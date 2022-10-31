@@ -1,0 +1,14 @@
+cmake_minimum_required(VERSION 3.16.3)
+project(dida)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+include_directories(..)
+
+add_library(dida
+    math/int128.cpp
+    math/int128.hpp
+    math/int128.inl)
+
+add_subdirectory(math/tests)
