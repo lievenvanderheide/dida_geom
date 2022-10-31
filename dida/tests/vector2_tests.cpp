@@ -1,6 +1,7 @@
 #include "dida/vector2.hpp"
 
 #include <catch2/catch.hpp>
+#include <sstream>
 
 namespace dida
 {
@@ -100,6 +101,13 @@ TEST_CASE("right_perpendicular")
 {
   Vector2 a(6740, 4550);
   CHECK(right_perpendicular(a) == Vector2(4550, -6740));
+}
+
+TEST_CASE("Vector2 printing")
+{
+  std::stringstream s;
+  s << Vector2(-4917, -7736);
+  CHECK(s.str() == "{-4917, -7736}");
 }
 
 } // namespace dida
