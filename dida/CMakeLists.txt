@@ -9,6 +9,10 @@ include_directories(..)
 add_library(dida
     math/int128.cpp
     math/int128.hpp
-    math/int128.inl)
+    math/int128.inl
+    scalar.cpp
+    scalar.hpp
+    scalar.inl)
 
 add_subdirectory(math/tests)
+add_subdirectory(tests)

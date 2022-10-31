@@ -1,8 +1,5 @@
 #include "dida/math/int128.hpp"
 
-#include <cassert>
-#include <iostream>
-
 namespace dida::math
 {
 
