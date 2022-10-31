@@ -12,7 +12,10 @@ add_library(dida
     math/int128.inl
     scalar.cpp
     scalar.hpp
-    scalar.inl)
+    scalar.inl
+    vector2.cpp
+    vector2.hpp
+    vector2.inl)
 
 add_subdirectory(math/tests)
 add_subdirectory(tests)

@@ -5,7 +5,7 @@
 namespace dida::math
 {
 
-TEST_CASE("Int128::operator==/operator!=")
+TEST_CASE("Int128::operator==/!=")
 {
   SECTION("Equal")
   {
