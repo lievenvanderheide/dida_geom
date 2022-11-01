@@ -216,9 +216,19 @@ TEST_CASE("crossing_point_with_perturbation")
 
   SECTION("B vertex on a, disjoint after perturbation")
   {
-    const Segment2 a = GENERATE(Segment2({5, 4}, {2, -2}), Segment2({2, -2}, {5, 4}));
-    const Segment2 b = GENERATE(Segment2({4, 2}, {8, 3}), Segment2({8, 3}, {4, 2}));
+    Segment2 a = GENERATE(Segment2({5, 4}, {2, -2}), Segment2({2, -2}, {5, 4}));
+    Segment2 b = GENERATE(Segment2({4, 2}, {8, 3}), Segment2({8, 3}, {4, 2}));
     CHECK(!crossing_point_with_perturbation<PerturbationVector2::right_up>(a, b));
+    CHECK(!crossing_point_with_perturbation<PerturbationVector2::left_down>(b, a));
+  }
+
+  SECTION("Colinear")
+  {
+    Segment2 a = GENERATE(Segment2({-6, 5}, {6, 1}), Segment2({6, 1}, {-6, 5}));
+    Segment2 b = GENERATE(Segment2({-3, 4}, {9, 0}), Segment2({9, 0}, {-3, 4}));
+    CHECK(!crossing_point_with_perturbation<PerturbationVector2::right_up>(a, b));
+    CHECK(!crossing_point_with_perturbation<PerturbationVector2::left_down>(a, b));
+    CHECK(!crossing_point_with_perturbation<PerturbationVector2::right_up>(b, a));
     CHECK(!crossing_point_with_perturbation<PerturbationVector2::left_down>(b, a));
   }
 }
