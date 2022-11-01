@@ -7,6 +7,9 @@ namespace dida
 
 /// A symbolic infinitesimal offset which can be applied to parts of the input of predicates to symbolically turn input
 /// in special position into input in general position.
+///
+/// Formally, the output of a function which takes a @c PerturbationVector2 offset to be applied to some of its input
+/// will be equal to the limit of the output as a sequence of positive @c eps approach 0.
 enum class PerturbationVector2
 {
   /// The perturbation vector <tt>[-eps, -eps^2]</tt>, with Infinitesimal @c eps.

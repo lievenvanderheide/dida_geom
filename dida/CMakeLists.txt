@@ -10,11 +10,14 @@ add_library(dida
     math/int128.cpp
     math/int128.hpp
     math/int128.inl
+    assert.hpp
     perturbation.hpp
     perturbation.inl
     scalar.cpp
     scalar.hpp
     scalar.inl
+    segment2.hpp
+    segment2.inl
     vector2.cpp
     vector2.hpp
     vector2.inl)
