@@ -10,6 +10,8 @@ add_library(dida
     math/int128.cpp
     math/int128.hpp
     math/int128.inl
+    perturbation.hpp
+    perturbation.inl
     scalar.cpp
     scalar.hpp
     scalar.inl
