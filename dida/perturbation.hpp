@@ -5,6 +5,8 @@
 namespace dida
 {
 
+/// A symbolic infinitesimal offset which can be applied to parts of the input of predicates to symbolically turn input
+/// in special position into input in general position.
 enum class PerturbationVector2
 {
   /// The perturbation vector <tt>[-eps, -eps^2]</tt>, with Infinitesimal @c eps.
@@ -42,6 +44,6 @@ inline bool cross_is_positive(Vector2 a, PerturbationVector2 b);
 /// @return True iff the cross product of @c a and the perturbation vector @c b is negative.
 inline bool cross_is_negative(Vector2 a, PerturbationVector2 b);
 
-} // namespace dida::detail
+} // namespace dida
 
 #include "dida/perturbation.inl"
