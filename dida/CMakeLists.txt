@@ -13,6 +13,9 @@ add_library(dida
     array_view.hpp
     array_view.inl
     assert.hpp
+    convex_polygon2.cpp
+    convex_polygon2.hpp
+    convex_polygon2.inl
     perturbation.hpp
     perturbation.inl
     scalar.cpp

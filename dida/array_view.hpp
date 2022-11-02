@@ -51,12 +51,16 @@ public:
 
   ///@{
   /// Returns an iterator to the beginning of this @c ArrayView.
+  ///
+  /// @return The iterator.
   inline iterator begin();
   const_iterator begin() const;
   ///@}
 
   ///@{
   /// Returns an iterator to the end of this @c ArrayView.
+  ///
+  /// @return The iterator.
   inline iterator end();
   inline const_iterator end() const;
   ///@}
