@@ -104,7 +104,7 @@ public:
   /// that the vertices outlive the @c ConvexPolygonView2.
   ///
   /// @param vertices The vertices.
-  inline ConvexPolygonView2(ArrayView<const Point2> vertices);
+  inline explicit ConvexPolygonView2(ArrayView<const Point2> vertices);
 
   /// Constructs a @c ConvexPolygonView2 with the given vertices.
   ///

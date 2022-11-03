@@ -3,6 +3,7 @@ project(dida)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "-O3 -DNDEBUG")
 
 include_directories(..)
 
@@ -13,6 +14,8 @@ add_library(dida
     array_view.hpp
     array_view.inl
     assert.hpp
+    convex_polygon2_utils.cpp
+    convex_polygon2_utils.hpp
     convex_polygon2.cpp
     convex_polygon2.hpp
     convex_polygon2.inl
@@ -27,5 +30,6 @@ add_library(dida
     vector2.hpp
     vector2.inl)
 
+add_subdirectory(benchmarks)
 add_subdirectory(math/tests)
 add_subdirectory(tests)
