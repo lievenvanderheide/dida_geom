@@ -61,7 +61,6 @@ TEST_CASE("leftmost_vertex benchmark")
 
   {
     ConvexPolygon2 polygon = circle_polygon(Point2(2, 6), 10, 20, .3 * M_PI);
-    std::atomic_thread_fence(std::memory_order_seq_cst);
     BENCHMARK("20 vertices")
     {
       return leftmost_vertex(polygon);
@@ -70,7 +69,6 @@ TEST_CASE("leftmost_vertex benchmark")
 
   {
     ConvexPolygon2 polygon = circle_polygon(Point2(2, 6), 10, 100, .3 * M_PI);
-    std::atomic_thread_fence(std::memory_order_seq_cst);
     BENCHMARK("100 vertices")
     {
       return leftmost_vertex(polygon);

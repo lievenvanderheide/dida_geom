@@ -12,7 +12,8 @@ namespace
 /// Returns the support vertex of @c polygon in the direction specified using a @c compare_points function. If there's a
 /// tie, then the vertex at the end of the edge connecting the two candidates is returned.
 ///
-/// The user specified <tt>bool compare_points(Point2 a, Point2 b)</tt> function should return true iff the projection of point
+/// The user specified <tt>bool compare_points(Point2 a, Point2 b)</tt> function should return true iff the projection
+/// of point
 /// @c a onto the direction of interest is less than or equal to the projection of point @c b onto that direction. For
 /// example, if we want to find the support vertex in the +X direction, then the following function can be used:
 ///
@@ -44,17 +45,17 @@ ConvexPolygonView2::const_iterator support_vertex(ConvexPolygonView2 polygon, Co
         // 'prev(range_mid) - range_mid'. This cone fully contains the first half of the range, while the apex
         // ('range_mid') is the cone's farthest point in the direction of interest.
         //
-        // Since 'range_mid' is part of the second half, this means we can fully discard the first half.
+        // Since 'range_mid' is part of the second half, we can fully discard the first half.
         //
         // A special case is the case when one or both rays are perpendicular to the direction of interest. In that
         // case, 'apex' is tied with other points in the cone for being the farthest point in the direction of interest.
         // The vertex we want to find is either 'range_mid', 'next(range_mid)', or another vertex not in the cone. In
         // the first and last case, the vertex must be in the second half, so we're fine. The only potential problematic
         // case is if 'next(range_mid)' were in the first half, however, for this to be the case, 'next(range_mid)' must
-        // be the first vertex of the current range, 'range_mid' the last vertex, and since a polygon has at least 3
-        // vertices, there must be at least one other vertex between those two, which means a different 'range_mid'
-        // vertex would actually have been selected. Since this can't happen, we know that 'next(range_mid)' must also
-        // be in the second half.
+        // be the first vertex of the current range, 'range_mid' the last vertex of the current range, and since a
+        // polygon has at least 3 vertices, there must be at least one other vertex between those two, however, this
+        // means that a different 'range_mid' vertex should have been selected, so we have a contradiction, and the
+        // assumption that 'next(range_mid)' lies in the first half must be false.
 
         range_begin_it = range_mid_it;
         range_begin_prev_it = range_mid_it - 1;

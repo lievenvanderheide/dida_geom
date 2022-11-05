@@ -1,6 +1,11 @@
 namespace dida
 {
 
+constexpr PerturbationVector2 flip_perturbation_vector(PerturbationVector2 a)
+{
+  return a == PerturbationVector2::left_down ? PerturbationVector2::right_up : PerturbationVector2::left_down;
+}
+
 inline bool dot_is_positive(Vector2 a, PerturbationVector2 b)
 {
   if (b == PerturbationVector2::left_down)

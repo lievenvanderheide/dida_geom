@@ -19,6 +19,8 @@ enum class PerturbationVector2
   right_up,
 };
 
+constexpr PerturbationVector2 flip_perturbation_vector(PerturbationVector2 a);
+
 /// Returns whether the dot product of vector @c a and perturbation vector @c b is positive.
 ///
 /// @param a The vector operand.

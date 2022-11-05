@@ -8,6 +8,7 @@ add_executable(dida_tests
     convex_polygon2_utils_tests.cpp
     perturbation_tests.cpp
     point2_tests.cpp
+    utils_tests.cpp
     scalar_tests.cpp
     segment2_tests.cpp
     vector2_tests.cpp)

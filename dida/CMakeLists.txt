@@ -3,7 +3,7 @@ project(dida)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "-O3 -DNDEBUG")
+#set(CMAKE_CXX_FLAGS "-O3 -DNDEBUG")
 
 include_directories(..)
 
@@ -31,5 +31,6 @@ add_library(dida
     vector2.inl)
 
 add_subdirectory(benchmarks)
+add_subdirectory(detail/tests)
 add_subdirectory(math/tests)
 add_subdirectory(tests)
