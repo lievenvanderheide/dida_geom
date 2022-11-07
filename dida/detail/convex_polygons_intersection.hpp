@@ -155,6 +155,27 @@ bool advance_forward_edge(const PolygonInfo& polygon_info, ForwardEdge& edge);
 template <Arc arc>
 bool advance_reverse_edge(const PolygonInfo& polygon_info, ReverseEdge& edge);
 
+/// Finds all crossing points which lie "on" the given arc of the intersection polygon. A crossing point is considered
+/// to lie on the arc if both its incoming and outgoing edges lie on the arc.
+///
+/// On call, @c a_edge and @c b_edge should be edges of their respective polygons, which both intersect the sweep line
+/// for a sweep position before the first crossing point.
+///
+/// Special cases are resolved by shifting input polygon @c b by perturbation vector @c PerturbationVector::right_up.
+///
+/// @tparam arc The arc of the crossing points to find.
+/// @tparam Callbacks The type of the callbacks object.
+/// @param a_info The @c PolygonInfo of the first input polygon.
+/// @param a_edge The edge of the first polygon.
+/// @param b_info The @c PolygonInfo of the second input polygon.
+/// @param b_edge The edge of the second polygon.
+/// @param a_is_inner Whether the point of edge @c a initially intersecting the sweep line is on the interior side of
+/// edge @c b.
+/// @param callbacks The callbacks objects.
+template <Arc arc, class Callbacks>
+void find_on_arc_crossing_points(const PolygonInfo& a_info, ForwardEdge& a_edge, const PolygonInfo& b_info,
+                                 ForwardEdge& b_edge, bool a_is_inner, Callbacks& callbacks);
+
 } // namespace convex_polygons_intersection
 
 } // namespace dida::detail

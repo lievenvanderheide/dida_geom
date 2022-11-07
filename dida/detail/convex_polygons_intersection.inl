@@ -151,6 +151,67 @@ bool advance_reverse_edge(const PolygonInfo& polygon_info, ReverseEdge& edge)
   return true;
 }
 
+template <Arc arc, class Callbacks>
+void find_on_arc_crossing_points(const PolygonInfo& a_info, ForwardEdge& a_edge, const PolygonInfo& b_info,
+                                 ForwardEdge& b_edge, bool a_is_inner, Callbacks& callbacks)
+{
+  while (true)
+  {
+    if (sweep_position_less_than<arc, PerturbationVector2::right_up>(a_edge.end_it->x(), b_edge.end_it->x()))
+    {
+      // Advance 'b'.
+
+      // cross(b_dir, a_end - s * a_dir - b_end) = 0
+      // s = cross(b_dir, a_end - b_end) / cross(b_dir, a_dir)
+      Vector2 ends_diff = *a_edge.end_it - *b_edge.end_it;
+      ScalarDeg2 s_num = cross(b_edge.dir, ends_diff);
+      bool a_end_is_inner = s_num > 0 || (s_num == 0 && cross_is_positive(b_edge.dir, PerturbationVector2::left_down));
+      if (a_is_inner != a_end_is_inner)
+      {
+        // cross(a_dir, b_end - t * b_dir - a_end) = 0
+        // t = cross(a_dir, b_end - a_end) / cross(a_dir, b_dir)
+        ScalarDeg2 t_num = cross(a_edge.dir, ends_diff);
+        ScalarDeg2 denom = cross(b_edge.dir, a_edge.dir);
+
+        callbacks.crossing_point(a_edge, b_edge, s_num, t_num, denom);
+
+        a_is_inner = a_end_is_inner;
+      }
+
+      if (!advance_forward_edge<arc>(a_info, a_edge))
+      {
+        return;
+      }
+    }
+    else
+    {
+      // Advance 'a'.
+
+      // cross(a_dir, b_end - t * b_dir - a_end) = 0
+      // t = cross(a_dir, b_end - a_end) / cross(a_dir, b_dir)
+      Vector2 ends_diff = *b_edge.end_it - *a_edge.end_it;
+      ScalarDeg2 t_num = cross(a_edge.dir, ends_diff);
+      bool b_end_is_inner = t_num > 0 || (t_num == 0 && cross_is_positive(a_edge.dir, PerturbationVector2::right_up));
+      if (a_is_inner == b_end_is_inner)
+      {
+        // cross(b_dir, a_end - s * a_dir - b_end) = 0
+        // s = cross(b_dir, b_end - a_end) / cross(a_dir, b_dir)
+        ScalarDeg2 s_num = cross(b_edge.dir, ends_diff);
+        ScalarDeg2 denom = cross(a_edge.dir, b_edge.dir);
+
+        callbacks.crossing_point(a_edge, b_edge, s_num, t_num, denom);
+
+        a_is_inner = !a_is_inner;
+      }
+
+      if (!advance_forward_edge<arc>(b_info, b_edge))
+      {
+        return;
+      }
+    }
+  }
+}
+
 } // namespace convex_polygons_intersection
 
 } // namespace dida::detail
