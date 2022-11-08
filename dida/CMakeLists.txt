@@ -24,6 +24,7 @@ add_library(dida
     scalar.cpp
     scalar.hpp
     scalar.inl
+    segment2.cpp
     segment2.hpp
     segment2.inl
     vector2.cpp

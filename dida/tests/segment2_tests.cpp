@@ -1,6 +1,7 @@
-#include <catch2/catch.hpp>
-
 #include "dida/segment2.hpp"
+
+#include <catch2/catch.hpp>
+#include <sstream>
 
 namespace dida
 {
@@ -231,6 +232,13 @@ TEST_CASE("crossing_point_with_perturbation")
     CHECK(!crossing_point_with_perturbation<PerturbationVector2::right_up>(b, a));
     CHECK(!crossing_point_with_perturbation<PerturbationVector2::left_down>(b, a));
   }
+}
+
+TEST_CASE("Segment2 printing")
+{
+  std::stringstream s;
+  s << Segment2({936, -18}, {-716, 339});
+  CHECK(s.str() == "{{936, -18}, {-716, 339}}");
 }
 
 } // namespace dida

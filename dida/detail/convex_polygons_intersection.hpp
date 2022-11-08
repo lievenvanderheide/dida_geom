@@ -155,6 +155,39 @@ bool advance_forward_edge(const PolygonInfo& polygon_info, ForwardEdge& edge);
 template <Arc arc>
 bool advance_reverse_edge(const PolygonInfo& polygon_info, ReverseEdge& edge);
 
+/// Returns the @c ForwardEdge for the same edge as @c reverse_edge.
+///
+/// @param polygon_info The @c PolygonInfo of the polygon which contains the edge.
+/// @param reverse_edge The edge as a @c ReverseEdge.
+/// @return The edge as a @c ForwardEdge.
+ForwardEdge to_forward_edge(const PolygonInfo &polygon_info, const ReverseEdge &reverse_edge);
+
+/// Finds the "side" crossing point of the given arc of the intersection polygon. A crossing point is considered the
+/// side crossing point of @c arc if its outgoing edge belongs to @c arc, while it's incoming edge belongs to the other
+/// arc.
+///
+/// This function should be called when the first vertices of arc of each input polygon lie outside the other polygon.
+/// If this is the case, then either there's a side crossing point, or the two input polygons are disjoint.
+///
+/// On call, @c fwd_edge and @c rev_edge should be two edges which intersect the sweep line for a sweep position before
+/// the crossing point.
+/// @c fwd_edge should be on the arc which should be traversed in the forward direction, while @c rev_edge should be on
+/// the arc which should be traversed in the reverse direction.
+///
+/// @tparam arc The arc for which the side crossing point is the first vertex of the intersection polygon.
+/// @tparam fwd_is_first_input_polygon If true, then the polygon corresponding to @c fwd_info is the first input
+/// polygon. This flag affects the perturbation used to resolve special cases, and the argument order to the callback
+/// function in @c callback.
+/// @tparam Callbacks The type of the callbacks object.
+/// @param fwd_info The @c PolygonInfo of the input polygon which contains the forward edge.
+/// @param fwd_edge The forward edge.
+/// @param rev_info The @c PolygonInfo of the input polygon which contains the reverse edge.
+/// @param rev_edge The reverse edge.
+/// @return True iff a side crossing point was found, false if the two input polygons are disjoint.
+template <Arc arc, bool fwd_is_first_input_polygon, class Callbacks>
+bool find_side_crossing_point(const PolygonInfo& fwd_info, ForwardEdge& fwd_edge, const PolygonInfo& rev_info,
+                              ReverseEdge& rev_edge, Callbacks& callbacks);
+
 /// Finds all crossing points which lie "on" the given arc of the intersection polygon. A crossing point is considered
 /// to lie on the arc if both its incoming and outgoing edges lie on the arc.
 ///

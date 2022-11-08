@@ -151,6 +151,89 @@ bool advance_reverse_edge(const PolygonInfo& polygon_info, ReverseEdge& edge)
   return true;
 }
 
+ForwardEdge to_forward_edge(const PolygonInfo &polygon_info, const ReverseEdge &reverse_edge)
+{
+  return ForwardEdge{next_cyclic(polygon_info.polygon, reverse_edge.start_it), reverse_edge.dir};
+}
+
+template <Arc arc, bool fwd_is_first_input_polygon, class Callbacks>
+bool find_side_crossing_point(const PolygonInfo& fwd_info, ForwardEdge& fwd_edge, const PolygonInfo& rev_info,
+                              ReverseEdge& rev_edge, Callbacks& callbacks)
+{
+  constexpr PerturbationVector2 fwd_perturbation_vector =
+      fwd_is_first_input_polygon ? PerturbationVector2::left_down : PerturbationVector2::right_up;
+  constexpr PerturbationVector2 rev_perturbation_vector =
+      fwd_is_first_input_polygon ? PerturbationVector2::right_up : PerturbationVector2::left_down;
+
+  while (true)
+  {
+    if (sweep_position_less_than<arc, rev_perturbation_vector>(fwd_edge.end_it->x(), rev_edge.start_it->x()))
+    {
+      // Advance 'forward'.
+
+      // cross(rev_dir, fwd_end - s * fwd_dir - rev_start) = 0.
+      // s = cross(rev_dir, fwd_end - rev_start) / cross(rev_dir, fwd_dir)
+      Vector2 ends_diff = *fwd_edge.end_it - *rev_edge.start_it;
+      ScalarDeg2 s_num = cross(rev_edge.dir, ends_diff);
+      if (s_num > 0 || (s_num == 0 && cross_is_positive(rev_edge.dir, fwd_perturbation_vector)))
+      {
+        // cross(fwd_dir, rev_start + t * rev_dir - fwd_end) = 0
+        // t = -cross(fwd_dir, fwd_end - rev_start) / cross(rev_dir, fwd_dir)
+        ScalarDeg2 t_num = -cross(fwd_edge.dir, ends_diff);
+        ScalarDeg2 denom = cross(rev_edge.dir, fwd_edge.dir);
+
+        if constexpr (fwd_is_first_input_polygon)
+        {
+          callbacks.crossing_point(fwd_edge, to_forward_edge(rev_info, rev_edge), s_num, denom - t_num, denom);
+        }
+        else
+        {
+          callbacks.crossing_point(to_forward_edge(rev_info, rev_edge), fwd_edge, denom - t_num, s_num, denom);
+        }
+
+        return true;
+      }
+
+      if (!advance_forward_edge<arc>(fwd_info, fwd_edge))
+      {
+        return false;
+      }
+    }
+    else
+    {
+      // Advance 'reverse'.
+
+      // cross(fwd_dir, rev_start + t * rev_dir - fwd_end) = 0.
+      // t = cross(fwd_dir, rev_start - fwd_end) / cross(rev_dir, fwd_dir)
+      Vector2 ends_diff = *rev_edge.start_it - *fwd_edge.end_it;
+      ScalarDeg2 t_num = cross(fwd_edge.dir, ends_diff);
+      if (t_num > 0 || (t_num == 0 && cross_is_positive(fwd_edge.dir, rev_perturbation_vector)))
+      {
+        // cross(rev_dir, fwd_end - t * fwd_dir - rev_start) = 0
+        // s = -cross(rev_dir, fwd_end - rev_start) / cross(rev_dir, fwd_dir)
+        ScalarDeg2 s_num = -cross(rev_edge.dir, ends_diff);
+        ScalarDeg2 denom = cross(rev_edge.dir, fwd_edge.dir);
+
+        if constexpr (fwd_is_first_input_polygon)
+        {
+          callbacks.crossing_point(fwd_edge, to_forward_edge(rev_info, rev_edge), s_num, denom - t_num, denom);
+        }
+        else
+        {
+          callbacks.crossing_point(to_forward_edge(rev_info, rev_edge), fwd_edge, denom - t_num, s_num, denom);
+        }
+
+        return true;
+      }
+
+      if (!advance_reverse_edge<other_arc(arc)>(rev_info, rev_edge))
+      {
+        return false;
+      }
+    }
+  }
+}
+
 template <Arc arc, class Callbacks>
 void find_on_arc_crossing_points(const PolygonInfo& a_info, ForwardEdge& a_edge, const PolygonInfo& b_info,
                                  ForwardEdge& b_edge, bool a_is_inner, Callbacks& callbacks)

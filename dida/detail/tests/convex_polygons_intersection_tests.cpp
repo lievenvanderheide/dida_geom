@@ -322,6 +322,28 @@ TEST_CASE("advance_reverse_edge")
   }
 }
 
+TEST_CASE("to_forward_edge")
+{
+  ConvexPolygon2 polygon{{-3.76, -1.76}, {-2.02, -3.28}, {2.52, -1.66}, {2.14, 2.7}};
+  PolygonInfo info(polygon);
+
+  SECTION("General")
+  {
+    ReverseEdge reverse_edge{info.polygon.begin() + 1, polygon[2] - polygon[1]};
+    ForwardEdge forward_edge = to_forward_edge(info, reverse_edge);
+    CHECK(forward_edge.end_it == info.polygon.begin() + 2);
+    CHECK(forward_edge.dir == polygon[2] - polygon[1]);
+  }
+
+  SECTION("With wrap")
+  {
+    ReverseEdge reverse_edge{info.polygon.begin() + 3, polygon[0] - polygon[3]};
+    ForwardEdge forward_edge = to_forward_edge(info, reverse_edge);
+    CHECK(forward_edge.end_it == info.polygon.begin());
+    CHECK(forward_edge.dir == polygon[0] - polygon[3]);
+  }
+}
+
 namespace
 {
 
@@ -444,11 +466,11 @@ bool TestCallbacks::should_include(Segment2 a_edge, Segment2 b_edge, FindExpecte
       Vector2 upper_dir = b_edge.end() - b_edge.start();
       if (cross(lower_dir, upper_dir) > 0)
       {
-        return flags.include_lower_arc_side_point;
+        return flags.include_upper_arc_side_point;
       }
       else
       {
-        return flags.include_upper_arc_side_point;
+        return flags.include_lower_arc_side_point;
       }
     }
   }
@@ -461,11 +483,11 @@ bool TestCallbacks::should_include(Segment2 a_edge, Segment2 b_edge, FindExpecte
       Vector2 lower_dir = b_edge.end() - b_edge.start();
       if (cross(lower_dir, upper_dir) > 0)
       {
-        return flags.include_lower_arc_side_point;
+        return flags.include_upper_arc_side_point;
       }
       else
       {
-        return flags.include_upper_arc_side_point;
+        return flags.include_lower_arc_side_point;
       }
     }
     else
@@ -508,7 +530,306 @@ bool TestCallbacks::CrossingPointKey::operator<(CrossingPointKey rhs) const
   return a_end_it < rhs.a_end_it || (a_end_it == rhs.a_end_it && b_end_it < rhs.b_end_it);
 }
 
+/// Rotates @c polygon by 180 degrees.
+///
+/// @param polygon The polygon to rotate.
+void rotate_180_deg(ConvexPolygon2& polygon)
+{
+  for (Point2& vertex : polygon.unsafe_mutable_vertices())
+  {
+    vertex = Point2(-static_cast<Vector2>(vertex));
+  }
+}
+
+/// Tests the @c find_side_crossing_point. It's assumed that the first edge of the relevant arc of both @c fwd_polygon
+/// and @c rev_polygon can be passed as @c fwd_edge and @c rev_edge to @c find_side_crossing_point, that is, there must
+/// be a sweep position for which both @c fwd_edge and @c rev_edge intersect the sweep line.
+///
+/// @tparam arc The arc for which to find the side crossing points.
+/// @tparam fwd_is_first_input_polygon If true, then the polygon corresponding to @c fwd_info is the first input
+/// polygon.
+/// @param fwd_polygon The polygon with the edges which should be traversed in the forward direction.
+/// @param rev_polygon The polygon with the edges which should be traversed in the reverse direction.
+/// @param expected_return_value The expected return value of @c find_side_crossing_point.
+template <Arc arc, bool fwd_is_first_input_polygon>
+void test_find_side_crossing_points(ConvexPolygonView2 fwd_polygon, ConvexPolygonView2 rev_polygon,
+                                    bool expected_return_value)
+{
+  PolygonInfo fwd_info(fwd_polygon);
+  PolygonInfo rev_info(rev_polygon);
+
+  ForwardEdge fwd_edge = arc_first_forward_edge<arc>(fwd_info);
+  ReverseEdge rev_edge = arc_first_reverse_edge<other_arc(arc)>(rev_info);
+
+  TestCallbacks::FindExpectedCrossingPointsFlags flags;
+  flags.include_on_lower_arc_points = false;
+  flags.include_on_upper_arc_points = false;
+  flags.include_lower_arc_side_point = arc == Arc::lower;
+  flags.include_upper_arc_side_point = arc == Arc::upper;
+
+  TestCallbacks callbacks;
+  if (fwd_is_first_input_polygon)
+  {
+    callbacks.find_expected_crossing_points(fwd_info, rev_info, flags);
+  }
+  else
+  {
+    callbacks.find_expected_crossing_points(rev_info, fwd_info, flags);
+  }
+
+  bool return_value =
+      find_side_crossing_point<arc, fwd_is_first_input_polygon>(fwd_info, fwd_edge, rev_info, rev_edge, callbacks);
+  CHECK(return_value == expected_return_value);
+  CHECK(callbacks.all_expected_points_found());
+}
+
 } // namespace
+
+TEST_CASE("find_side_crossing_point")
+{
+  SECTION("Found when advancing forward edge")
+  {
+    // The polygon whose edges we're traversing in the forward direction in this test.
+    ConvexPolygon2 fwd_polygon{{2.1, 4.52},  {3.44, 2.74},  {6.36, 0.88}, {9.36, 0.48},
+                               {11.76, 1.1}, {13.78, 3.12}, {14.3, 6.04}, {7.76, 6.9}};
+
+    // The polygon whose edges we're traversing in the reverse direction in this test.
+    ConvexPolygon2 rev_polygon{{15.43, 2.26}, {10.29, 1.51}, {7.08, 0.22}, {5.52, -0.64}, {3.46, -2.16}, {2.26, -3.44}};
+
+    SECTION("Left side vertex")
+    {
+      SECTION("Fwd is first, rev is second")
+      {
+        test_find_side_crossing_points<Arc::lower, true>(fwd_polygon, rev_polygon, true);
+      }
+
+      SECTION("Rev is first, fwd is second")
+      {
+        test_find_side_crossing_points<Arc::lower, false>(fwd_polygon, rev_polygon, true);
+      }
+    }
+
+    SECTION("Right side vertex")
+    {
+      rotate_180_deg(fwd_polygon);
+      rotate_180_deg(rev_polygon);
+
+      SECTION("Fwd is first, rev is second")
+      {
+        test_find_side_crossing_points<Arc::upper, true>(fwd_polygon, rev_polygon, true);
+      }
+
+      SECTION("Rev is first, fwd is second")
+      {
+        test_find_side_crossing_points<Arc::upper, false>(fwd_polygon, rev_polygon, true);
+      }
+    }
+  }
+
+  SECTION("Found when advancing reverse edge")
+  {
+    // The polygon whose edges we're traversing in the forward direction in this test.
+    ConvexPolygon2 fwd_polygon{{-11.98, 6.46}, {-10.68, 2.86}, {-7.5, -0.56}, {-3.68, -1.44},
+                               {0.56, -1.38},  {3.62, 0.7},    {5.78, 4.82}};
+
+    // The polygon whose edges we're traversing in the reverse direction in this test.
+    ConvexPolygon2 rev_polygon{{0.38, -8.28}, {7.38, -0.22},   {2.26, 2.06},   {-3.3, 2.54},
+                               {-8.2, 1.28},  {-10.24, -1.22}, {-11.46, -3.38}};
+
+    SECTION("Left side vertex")
+    {
+      SECTION("Fwd is first, rev is second")
+      {
+        test_find_side_crossing_points<Arc::lower, true>(fwd_polygon, rev_polygon, true);
+      }
+
+      SECTION("Rev is first, fwd is second")
+      {
+        test_find_side_crossing_points<Arc::lower, false>(fwd_polygon, rev_polygon, true);
+      }
+    }
+
+    SECTION("Right side vertex")
+    {
+      rotate_180_deg(fwd_polygon);
+      rotate_180_deg(rev_polygon);
+
+      SECTION("Fwd is first, rev is second")
+      {
+        test_find_side_crossing_points<Arc::upper, true>(fwd_polygon, rev_polygon, true);
+      }
+
+      SECTION("Rev is first, fwd is second")
+      {
+        test_find_side_crossing_points<Arc::upper, false>(fwd_polygon, rev_polygon, true);
+      }
+    }
+  }
+
+  SECTION("Intersecting, vertex on edge")
+  {
+    SECTION("Advancing forward")
+    {
+      ConvexPolygon2 fwd_polygon{{1, 5}, {2, 3}, {4, 2}, {7, 1}};
+      ConvexPolygon2 rev_polygon{{1, -1}, {8, -2}, {7, 2}, {3, 2}};
+
+      SECTION("Lower arc")
+      {
+        test_find_side_crossing_points<Arc::lower, false>(fwd_polygon, rev_polygon, true);
+        test_find_side_crossing_points<Arc::lower, true>(fwd_polygon, rev_polygon, true);
+      }
+
+      SECTION("Upper arc")
+      {
+        rotate_180_deg(fwd_polygon);
+        rotate_180_deg(rev_polygon);
+
+        test_find_side_crossing_points<Arc::upper, false>(fwd_polygon, rev_polygon, true);
+        test_find_side_crossing_points<Arc::upper, true>(fwd_polygon, rev_polygon, true);
+      }
+    }
+
+    SECTION("Advancing reverse")
+    {
+      ConvexPolygon2 fwd_polygon{{5, 3}, {4, 1}, {11, 1}, {10, 3}};
+      ConvexPolygon2 rev_polygon{{10, -1}, {8, 2}, {6, 1}, {5, -1}};
+
+      SECTION("Lower arc")
+      {
+        test_find_side_crossing_points<Arc::lower, false>(fwd_polygon, rev_polygon, true);
+        test_find_side_crossing_points<Arc::lower, true>(fwd_polygon, rev_polygon, true);
+      }
+
+      SECTION("Upper arc")
+      {
+        rotate_180_deg(fwd_polygon);
+        rotate_180_deg(rev_polygon);
+
+        test_find_side_crossing_points<Arc::upper, false>(fwd_polygon, rev_polygon, true);
+        test_find_side_crossing_points<Arc::upper, true>(fwd_polygon, rev_polygon, true);
+      }
+    }
+  }
+
+  SECTION("Vertically disjoint")
+  {
+    // The polygon whose edges we're traversing in the forward direction in this test.
+    ConvexPolygon2 fwd_polygon{{-1.38, 2.4},  {-0.64, 1.3}, {2.16, -0.66}, {5.14, -1.36},
+                               {7.18, -1.12}, {8.94, 0.16}, {9.3, 2.24},   {5.58, 5.32}};
+
+    // The polygon whose edges we're traversing in the reverse direction in this test.
+    ConvexPolygon2 rev_polygon{{6.22, -9.28}, {10.32, -5.16}, {8.38, -3.14},  {6.32, -2.34},
+                               {3.56, -1.9},  {1.42, -2.36},  {-0.18, -3.34}, {-1.32, -4.48}};
+
+    SECTION("Lower arc")
+    {
+      SECTION("Fwd is first, rev is second")
+      {
+        test_find_side_crossing_points<Arc::lower, true>(fwd_polygon, rev_polygon, false);
+      }
+
+      SECTION("Rev is first, fwd is second")
+      {
+        test_find_side_crossing_points<Arc::lower, false>(fwd_polygon, rev_polygon, false);
+      }
+    }
+
+    SECTION("Upper arc")
+    {
+      rotate_180_deg(fwd_polygon);
+      rotate_180_deg(rev_polygon);
+
+      SECTION("Fwd is first, rev is second")
+      {
+        test_find_side_crossing_points<Arc::upper, true>(fwd_polygon, rev_polygon, false);
+      }
+
+      SECTION("Rev is first, fwd is second")
+      {
+        test_find_side_crossing_points<Arc::upper, false>(fwd_polygon, rev_polygon, false);
+      }
+    }
+  }
+
+  SECTION("Touching, but disjoint after perturbation")
+  {
+    SECTION("Advancing forward 1")
+    {
+      ConvexPolygon2 fwd_polygon{{-1, 3}, {2, 0}, {4, 3}};
+      ConvexPolygon2 rev_polygon{{-2, -2}, {2, -5}, {8, -2}, {6, 2}};
+
+      SECTION("Lower arc")
+      {
+        test_find_side_crossing_points<Arc::lower, true>(fwd_polygon, rev_polygon, false);
+      }
+
+      SECTION("Upper arc")
+      {
+        rotate_180_deg(fwd_polygon);
+        rotate_180_deg(rev_polygon);
+
+        test_find_side_crossing_points<Arc::upper, false>(fwd_polygon, rev_polygon, false);
+      }
+    }
+
+    SECTION("Advancing forward 2")
+    {
+      ConvexPolygon2 fwd_polygon{{-2, 3}, {1, 8}, {-4, 11}};
+      ConvexPolygon2 rev_polygon{{-5, -2}, {1, -3}, {-3, 5}};
+
+      SECTION("Lower arc")
+      {
+        test_find_side_crossing_points<Arc::lower, false>(fwd_polygon, rev_polygon, false);
+      }
+
+      SECTION("Upper arc")
+      {
+        rotate_180_deg(fwd_polygon);
+        rotate_180_deg(rev_polygon);
+
+        test_find_side_crossing_points<Arc::upper, true>(fwd_polygon, rev_polygon, false);
+      }
+    }
+
+    SECTION("Advancing reverse 1")
+    {
+      ConvexPolygon2 fwd_polygon{{-7, 2}, {-4, -4}, {-1, -1}, {1, 3}};
+      ConvexPolygon2 rev_polygon{{-5, -5}, {-5, -2}, {-6, 0}, {-10, -5}};
+
+      SECTION("Lower arc")
+      {
+        test_find_side_crossing_points<Arc::lower, false>(fwd_polygon, rev_polygon, false);
+      }
+
+      SECTION("Upper arc")
+      {
+        rotate_180_deg(fwd_polygon);
+        rotate_180_deg(rev_polygon);
+
+        test_find_side_crossing_points<Arc::upper, true>(fwd_polygon, rev_polygon, false);
+      }
+    }
+
+    SECTION("Advancing reverse 2")
+    {
+      ConvexPolygon2 fwd_polygon{{-7, 2}, {-4, -4}, {-1, -1}, {1, 3}};
+      ConvexPolygon2 rev_polygon{{-5, -8}, {1, -5}, {-2, -2}, {-3, -3}};
+
+      SECTION("Lower arc")
+      {
+        test_find_side_crossing_points<Arc::lower, true>(fwd_polygon, rev_polygon, false);
+      }
+
+      SECTION("Upper arc")
+      {
+        rotate_180_deg(fwd_polygon);
+        rotate_180_deg(rev_polygon);
+
+        test_find_side_crossing_points<Arc::upper, false>(fwd_polygon, rev_polygon, false);
+      }
+    }
+  }
+}
 
 namespace
 {
@@ -542,14 +863,6 @@ void test_find_on_arc_crossing_points(ConvexPolygonView2 a, ConvexPolygonView2 b
 
   find_on_arc_crossing_points<arc>(a_info, a_edge, b_info, b_edge, a_is_inner, callbacks);
   CHECK(callbacks.all_expected_points_found());
-}
-
-void rotate_180_deg(ConvexPolygon2& polygon)
-{
-  for (Point2& vertex : polygon.unsafe_mutable_vertices())
-  {
-    vertex = Point2(-static_cast<Vector2>(vertex));
-  }
 }
 
 } // namespace

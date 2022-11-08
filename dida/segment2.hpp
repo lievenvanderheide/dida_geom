@@ -118,6 +118,13 @@ private:
 template <PerturbationVector2 b_perturbation_vector>
 inline std::optional<SegmentsCrossingPointParams> crossing_point_with_perturbation(Segment2 a, Segment2 b);
 
+/// Writes @c segment to the output stream @c s.
+///
+/// @param s The output stream.
+/// @param segment The @c Segment2 to write to the @c s.
+/// @return A reference to the output stream.
+std::ostream& operator<<(std::ostream& s, Segment2 segment);
+
 } // namespace dida
 
 #include "dida/segment2.inl"
