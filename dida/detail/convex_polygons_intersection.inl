@@ -151,7 +151,7 @@ bool advance_reverse_edge(const PolygonInfo& polygon_info, ReverseEdge& edge)
   return true;
 }
 
-ForwardEdge to_forward_edge(const PolygonInfo &polygon_info, const ReverseEdge &reverse_edge)
+ForwardEdge to_forward_edge(const PolygonInfo& polygon_info, const ReverseEdge& reverse_edge)
 {
   return ForwardEdge{next_cyclic(polygon_info.polygon, reverse_edge.start_it), reverse_edge.dir};
 }
@@ -293,6 +293,72 @@ void find_on_arc_crossing_points(const PolygonInfo& a_info, ForwardEdge& a_edge,
       }
     }
   }
+}
+
+template <Arc arc, bool a_is_first_input_polygon, class Callbacks>
+bool find_arc_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callbacks& callbacks)
+{
+  constexpr PerturbationVector2 a_perturbation_vector =
+      a_is_first_input_polygon ? PerturbationVector2::left_down : PerturbationVector2::right_up;
+  constexpr PerturbationVector2 b_perturbation_vector =
+      a_is_first_input_polygon ? PerturbationVector2::right_up : PerturbationVector2::left_down;
+
+  DIDA_DEBUG_ASSERT((sweep_position_less_than<arc, b_perturbation_vector>(arc_first_vertex_it<arc>(a_info)->x(),
+                                                                          arc_first_vertex_it<arc>(b_info)->x())));
+
+  ConvexPolygonView2::const_iterator b_vertex_it = arc_first_vertex_it<arc>(b_info);
+  ForwardEdge a_fwd_edge = forward_edge_for_sweep_position<arc, b_perturbation_vector>(a_info, b_vertex_it->x());
+  ForwardEdge b_fwd_edge;
+  bool a_is_inner;
+
+  ScalarDeg2 a_fwd_edge_side = cross(a_fwd_edge.dir, *b_vertex_it - *a_fwd_edge.end_it);
+  if (a_fwd_edge_side < 0 ||
+      (a_fwd_edge_side == 0 && cross_is_negative(a_fwd_edge.dir, b_perturbation_vector)))
+  {
+    ReverseEdge b_rev_edge = arc_first_reverse_edge<other_arc(arc)>(b_info);
+    if (!find_side_crossing_point<arc, a_is_first_input_polygon>(a_info, a_fwd_edge, b_info, b_rev_edge, callbacks))
+    {
+      return false;
+    }
+
+    ScalarDeg1 sweep_position = prev_cyclic(a_info.polygon, a_fwd_edge.end_it)->x();
+    b_fwd_edge = forward_edge_for_sweep_position<arc, a_perturbation_vector>(b_info, sweep_position);
+    a_is_inner = true;
+  }
+  else
+  {
+    ReverseEdge a_rev_edge = reverse_edge_for_sweep_position<other_arc(arc), b_perturbation_vector>(a_info, b_vertex_it->x());
+    ScalarDeg2 a_rev_edge_side = cross(a_rev_edge.dir, *b_vertex_it - *a_rev_edge.start_it);
+    if (a_rev_edge_side < 0 ||
+        (a_rev_edge_side == 0 && cross_is_negative(a_rev_edge.dir, b_perturbation_vector)))
+    {
+      b_fwd_edge = arc_first_forward_edge<arc>(b_info);
+      if (!find_side_crossing_point<arc, !a_is_first_input_polygon>(b_info, b_fwd_edge, a_info, a_rev_edge, callbacks))
+      {
+        return false;
+      }
+
+      ScalarDeg1 sweep_position = prev_cyclic(b_info.polygon, b_fwd_edge.end_it)->x();
+      a_fwd_edge = forward_edge_for_sweep_position<arc, b_perturbation_vector>(a_info, sweep_position);
+      a_is_inner = false;
+    }
+    else
+    {
+      b_fwd_edge = arc_first_forward_edge<arc>(b_info);
+      a_is_inner = false;
+    }
+  }
+
+  if constexpr (a_is_first_input_polygon)
+  {
+    find_on_arc_crossing_points<arc>(a_info, a_fwd_edge, b_info, b_fwd_edge, a_is_inner, callbacks);
+  }
+  else
+  {
+    find_on_arc_crossing_points<arc>(b_info, b_fwd_edge, a_info, a_fwd_edge, !a_is_inner, callbacks);
+  }
+
+  return true;
 }
 
 } // namespace convex_polygons_intersection

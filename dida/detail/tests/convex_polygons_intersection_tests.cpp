@@ -379,11 +379,10 @@ public:
 
   /// Finds the expected crossing points and adds them to the @c expected_crossing_points_ map.
   ///
-  /// @param a_info The @c PolygonInfo of the first polygon.
-  /// @param b_info The @c PolygonInfo of the second polygon.
+  /// @param a The first input polygon.
+  /// @param b The second input polygon.
   /// @param flags The flags indicating which crossing points should be included.
-  void find_expected_crossing_points(const PolygonInfo& a_info, const PolygonInfo& b_info,
-                                     FindExpectedCrossingPointsFlags flags);
+  void find_expected_crossing_points(ConvexPolygonView2 a, ConvexPolygonView2 b, FindExpectedCrossingPointsFlags flags);
 
   /// The callback function which is called by the function under test when a crossing point is found. This
   /// implementation checks if the crossing point is in @c expected_crossing_points_, and if so, removes it from that
@@ -423,16 +422,14 @@ private:
   ExpectedCrossingPointsMap expected_crossing_points_;
 };
 
-void TestCallbacks::find_expected_crossing_points(const PolygonInfo& a_info, const PolygonInfo& b_info,
+void TestCallbacks::find_expected_crossing_points(const ConvexPolygonView2 a, const ConvexPolygonView2 b,
                                                   FindExpectedCrossingPointsFlags flags)
 {
-  ConvexPolygonView2::const_iterator a_start_it = a_info.polygon.end() - 1;
-  for (ConvexPolygonView2::const_iterator a_end_it = a_info.polygon.begin(); a_end_it != a_info.polygon.end();
-       ++a_end_it)
+  ConvexPolygonView2::const_iterator a_start_it = a.end() - 1;
+  for (ConvexPolygonView2::const_iterator a_end_it = a.begin(); a_end_it != a.end(); ++a_end_it)
   {
-    ConvexPolygonView2::const_iterator b_start_it = b_info.polygon.end() - 1;
-    for (ConvexPolygonView2::const_iterator b_end_it = b_info.polygon.begin(); b_end_it != b_info.polygon.end();
-         ++b_end_it)
+    ConvexPolygonView2::const_iterator b_start_it = b.end() - 1;
+    for (ConvexPolygonView2::const_iterator b_end_it = b.begin(); b_end_it != b.end(); ++b_end_it)
     {
       Segment2 a_edge(*a_start_it, *a_end_it);
       Segment2 b_edge(*b_start_it, *b_end_it);
@@ -570,11 +567,11 @@ void test_find_side_crossing_points(ConvexPolygonView2 fwd_polygon, ConvexPolygo
   TestCallbacks callbacks;
   if (fwd_is_first_input_polygon)
   {
-    callbacks.find_expected_crossing_points(fwd_info, rev_info, flags);
+    callbacks.find_expected_crossing_points(fwd_polygon, rev_polygon, flags);
   }
   else
   {
-    callbacks.find_expected_crossing_points(rev_info, fwd_info, flags);
+    callbacks.find_expected_crossing_points(rev_polygon, fwd_polygon, flags);
   }
 
   bool return_value =
@@ -859,7 +856,7 @@ void test_find_on_arc_crossing_points(ConvexPolygonView2 a, ConvexPolygonView2 b
   flags.include_upper_arc_side_point = false;
 
   TestCallbacks callbacks;
-  callbacks.find_expected_crossing_points(a_info, b_info, flags);
+  callbacks.find_expected_crossing_points(a, b, flags);
 
   find_on_arc_crossing_points<arc>(a_info, a_edge, b_info, b_edge, a_is_inner, callbacks);
   CHECK(callbacks.all_expected_points_found());
@@ -958,6 +955,167 @@ TEST_CASE("find_on_arc_crossing_points")
       rotate_180_deg(b);
       test_find_on_arc_crossing_points<Arc::upper>(a, b, true);
     }
+  }
+}
+
+namespace
+{
+
+template <Arc arc, bool a_is_first_input_polygon>
+void test_find_arc_crossing_points(ConvexPolygonView2 a, ConvexPolygonView2 b, bool expected_return_value)
+{
+  PolygonInfo a_info(a);
+  PolygonInfo b_info(b);
+
+  TestCallbacks::FindExpectedCrossingPointsFlags flags;
+  flags.include_on_lower_arc_points = arc == Arc::lower;
+  flags.include_on_upper_arc_points = arc == Arc::upper;
+  flags.include_lower_arc_side_point = arc == Arc::lower;
+  flags.include_upper_arc_side_point = arc == Arc::upper;
+
+  TestCallbacks callbacks;
+  if (a_is_first_input_polygon)
+  {
+    callbacks.find_expected_crossing_points(a, b, flags);
+  }
+  else
+  {
+    callbacks.find_expected_crossing_points(b, a, flags);
+  }
+
+  bool return_value = find_arc_crossing_points<arc, a_is_first_input_polygon>(a_info, b_info, callbacks);
+  CHECK(return_value == expected_return_value);
+  CHECK(callbacks.all_expected_points_found());
+}
+
+} // namespace
+
+TEST_CASE("find_arc_crossing_points")
+{
+  SECTION("Lower arc, B leftmost below A")
+  {
+    ConvexPolygon2 a{{-7.66, 0.52}, {-5.42, -2.5}, {-0.76, -3.98}, {3.8, -1.62}, {1.36, 2.86}, {-2.26, 3.44}};
+    ConvexPolygon2 b{{1.28, -4.16}, {4.44, 0.74}, {-5.46, 2.54}, {-6.96, -1.5}};
+
+    test_find_arc_crossing_points<Arc::lower, true>(a, b, true);
+    test_find_arc_crossing_points<Arc::lower, false>(a, b, true);
+  }
+
+  SECTION("Lower arc, B leftmost above A")
+  {
+    ConvexPolygon2 a{{1.18, -0.64}, {3.74, -6.44}, {8.36, -4.36}, {11.48, 3.02}, {8.26, 5.36}};
+    ConvexPolygon2 b{{6.58, 9.46}, {7.34, 7.64}, {12.26, 0.9}, {12.06, 6.38}};
+
+    test_find_arc_crossing_points<Arc::lower, true>(a, b, true);
+    test_find_arc_crossing_points<Arc::lower, false>(a, b, true);
+  }
+
+  SECTION("Lower arc, B leftmost inside A")
+  {
+    ConvexPolygon2 a{{0.18, -3.3}, {3.36, -1.7}, {3.5, 2.68}, {-2.76, 1.46}, {-2.06, -1.46}};
+    ConvexPolygon2 b{{-1.28, -1.04}, {0.34, -5.7}, {3.14, -1.36}, {3.68, 2.26}};
+
+    test_find_arc_crossing_points<Arc::lower, true>(a, b, true);
+    test_find_arc_crossing_points<Arc::lower, false>(a, b, true);
+  }
+
+  SECTION("Lower arc, disjoint 1")
+  {
+    ConvexPolygon2 a{{-0.4, 1.88}, {1.8, 0.1}, {8.3, 0.76}, {6.4, 3.42}};
+    ConvexPolygon2 b{{5.52, 0.28}, {0.24, -1.38}, {7.62, -1.26}};
+
+    test_find_arc_crossing_points<Arc::lower, true>(a, b, false);
+    test_find_arc_crossing_points<Arc::lower, false>(a, b, false);
+  }
+
+  SECTION("Lower arc, disjoint 2")
+  {
+    ConvexPolygon2 a{{-2.74, -1.88}, {4.64, -1.76}, {2.54, -0.22}};
+    ConvexPolygon2 b{{-0.4, 1.88}, {1.8, 0.1}, {8.3, 0.76}, {6.4, 3.42}};
+
+    test_find_arc_crossing_points<Arc::lower, true>(a, b, false);
+    test_find_arc_crossing_points<Arc::lower, false>(a, b, false);
+  }
+
+  SECTION("Lower arc, B leftmost on A upper edge")
+  {
+    ConvexPolygon2 a{{3, 2}, {10, 2}, {10, 4}, {3, 4}};
+    ConvexPolygon2 b{{4, 4}, {6, 3}, {8, 6}};
+
+    test_find_arc_crossing_points<Arc::lower, true>(a, b, true);
+    test_find_arc_crossing_points<Arc::lower, false>(a, b, true);
+  }
+
+  SECTION("Lower arc, B leftmost on A lower edge")
+  {
+    ConvexPolygon2 a{{3, 2}, {10, 2}, {10, 4}, {3, 4}};
+    ConvexPolygon2 b{{4, 2}, {7, 1}, {11, 4}};
+
+    test_find_arc_crossing_points<Arc::lower, true>(a, b, true);
+    test_find_arc_crossing_points<Arc::lower, false>(a, b, true);
+  }
+
+  SECTION("Upper arc, B rightmost above A")
+  {
+    ConvexPolygon2 a{{3.66, -1.12}, {11.62, -2.3}, {10.58, 2.8}, {7.22, 4.58}, {5.34, 3.22}};
+    ConvexPolygon2 b{{3.5, 3.1}, {1.68, 0.58}, {8.36, 0.6}, {10.18, 4.9}};
+
+    test_find_arc_crossing_points<Arc::upper, true>(a, b, true);
+    test_find_arc_crossing_points<Arc::upper, false>(a, b, true);
+  }
+
+  SECTION("Upper arc, B rightmost below A")
+  {
+    ConvexPolygon2 a{{9.84, 2.08}, {0.86, 2.78}, {1.62, 0.2}};
+    ConvexPolygon2 b{{4.76, 1.7}, {9.16, 3.8}, {7.06, 4.34}};
+
+    test_find_arc_crossing_points<Arc::upper, true>(a, b, true);
+    test_find_arc_crossing_points<Arc::upper, false>(a, b, true);
+  }
+
+  SECTION("Upper arc, B rightmost inside A")
+  {
+    ConvexPolygon2 a{{1.44, -4.76}, {10.26, -2.24}, {1.78, -0.68}};
+    ConvexPolygon2 b{{7.6, -2.46}, {0.5, -1.34}, {3.82, -4.7}};
+
+    test_find_arc_crossing_points<Arc::upper, true>(a, b, true);
+    test_find_arc_crossing_points<Arc::upper, false>(a, b, true);
+  }
+
+  SECTION("Upper arc, disjoint 1")
+  {
+    ConvexPolygon2 a{{9.54, -1.22}, {2.38, -0.24}, {-0.58, -1.28}, {-1.8, -2.52}, {3.94, -3.86}};
+    ConvexPolygon2 b{{8.5, 1.86}, {2.44, 2.26}, {-0.64, 0.1}, {5.58, 0.06}};
+
+    test_find_arc_crossing_points<Arc::upper, true>(a, b, false);
+    test_find_arc_crossing_points<Arc::upper, false>(a, b, false);
+  }
+
+  SECTION("Upper arc, disjoint 2")
+  {
+    ConvexPolygon2 a{{9.78, -1.12}, {3.86, 1.18}, {-2.88, -1.8}, {5.2, -5.38}};
+    ConvexPolygon2 b{{8.08, -4.16}, {5.36, -6.58}, {7.16, -6.48}};
+
+    test_find_arc_crossing_points<Arc::upper, true>(a, b, false);
+    test_find_arc_crossing_points<Arc::upper, false>(a, b, false);
+  }
+
+  SECTION("Upper arc, B rightmost on A upper edge")
+  {
+    ConvexPolygon2 a{{4, 1}, {10, 2}, {11, 5}, {3, 4}};
+    ConvexPolygon2 b{{7, 4.5}, {4, 6}, {6, 3}};
+
+    test_find_arc_crossing_points<Arc::upper, true>(a, b, true);
+    test_find_arc_crossing_points<Arc::upper, false>(a, b, true);
+  }
+
+  SECTION("Upper arc, B rightmost on A lower edge")
+  {
+    ConvexPolygon2 a{{4, 1}, {10, 2}, {11, 5}, {3, 4}};
+    ConvexPolygon2 b{{7, 1.5}, {5, 2}, {6, -1}};
+
+    test_find_arc_crossing_points<Arc::upper, true>(a, b, true);
+    test_find_arc_crossing_points<Arc::upper, false>(a, b, true);
   }
 }
 

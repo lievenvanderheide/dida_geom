@@ -160,7 +160,7 @@ bool advance_reverse_edge(const PolygonInfo& polygon_info, ReverseEdge& edge);
 /// @param polygon_info The @c PolygonInfo of the polygon which contains the edge.
 /// @param reverse_edge The edge as a @c ReverseEdge.
 /// @return The edge as a @c ForwardEdge.
-ForwardEdge to_forward_edge(const PolygonInfo &polygon_info, const ReverseEdge &reverse_edge);
+ForwardEdge to_forward_edge(const PolygonInfo& polygon_info, const ReverseEdge& reverse_edge);
 
 /// Finds the "side" crossing point of the given arc of the intersection polygon. A crossing point is considered the
 /// side crossing point of @c arc if its outgoing edge belongs to @c arc, while it's incoming edge belongs to the other
@@ -208,6 +208,19 @@ bool find_side_crossing_point(const PolygonInfo& fwd_info, ForwardEdge& fwd_edge
 template <Arc arc, class Callbacks>
 void find_on_arc_crossing_points(const PolygonInfo& a_info, ForwardEdge& a_edge, const PolygonInfo& b_info,
                                  ForwardEdge& b_edge, bool a_is_inner, Callbacks& callbacks);
+
+/// Finds all crossing points whose outgoing edge lies on @c arc.
+///
+/// @tparam arc The arc of the crossing points to find.
+/// @tparam a_is_first_input_polygon If true, then the polygon corresponding to @c a_info is the first input polygon.
+/// This flag affects the perturbation used to resolve special cases, and the argument order to the callback function in
+/// @c callback.
+/// @tparam Callbacks The type of the callbacks object.
+/// @param a_info The @c PolygonInfo of the first input polygon.
+/// @param b_info The @c PolygonInfo of the second input polygon.
+/// @param callbacks The callbacks objects.
+template <Arc arc, bool a_is_first_input_polygon, class Callbacks>
+bool find_arc_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callbacks& callbacks);
 
 } // namespace convex_polygons_intersection
 
