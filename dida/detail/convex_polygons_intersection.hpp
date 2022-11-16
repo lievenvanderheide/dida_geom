@@ -211,6 +211,9 @@ void find_on_arc_crossing_points(const PolygonInfo& a_info, ForwardEdge& a_edge,
 
 /// Finds all crossing points whose outgoing edge lies on @c arc.
 ///
+/// The input polygons must be ordered such that the sweep position of the first vertex of @c a_info comes before the
+/// sweep position of the first vertex of @c b_info (see @c sweep_position_less_than).
+///
 /// @tparam arc The arc of the crossing points to find.
 /// @tparam a_is_first_input_polygon If true, then the polygon corresponding to @c a_info is the first input polygon.
 /// This flag affects the perturbation used to resolve special cases, and the argument order to the callback function in
@@ -219,8 +222,21 @@ void find_on_arc_crossing_points(const PolygonInfo& a_info, ForwardEdge& a_edge,
 /// @param a_info The @c PolygonInfo of the first input polygon.
 /// @param b_info The @c PolygonInfo of the second input polygon.
 /// @param callbacks The callbacks objects.
+/// @return True if the polygons are intersecting, false if they're disjoint. Note that the polygons also intersect if
+/// one of them is fully contained in the other, even though there are no crossing points in that case.
 template <Arc arc, bool a_is_first_input_polygon, class Callbacks>
 bool find_arc_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callbacks& callbacks);
+
+/// Finds all crossing points between segments of the two input polygons.
+///
+/// @tparam Callbacks The type of the callbacks object.
+/// @param a_info The @c PolygonInfo of the first input polygon.
+/// @param b_info The @c PolygonInfo of the second input polygon.
+/// @param callbacks The callbacks objects.
+/// @return True if the polygons are intersecting, false if they're disjoint. Note that the polygons also intersect if
+/// one of them is fully contained in the other, even though there are no crossing points in that case.
+template <class Callbacks>
+bool find_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callbacks& callbacks);
 
 } // namespace convex_polygons_intersection
 

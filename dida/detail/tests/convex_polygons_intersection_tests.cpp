@@ -1119,6 +1119,108 @@ TEST_CASE("find_arc_crossing_points")
   }
 }
 
+namespace
+{
+
+void test_find_crossing_points(ConvexPolygonView2 a, ConvexPolygonView2 b, bool expected_return_value)
+{
+  PolygonInfo a_info(a);
+  PolygonInfo b_info(b);
+
+  TestCallbacks::FindExpectedCrossingPointsFlags flags;
+  flags.include_on_lower_arc_points = true;
+  flags.include_on_upper_arc_points = true;
+  flags.include_lower_arc_side_point = true;
+  flags.include_upper_arc_side_point = true;
+
+  TestCallbacks callbacks;
+  callbacks.find_expected_crossing_points(a, b, flags);
+
+  CHECK(find_crossing_points(a_info, b_info, callbacks) == expected_return_value);
+  CHECK(callbacks.all_expected_points_found());
+}
+
+} // namespace
+
+TEST_CASE("find_crossing_points")
+{
+  SECTION("A lower starts before B lower")
+  {
+    SECTION("A upper starts before B upper")
+    {
+      ConvexPolygon2 a{{-1.78, 1.04}, {1.26, -1.38}, {10.38, -0.34}, {12.4, 2.32}, {8.4, 4.2}, {0.92, 3.6}};
+      ConvexPolygon2 b{{2.16, 5.08}, {0.28, -1.6}, {2.8, -3.68}, {11.68, 3.08}};
+      test_find_crossing_points(a, b, true);
+    }
+
+    SECTION("B upper starts before A upper")
+    {
+      ConvexPolygon2 a{{-6.26, 1.88}, {-4.5, -1.42}, {-1.06, -2.36}, {3.34, -0.32}, {2.66, 3.78}, {-1.82, 5.62}};
+      ConvexPolygon2 b{{-4.96, 3.72}, {-2.32, -4.38}, {0.4, -3.72}, {4.54, 2.02}, {0.44, 5.34}, {-3.28, 5.22}};
+      test_find_crossing_points(a, b, true);
+    }
+  }
+
+  SECTION("B lower starts before A lower")
+  {
+    SECTION("A upper starts before B upper")
+    {
+      ConvexPolygon2 a{{2.14, 5.06},  {4.22, 1.98}, {9.36, 2.12}, {12.02, 3.68},
+                       {14.58, 6.84}, {10.66, 9.4}, {6.46, 9.58}, {3.62, 7.4}};
+      ConvexPolygon2 b{{0.52, 3.46}, {12.08, 2.22}, {13.64, 6.72}, {8.5, 10.04}, {2.38, 5.92}};
+      test_find_crossing_points(a, b, true);
+    }
+
+    SECTION("B upper starts before A upper")
+    {
+      ConvexPolygon2 a{{3.7, 4.56}, {2.18, 3.36}, {1.4, -1.2}, {1.88, -3.28}, {5.24, -2.34}, {5.34, 1.56}};
+      ConvexPolygon2 b{{-1.9, 1.72}, {3.52, -3.68}, {8.74, 3.7}, {3.52, 3.64}};
+      test_find_crossing_points(a, b, true);
+    }
+  }
+
+  SECTION("Arcs start at same sweep positions")
+  {
+    ConvexPolygon2 a{{2, 2}, {4, -1}, {10, 0}, {11, 4}, {6, 5}};
+    ConvexPolygon2 b{{2, 2}, {4, -3}, {11, 4}, {6, 6}};
+    test_find_crossing_points(a, b, true);
+  }
+
+  SECTION("Horizontally disjoint")
+  {
+    SECTION("A left of B")
+    {
+      ConvexPolygon2 a{{-1.82, -0.2}, {0.42, -3.72}, {3.4, -2.1}, {2.56, 4.74}};
+      ConvexPolygon2 b{{4.72, -0.68}, {5.06, -5.62}, {10.44, 2.16}};
+      test_find_crossing_points(a, b, false);
+    }
+
+    SECTION("B left of A")
+    {
+      ConvexPolygon2 a{{5.24, 1.62}, {4.4, -1.1}, {5.04, -3.22}, {17.76, 0.04}, {18.4, 1.72}, {13.08, 3.44}};
+      ConvexPolygon2 b{{-2.64, 1.1}, {-3.88, -6.14}, {1.22, -3.3}, {3.08, -0.2}, {2.08, 2.24}};
+      test_find_crossing_points(a, b, false);
+    }
+  }
+
+  SECTION("Vertically disjoint")
+  {
+    SECTION("A lower starts before B lower")
+    {
+      ConvexPolygon2 a{{-0.58, 4.06}, {2.2, 0.88}, {9.58, 2.92}, {5.2, 6.2}};
+      ConvexPolygon2 b{{0.5, -1.6}, {4.24, -6.48}, {7.52, -1.3}, {5.62, 0.76}};
+      test_find_crossing_points(a, b, false);
+    }
+
+    SECTION("B lower starts before A lower")
+    {
+      ConvexPolygon2 a{{3.64, 5.04}, {1.66, 1.9}, {5.88, 1.18}};
+      ConvexPolygon2 b{{-1.4, -1.26}, {4.28, -6.78}, {11.48, -1.14}};
+      test_find_crossing_points(a, b, false);
+    }
+  }
+}
+
 } // namespace convex_polygons_intersection
 
 } // namespace dida::detail
