@@ -26,7 +26,7 @@ TEST_CASE("PolygonInfo")
   CHECK(*polygon_info.rightmost_it == Point2(2.88, -0.56));
 }
 
-TEST_CASE("arc_vertex_less_than")
+TEST_CASE("sweep_position_less_than")
 {
   SECTION("Arc::lower")
   {
