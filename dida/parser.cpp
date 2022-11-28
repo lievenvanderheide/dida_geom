@@ -1,11 +1,49 @@
-#include "dida/detail/parser.hpp"
+#include "dida/parser.hpp"
 
 #include <cctype>
 
 #include "dida/assert.hpp"
 
-namespace dida::detail
+namespace dida
 {
+
+namespace
+{
+
+bool is_identifier_first_char(char c)
+{
+  return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_';
+}
+
+bool is_identifier_char(char c)
+{
+  return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_';
+}
+
+bool is_digit(char c)
+{
+  return c >= '0' && c <= '9';
+}
+
+} // namespace
+
+std::optional<std::string_view> Parser::parse_identifier()
+{
+  const char* identifier_begin = head_;
+
+  if (head_ == end_ || !is_identifier_first_char(*head_))
+  {
+    return std::nullopt;
+  }
+
+  head_++;
+  while (head_ != end_ && is_identifier_char(*head_))
+  {
+    head_++;
+  }
+
+  return std::string_view(identifier_begin, static_cast<size_t>(head_ - identifier_begin));
+}
 
 namespace
 {
@@ -38,7 +76,7 @@ ScalarDeg1 parse_scalar_fractional_part(std::string_view digits)
     int32_t fractional_part_denom = 1;
     for (size_t i = 0; i < digits.size(); i++)
     {
-      DIDA_DEBUG_ASSERT(std::isdigit(digits[i]));
+      DIDA_DEBUG_ASSERT(is_digit(digits[i]));
       int32_t digit = static_cast<int32_t>(digits[i] - '0');
       fractional_part_num = 10 * fractional_part_num + digit;
       fractional_part_denom *= 10;
@@ -52,7 +90,7 @@ ScalarDeg1 parse_scalar_fractional_part(std::string_view digits)
     int32_t significant_digits = 0;
     for (size_t i = 0; i < num_significant_digits; i++)
     {
-      DIDA_DEBUG_ASSERT(std::isdigit(digits[i]));
+      DIDA_DEBUG_ASSERT(is_digit(digits[i]));
       int32_t digit = static_cast<int32_t>(digits[i] - '0');
       significant_digits = 10 * significant_digits + digit;
     }
@@ -78,7 +116,7 @@ ScalarDeg1 parse_scalar_fractional_part(std::string_view digits)
 
     for (size_t i = num_significant_digits; i < digits.size(); i++)
     {
-      DIDA_DEBUG_ASSERT(std::isdigit(digits[i]));
+      DIDA_DEBUG_ASSERT(is_digit(digits[i]));
       int32_t digit = static_cast<int32_t>(digits[i] - '0');
 
       // Compute the most significant digit of 'threshold'.
@@ -125,14 +163,14 @@ std::optional<ScalarDeg1> Parser::parse_scalar()
     }
   }
 
-  if (!std::isdigit(*head_) && *head_ != '.')
+  if (!is_digit(*head_) && *head_ != '.')
   {
     return std::nullopt;
   }
 
   int32_t int_part = 0;
   size_t num_digits = 0;
-  while (head_ != end_ && std::isdigit(*head_))
+  while (head_ != end_ && is_digit(*head_))
   {
     if (num_digits > max_num_int_digits)
     {
@@ -151,7 +189,7 @@ std::optional<ScalarDeg1> Parser::parse_scalar()
     head_++;
 
     const char* fractional_digits_begin = head_;
-    while (head_ != end_ && std::isdigit(*head_))
+    while (head_ != end_ && is_digit(*head_))
     {
       head_++;
     }
@@ -233,4 +271,45 @@ std::optional<Vector2> Parser::parse_vector2()
   return Vector2(*x, *y);
 }
 
-} // namespace dida::detail
+std::optional<std::vector<Point2>> Parser::parse_point2_vector()
+{
+  if (!match('{'))
+  {
+    return std::nullopt;
+  }
+
+  skip_optional_whitespace();
+  if(try_match('}'))
+  {
+    return std::vector<Point2>();
+  }
+
+  std::vector<Point2> result;
+  while (true)
+  {
+    std::optional<Point2> point = parse_point2();
+    if (!point)
+    {
+      return std::nullopt;
+    }
+
+    result.push_back(*point);
+
+    skip_optional_whitespace();
+    if (!try_match(','))
+    {
+      break;
+    }
+
+    skip_optional_whitespace();
+  }
+
+  if (!match('}'))
+  {
+    return std::nullopt;
+  }
+
+  return result;
+}
+
+} // namespace dida

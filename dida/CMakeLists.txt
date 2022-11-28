@@ -10,10 +10,6 @@ include_directories(..)
 add_library(dida
     detail/convex_polygons_intersection.hpp
     detail/convex_polygons_intersection.inl
-    detail/parser.inl
-    detail/parser.cpp
-    detail/parser.hpp
-    detail/parser.inl
     math/int128.cpp
     math/int128.hpp
     math/int128.inl
@@ -25,6 +21,9 @@ add_library(dida
     convex_polygon2.cpp
     convex_polygon2.hpp
     convex_polygon2.inl
+    parser.cpp
+    parser.hpp
+    parser.inl
     perturbation.hpp
     perturbation.inl
     scalar.cpp
@@ -41,3 +40,4 @@ add_subdirectory(benchmarks)
 add_subdirectory(detail/tests)
 add_subdirectory(math/tests)
 add_subdirectory(tests)
+add_subdirectory(viz)

@@ -6,6 +6,7 @@ add_executable(dida_tests
     array_view_tests.cpp
     convex_polygon2_tests.cpp
     convex_polygon2_utils_tests.cpp
+    parser_tests.cpp
     perturbation_tests.cpp
     point2_tests.cpp
     utils_tests.cpp
