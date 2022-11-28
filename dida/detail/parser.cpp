@@ -103,67 +103,65 @@ ScalarDeg1 parse_scalar_fractional_part(std::string_view digits)
   }
 }
 
-std::optional<ScalarDeg1> Parser::try_parse_scalar()
+std::optional<ScalarDeg1> Parser::parse_scalar()
 {
   static_assert(ScalarDeg1::radix == 12);
 
   static constexpr size_t max_num_int_digits = 6;
   static constexpr int32_t max_int_part = 1 << (31 - ScalarDeg1::radix);
 
-  const char* c = head_;
-
-  if (c == end_)
+  if (head_ == end_)
   {
     return std::nullopt;
   }
 
-  bool negative = *c == '-';
+  bool negative = *head_ == '-';
   if (negative)
   {
-    c++;
-    if (c == end_)
+    head_++;
+    if (head_ == end_)
     {
       return std::nullopt;
     }
   }
 
-  if(!std::isdigit(*c) && *c != '.')
+  if (!std::isdigit(*head_) && *head_ != '.')
   {
     return std::nullopt;
   }
 
   int32_t int_part = 0;
   size_t num_digits = 0;
-  while (c != end_ && std::isdigit(*c))
+  while (head_ != end_ && std::isdigit(*head_))
   {
     if (num_digits > max_num_int_digits)
     {
       return std::nullopt;
     }
 
-    int32_t digit = static_cast<int32_t>(*c - '0');
+    int32_t digit = static_cast<int32_t>(*head_ - '0');
     int_part = int_part * 10 + digit;
-    c++;
+    head_++;
     num_digits++;
   }
 
   ScalarDeg1 fractional_part(0);
-  if (c != end_ && *c == '.')
+  if (head_ != end_ && *head_ == '.')
   {
-    c++;
+    head_++;
 
-    const char* fractional_digits_begin = c;
-    while (c != end_ && std::isdigit(*c))
+    const char* fractional_digits_begin = head_;
+    while (head_ != end_ && std::isdigit(*head_))
     {
-      c++;
+      head_++;
     }
-    size_t num_fractional_digits = c - fractional_digits_begin;
+    size_t num_fractional_digits = head_ - fractional_digits_begin;
 
-    if(num_digits == 0 && num_fractional_digits == 0)
+    if (num_digits == 0 && num_fractional_digits == 0)
     {
       return std::nullopt;
     }
-    
+
     fractional_part = parse_scalar_fractional_part(std::string_view(fractional_digits_begin, num_fractional_digits));
   }
 
@@ -180,7 +178,6 @@ std::optional<ScalarDeg1> Parser::try_parse_scalar()
       return std::nullopt;
     }
 
-    head_ = c;
     return int_part_scalar - fractional_part;
   }
   else
@@ -196,9 +193,44 @@ std::optional<ScalarDeg1> Parser::try_parse_scalar()
       return std::nullopt;
     }
 
-    head_ = c;
     return int_part_scalar + fractional_part;
   }
+}
+
+std::optional<Vector2> Parser::parse_vector2()
+{
+  if (!match('{'))
+  {
+    return std::nullopt;
+  }
+
+  skip_optional_whitespace();
+  std::optional<ScalarDeg1> x = parse_scalar();
+  if (!x)
+  {
+    return std::nullopt;
+  }
+
+  skip_optional_whitespace();
+  if (!match(','))
+  {
+    return std::nullopt;
+  }
+
+  skip_optional_whitespace();
+  std::optional<ScalarDeg1> y = parse_scalar();
+  if (!y)
+  {
+    return std::nullopt;
+  }
+
+  skip_optional_whitespace();
+  if (!match('}'))
+  {
+    return std::nullopt;
+  }
+
+  return Vector2(*x, *y);
 }
 
 } // namespace dida::detail
