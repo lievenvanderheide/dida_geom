@@ -13,6 +13,8 @@ TEST_CASE("Scalar constants")
     CHECK(ScalarDeg1::deg_1_radix == 12);
     CHECK(ScalarDeg1::radix == 12);
     CHECK(ScalarDeg1::quantum == std::ldexp(1, -12));
+    CHECK(ScalarDeg1::min == ScalarDeg1::from_numerator(std::numeric_limits<int32_t>::min()));
+    CHECK(ScalarDeg1::max == ScalarDeg1::from_numerator(std::numeric_limits<int32_t>::max()));
   }
 
   SECTION("ScalarDeg2")
@@ -20,6 +22,8 @@ TEST_CASE("Scalar constants")
     CHECK(ScalarDeg2::deg_1_radix == 12);
     CHECK(ScalarDeg2::radix == 24);
     CHECK(ScalarDeg2::quantum == std::ldexp(1, -24));
+    CHECK(ScalarDeg2::min == ScalarDeg2::from_numerator(std::numeric_limits<int64_t>::min()));
+    CHECK(ScalarDeg2::max == ScalarDeg2::from_numerator(std::numeric_limits<int64_t>::max()));
   }
 
   SECTION("ScalarDeg3")

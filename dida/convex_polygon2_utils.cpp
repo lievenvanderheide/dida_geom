@@ -1,7 +1,6 @@
 #include "dida/convex_polygon2_utils.hpp"
 
 #include <algorithm>
-#include <iostream>
 
 namespace dida
 {
