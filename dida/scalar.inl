@@ -27,6 +27,28 @@ constexpr double Scalar<degree, IntType>::calc_quantum()
 }
 
 template <int degree, class IntType>
+constexpr Scalar<degree, IntType> Scalar<degree, IntType>::calc_min()
+{
+  static_assert(std::is_same_v<IntType, int32_t> || std::is_same_v<IntType, int64_t>,
+                "Not implemented yet for higher degree scalar types");
+
+  Scalar result{};
+  result.numerator_ = std::numeric_limits<IntType>::min();
+  return result;
+}
+
+template <int degree, class IntType>
+constexpr Scalar<degree, IntType> Scalar<degree, IntType>::calc_max()
+{
+  static_assert(std::is_same_v<IntType, int32_t> || std::is_same_v<IntType, int64_t>,
+                "Not implemented yet for higher degree scalar types");
+                
+  Scalar result{};
+  result.numerator_ = std::numeric_limits<IntType>::max();
+  return result;
+}
+
+template <int degree, class IntType>
 Scalar<degree, IntType>::Scalar(double value)
 {
   numerator_ = static_cast<IntType>(std::nearbyint(std::ldexp(value, radix)));

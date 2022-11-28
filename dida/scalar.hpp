@@ -34,6 +34,8 @@ namespace dida {
 template <int degree, class IntType> class Scalar {
 private:
   static constexpr double calc_quantum();
+  static constexpr Scalar calc_min();
+  static constexpr Scalar calc_max();
 
 public:
   /// The radix position of a first degree scalar.
@@ -45,6 +47,12 @@ public:
   /// The difference between adjacent scalars of the current degree, represented
   /// as a @c double value.
   static constexpr double quantum = calc_quantum();
+
+  /// The lowest value for this scalar type.
+  static constexpr Scalar min = calc_min();
+
+  /// The greatest value for this scalar type.
+  static constexpr Scalar max = calc_max();
 
   /// Constructs an unitialized Scalar.
   Scalar() = default;

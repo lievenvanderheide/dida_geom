@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16.3)
 find_package(Catch2 2 REQUIRED)
 
 add_executable(dida_detail_tests
-    convex_polygons_intersection_tests.cpp)
+    convex_polygons_intersection_tests.cpp
+    parser_tests.cpp)
 
 target_link_libraries(dida_detail_tests PRIVATE dida Catch2::Catch2WithMain)

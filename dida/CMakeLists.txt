@@ -8,6 +8,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include_directories(..)
 
 add_library(dida
+    detail/convex_polygons_intersection.hpp
+    detail/convex_polygons_intersection.inl
+    detail/parser.inl
+    detail/parser.cpp
+    detail/parser.hpp
+    detail/parser.inl
     math/int128.cpp
     math/int128.hpp
     math/int128.inl
