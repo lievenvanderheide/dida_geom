@@ -3,8 +3,9 @@
 
 #include <string>
 #include <vector>
-#include <iostream>
+#include <QtCore/QObject>
 
+#include "dida/array_view.hpp"
 #include "dida/point2.hpp"
 
 namespace dida
@@ -23,8 +24,12 @@ public:
   VizPolygon(std::string name, std::vector<Point2> vertices, bool should_be_convex)
       : name_(std::move(name)), vertices_(std::move(vertices)), should_be_convex_(should_be_convex)
   {
-    std::cout << name << std::endl;
     update_is_valid();
+  }
+
+  ArrayView<const Point2> vertices() const
+  {
+    return vertices_;
   }
 
 private:
@@ -39,13 +44,28 @@ private:
 std::optional<VizPolygon> parse_viz_polygon(Parser& parser);
 std::optional<VizPolygon> parse_viz_polygon(std::string_view string);
 
-class Scene
+class Scene : public QObject
 {
+  Q_OBJECT
+
 public:
-  Scene(std::vector<VizPolygon> primitives)
-    : primitives_(std::move(primitives))
+  Scene(std::vector<VizPolygon> primitives) : primitives_(std::move(primitives))
   {
   }
+
+  ArrayView<const VizPolygon> primitives()
+  {
+    return primitives_;
+  }
+
+  void add_primitive(VizPolygon polygon)
+  {
+    primitives_.emplace_back(std::move(polygon));
+    data_changed();
+  }
+
+Q_SIGNALS:
+  void data_changed();
 
 private:
   std::vector<VizPolygon> primitives_;

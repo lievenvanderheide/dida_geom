@@ -9,6 +9,8 @@ add_executable(dida_viz
     main_window.cpp
     main_window.hpp
     main.cpp
+    primitives_view.cpp
+    primitives_view.hpp
     scene.cpp
     scene.hpp)
 
