@@ -296,7 +296,7 @@ void find_on_arc_crossing_points(const PolygonInfo& a_info, ForwardEdge& a_edge,
 }
 
 template <Arc arc, bool a_is_first_input_polygon, class Callbacks>
-bool find_arc_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callbacks& callbacks)
+FindArcCrossingPointsResult find_arc_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callbacks& callbacks)
 {
   constexpr PerturbationVector2 a_perturbation_vector =
       a_is_first_input_polygon ? PerturbationVector2::left_down : PerturbationVector2::right_up;
@@ -310,6 +310,7 @@ bool find_arc_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callback
   ForwardEdge a_fwd_edge = forward_edge_for_sweep_position<arc, b_perturbation_vector>(a_info, b_vertex_it->x());
   ForwardEdge b_fwd_edge;
   bool a_is_inner;
+  FindArcCrossingPointsResult result;
 
   ScalarDeg2 a_fwd_edge_side = cross(a_fwd_edge.dir, *b_vertex_it - *a_fwd_edge.end_it);
   if (a_fwd_edge_side < 0 || (a_fwd_edge_side == 0 && cross_is_negative(a_fwd_edge.dir, b_perturbation_vector)))
@@ -317,12 +318,13 @@ bool find_arc_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callback
     ReverseEdge b_rev_edge = arc_first_reverse_edge<other_arc(arc)>(b_info);
     if (!find_side_crossing_point<arc, a_is_first_input_polygon>(a_info, a_fwd_edge, b_info, b_rev_edge, callbacks))
     {
-      return false;
+      return FindArcCrossingPointsResult::disjoint;
     }
 
     ScalarDeg1 sweep_position = prev_cyclic(a_info.polygon, a_fwd_edge.end_it)->x();
     b_fwd_edge = forward_edge_for_sweep_position<arc, a_perturbation_vector>(b_info, sweep_position);
     a_is_inner = true;
+    result = FindArcCrossingPointsResult::b_side_vertex_outside_a;
   }
   else
   {
@@ -334,17 +336,19 @@ bool find_arc_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callback
       b_fwd_edge = arc_first_forward_edge<arc>(b_info);
       if (!find_side_crossing_point<arc, !a_is_first_input_polygon>(b_info, b_fwd_edge, a_info, a_rev_edge, callbacks))
       {
-        return false;
+        return FindArcCrossingPointsResult::disjoint;
       }
 
       ScalarDeg1 sweep_position = prev_cyclic(b_info.polygon, b_fwd_edge.end_it)->x();
       a_fwd_edge = forward_edge_for_sweep_position<arc, b_perturbation_vector>(a_info, sweep_position);
       a_is_inner = false;
+      result = FindArcCrossingPointsResult::b_side_vertex_outside_a;
     }
     else
     {
       b_fwd_edge = arc_first_forward_edge<arc>(b_info);
       a_is_inner = false;
+      result = FindArcCrossingPointsResult::b_side_vertex_inside_a;
     }
   }
 
@@ -357,12 +361,14 @@ bool find_arc_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callback
     find_on_arc_crossing_points<arc>(b_info, b_fwd_edge, a_info, a_fwd_edge, !a_is_inner, callbacks);
   }
 
-  return true;
+  return result;
 }
 
 template <class Callbacks>
-bool find_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callbacks& callbacks)
+FindCrossingPointsResult find_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callbacks& callbacks)
 {
+  FindCrossingPointsResult result;
+
   if (sweep_position_less_than<Arc::lower, PerturbationVector2::right_up>(arc_first_vertex_it<Arc::lower>(a_info)->x(),
                                                                           arc_first_vertex_it<Arc::lower>(b_info)->x()))
   {
@@ -370,12 +376,19 @@ bool find_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callbacks& c
             arc_first_vertex_it<Arc::upper>(a_info)->x(), arc_first_vertex_it<Arc::lower>(b_info)->x()))
     {
       // The two polygons are horizontally disjoint.
-      return false;
+      return FindCrossingPointsResult::disjoint;
     }
 
-    if (!find_arc_crossing_points<Arc::lower, true>(a_info, b_info, callbacks))
+    switch (find_arc_crossing_points<Arc::lower, true>(a_info, b_info, callbacks))
     {
-      return false;
+    case FindArcCrossingPointsResult::disjoint:
+      return FindCrossingPointsResult::disjoint;
+    case FindArcCrossingPointsResult::b_side_vertex_inside_a:
+      result = FindCrossingPointsResult::b_leftmost_inside_a;
+      break;
+    case FindArcCrossingPointsResult::b_side_vertex_outside_a:
+      result = FindCrossingPointsResult::both_leftmost_outside_other;
+      break;
     }
   }
   else
@@ -384,28 +397,35 @@ bool find_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callbacks& c
             arc_first_vertex_it<Arc::upper>(b_info)->x(), arc_first_vertex_it<Arc::lower>(a_info)->x()))
     {
       // The two polygons are horizontally disjoint.
-      return false;
+      return FindCrossingPointsResult::disjoint;
     }
 
-    if (!find_arc_crossing_points<Arc::lower, false>(b_info, a_info, callbacks))
+    switch (find_arc_crossing_points<Arc::lower, false>(b_info, a_info, callbacks))
     {
-      return false;
+    case FindArcCrossingPointsResult::disjoint:
+      return FindCrossingPointsResult::disjoint;
+    case FindArcCrossingPointsResult::b_side_vertex_inside_a:
+      result = FindCrossingPointsResult::a_leftmost_inside_b;
+      break;
+    case FindArcCrossingPointsResult::b_side_vertex_outside_a:
+      result = FindCrossingPointsResult::both_leftmost_outside_other;
+      break;
     }
   }
 
   if (sweep_position_less_than<Arc::upper, PerturbationVector2::right_up>(arc_first_vertex_it<Arc::upper>(a_info)->x(),
                                                                           arc_first_vertex_it<Arc::upper>(b_info)->x()))
   {
-    bool intersecting = find_arc_crossing_points<Arc::upper, true>(a_info, b_info, callbacks);
-    DIDA_DEBUG_ASSERT(intersecting);
+    FindArcCrossingPointsResult arc_result = find_arc_crossing_points<Arc::upper, true>(a_info, b_info, callbacks);
+    DIDA_DEBUG_ASSERT(arc_result != FindArcCrossingPointsResult::disjoint);
   }
   else
   {
-    bool intersecting = find_arc_crossing_points<Arc::upper, false>(b_info, a_info, callbacks);
-    DIDA_DEBUG_ASSERT(intersecting);
+    FindArcCrossingPointsResult arc_result = find_arc_crossing_points<Arc::upper, false>(b_info, a_info, callbacks);
+    DIDA_DEBUG_ASSERT(arc_result != FindArcCrossingPointsResult::disjoint);
   }
 
-  return true;
+  return result;
 }
 
 } // namespace convex_polygons_intersection
