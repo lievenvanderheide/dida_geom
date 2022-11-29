@@ -14,8 +14,9 @@ int main(int argc, char* argv[])
   std::shared_ptr<dida::viz::Scene> scene = std::make_shared<dida::viz::Scene>(std::move(polygons));
 
   dida::viz::MainWindow main_window(scene);
+  main_window.resize(640, 480);
 
-  main_window.show();
+  main_window.showMaximized();
 
   return app.exec();
 }

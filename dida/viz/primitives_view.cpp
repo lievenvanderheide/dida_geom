@@ -1,12 +1,13 @@
 #include "dida/viz/primitives_view.hpp"
 
 #include <QtGui/QPainter>
+#include <QtGui/QMouseEvent>
 
 namespace dida::viz
 {
 
 PrimitivesView::PrimitivesView(std::shared_ptr<Scene> scene)
-    : scene_(scene), scale_(50), translate_x_(500), translate_y_(500)
+    : scene_(scene), scale_(50), translate_x_(500), translate_y_(500), panning_(false)
 {
   QObject::connect(scene_.get(), &Scene::data_changed, this, &PrimitivesView::on_scene_data_changed);
 }
@@ -46,8 +47,34 @@ void PrimitivesView::paint_grid(QPainter& painter) const
 QPointF PrimitivesView::point_to_qt(Point2 point) const
 {
   double x = static_cast<double>(point.x());
-  double y = static_cast<double>(point.y());
+  double y = static_cast<double>(-point.y());
   return QPointF(x * scale_ + translate_x_, y * scale_ + translate_y_);
+}
+
+void PrimitivesView::mousePressEvent(QMouseEvent* event)
+{
+  if(event->button() == Qt::LeftButton && event->modifiers() & Qt::AltModifier)
+  {
+    panning_ = true;
+    pan_previous_mouse_position_ = event->position();
+  }
+}
+
+void PrimitivesView::mouseReleaseEvent(QMouseEvent* event)
+{
+  panning_ = false;
+}
+
+void PrimitivesView::mouseMoveEvent(QMouseEvent* event)
+{
+  if(panning_)
+  {
+    QPointF position = event->position();
+    translate_x_ += position.x() - pan_previous_mouse_position_.x();
+    translate_y_ += position.y() - pan_previous_mouse_position_.y();
+    pan_previous_mouse_position_ = position;
+    update();
+  }
 }
 
 void PrimitivesView::on_scene_data_changed()
