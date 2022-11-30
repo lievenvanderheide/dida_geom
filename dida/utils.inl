@@ -1,3 +1,5 @@
+#include "dida/assert.hpp"
+
 namespace dida
 {
 
@@ -12,6 +14,25 @@ Iterator next_cyclic(Container& container, Iterator it)
 {
   ++it;
   return it != container.end() ? it : container.begin();
+}
+
+template <class IntType>
+IntType pred_modulo(IntType a, IntType m)
+{
+  DIDA_DEBUG_ASSERT(a >= 0 && a < m);
+  DIDA_DEBUG_ASSERT(m > 0);
+
+  return a != 0 ? a - 1 : m - 1;
+}
+
+template <class IntType>
+IntType succ_modulo(IntType a, IntType m)
+{
+  DIDA_DEBUG_ASSERT(a >= 0 && a < m);
+  DIDA_DEBUG_ASSERT(m > 0);
+
+  a++;
+  return a != m ? a : 0;
 }
 
 } // namespace dida

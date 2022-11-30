@@ -34,4 +34,30 @@ TEST_CASE("next_cyclic")
   }
 }
 
+TEST_CASE("pred_modulo")
+{
+  int32_t a = 4;
+  for (int32_t j = 0; j < 2; j++)
+  {
+    for (int32_t i = 4; i >= 0; i--)
+    {
+      CHECK(a == i);
+      a = pred_modulo(a, 5);
+    }
+  }
+}
+
+TEST_CASE("succ_modulo")
+{
+  int32_t a = 0;
+  for (int32_t j = 0; j < 2; j++)
+  {
+    for (int32_t i = 0; i < 5; i++)
+    {
+      CHECK(a == i);
+      a = succ_modulo(a, 5);
+    }
+  }
+}
+
 } // namespace dida
