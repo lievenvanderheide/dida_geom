@@ -7,7 +7,8 @@
 
 #include "dida/math/int128.hpp"
 
-namespace dida {
+namespace dida
+{
 
 /// A fixed point scalar type.
 ///
@@ -31,7 +32,9 @@ namespace dida {
 /// @tparam IntType The underlying int type. This type must be large enough to
 /// store integers of @c degree times the number of bits as used by scalars of
 /// degree 1.
-template <int degree, class IntType> class Scalar {
+template <int degree, class IntType>
+class Scalar
+{
 private:
   static constexpr double calc_quantum();
   static constexpr Scalar calc_min();
@@ -72,49 +75,49 @@ public:
   /// Returns the scalar with the given numerator.
   ///
   /// @return The scalar.
-  static Scalar from_numerator(const IntType &numerator);
+  static Scalar from_numerator(const IntType& numerator);
 
   /// Returns the numerator of the fraction 'numerator() / 2^radix' whose value
   /// is equal to the value of this scalar.
   ///
   /// @return The numerator.
-  const IntType &numerator() const;
+  const IntType& numerator() const;
 
   /// Compares two scalars for equality.
   ///
   /// @param b The second of the comparison.
   /// @return True iff the two scalars are equal.
-  bool operator==(const Scalar &b) const;
+  bool operator==(const Scalar& b) const;
 
   /// Compares two scalars for inequality.
   ///
   /// @param b The second of the comparison.
   /// @return True iff the two scalars are not equal.
-  bool operator!=(const Scalar &b) const;
+  bool operator!=(const Scalar& b) const;
 
   /// Returns whether this scalar is less than @c b.
   ///
   /// @param b The second of the comparison.
   /// @return True iff this scalar is less than @c b.
-  bool operator<(const Scalar &b) const;
+  bool operator<(const Scalar& b) const;
 
   /// Returns whether this scalar is less than or equal to @c b.
   ///
   /// @param b The second of the comparison.
   /// @return True iff this scalar is less than or equal to @c b.
-  bool operator<=(const Scalar &b) const;
+  bool operator<=(const Scalar& b) const;
 
   /// Returns whether this scalar is greater than or equal to @c b.
   ///
   /// @param b The second of the comparison.
   /// @return True iff this scalar is greater than or equal to @c b.
-  bool operator>=(const Scalar &b) const;
+  bool operator>=(const Scalar& b) const;
 
   /// Returns whether this scalar is greater than @c b.
   ///
   /// @param b The second of the comparison.
   /// @return True iff this scalar is greater than @c b.
-  bool operator>(const Scalar &b) const;
+  bool operator>(const Scalar& b) const;
 
   /// Returns whether this scalar is equal to @c b.
   ///
@@ -168,18 +171,30 @@ public:
   ///
   /// @param b The right hand operand.
   /// @return The result of the addition.
-  Scalar operator+(const Scalar &b) const;
+  Scalar operator+(const Scalar& b) const;
 
   /// Subtracts this scalar and @c b and returns the result.
   ///
   /// @param b The right hand operand.
   /// @return The result of the subtraction.
-  Scalar operator-(const Scalar &b) const;
+  Scalar operator-(const Scalar& b) const;
 
   /// Negates this scalar and returns the result.
   ///
   /// @return The negated value of this scalar.
   Scalar operator-() const;
+
+  /// Adds scalar @c b to this scalar.
+  ///
+  /// @param b The scalar to add to this scalar.
+  /// @return A reference to this scalar.
+  Scalar& operator+=(const Scalar& b);
+
+  /// Subtracts scalar @c b from this scalar.
+  ///
+  /// @param b The scalar to subtracts from this scalar.
+  /// @return A reference to this scalar.
+  Scalar& operator-=(const Scalar& b);
 
 private:
   IntType numerator_;
@@ -208,8 +223,8 @@ inline ScalarDeg4 operator*(ScalarDeg2 a, ScalarDeg2 b);
 /// @param s The output stream.
 /// @param scalar The scalar.
 /// @return A reference to the output stream.
-std::ostream &operator<<(std::ostream &s, ScalarDeg1 scalar);
-std::ostream &operator<<(std::ostream &s, ScalarDeg2 scalar);
+std::ostream& operator<<(std::ostream& s, ScalarDeg1 scalar);
+std::ostream& operator<<(std::ostream& s, ScalarDeg2 scalar);
 ///@}
 
 } // namespace dida
