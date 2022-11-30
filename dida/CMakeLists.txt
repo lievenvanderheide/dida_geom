@@ -13,6 +13,8 @@ add_library(dida
     math/int128.cpp
     math/int128.hpp
     math/int128.inl
+    area.cpp
+    area.hpp
     array_view.hpp
     array_view.inl
     assert.hpp
