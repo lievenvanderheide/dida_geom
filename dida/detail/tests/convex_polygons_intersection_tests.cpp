@@ -393,8 +393,10 @@ public:
   /// @param s_num The numerator of the parameter of the crossing point on @c a_edge.
   /// @param t_num The numerator of the parameter of the crossing point on @c b_edge.
   /// @param denom The denominator of the 2 interpolation parameters.
+  /// @param a_inner_to_outer If true, then the part of @c a_edge before the crossing point is inside polygon @c b,
+  /// while the part after the crossing point is outside polygon @c b. If false, then it's the other way around.
   void crossing_point(const ForwardEdge& a_edge, const ForwardEdge& b_edge, ScalarDeg2 s_num, ScalarDeg2 t_num,
-                      ScalarDeg2 denom);
+                      ScalarDeg2 denom, bool a_inner_to_outer);
 
   /// Returns whether all expected crossing points have been found, that is.
   ///
@@ -418,7 +420,13 @@ private:
     bool operator<(CrossingPointKey rhs) const;
   };
 
-  using ExpectedCrossingPointsMap = std::map<CrossingPointKey, SegmentsCrossingPointParams>;
+  struct ExpectedCrossingPoint
+  {
+    SegmentsCrossingPointParams params;
+    bool a_inner_to_outer;
+  };
+
+  using ExpectedCrossingPointsMap = std::map<CrossingPointKey, ExpectedCrossingPoint>;
   ExpectedCrossingPointsMap expected_crossing_points_;
 };
 
@@ -437,7 +445,12 @@ void TestCallbacks::find_expected_crossing_points(const ConvexPolygonView2 a, co
           crossing_point_with_perturbation<PerturbationVector2::right_up>(a_edge, b_edge);
       if (crossing_point && should_include(a_edge, b_edge, flags))
       {
-        expected_crossing_points_.emplace(CrossingPointKey{a_end_it, b_end_it}, *crossing_point);
+        Vector2 b_edge_dir = b_edge.end() - b_edge.start();
+        ScalarDeg2 a_start_side = cross(b_edge_dir, a_edge.start() - b_edge.start());
+        bool a_inner_to_outer =
+            a_start_side > 0 || (a_start_side == 0 && cross_is_positive(b_edge_dir, PerturbationVector2::left_down));
+        expected_crossing_points_.emplace(CrossingPointKey{a_end_it, b_end_it},
+                                          ExpectedCrossingPoint{*crossing_point, a_inner_to_outer});
       }
 
       b_start_it = b_end_it;
@@ -496,7 +509,7 @@ bool TestCallbacks::should_include(Segment2 a_edge, Segment2 b_edge, FindExpecte
 }
 
 void TestCallbacks::crossing_point(const ForwardEdge& a_edge, const ForwardEdge& b_edge, ScalarDeg2 s_num,
-                                   ScalarDeg2 t_num, ScalarDeg2 denom)
+                                   ScalarDeg2 t_num, ScalarDeg2 denom, bool a_inner_to_outer)
 {
   if (denom < 0)
   {
@@ -508,12 +521,12 @@ void TestCallbacks::crossing_point(const ForwardEdge& a_edge, const ForwardEdge&
   s_num = denom - s_num;
   t_num = denom - t_num;
 
-  SegmentsCrossingPointParams crossing_point(s_num, t_num, denom);
   ExpectedCrossingPointsMap::const_iterator expected_it =
       expected_crossing_points_.find(CrossingPointKey{a_edge.end_it, b_edge.end_it});
   REQUIRE(expected_it != expected_crossing_points_.end());
 
-  CHECK(expected_it->second == crossing_point);
+  CHECK(expected_it->second.params == SegmentsCrossingPointParams(s_num, t_num, denom));
+  CHECK(expected_it->second.a_inner_to_outer == a_inner_to_outer);
   expected_crossing_points_.erase(expected_it);
 }
 

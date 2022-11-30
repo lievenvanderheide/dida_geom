@@ -184,11 +184,11 @@ bool find_side_crossing_point(const PolygonInfo& fwd_info, ForwardEdge& fwd_edge
 
         if constexpr (fwd_is_first_input_polygon)
         {
-          callbacks.crossing_point(fwd_edge, to_forward_edge(rev_info, rev_edge), s_num, denom - t_num, denom);
+          callbacks.crossing_point(fwd_edge, to_forward_edge(rev_info, rev_edge), s_num, denom - t_num, denom, false);
         }
         else
         {
-          callbacks.crossing_point(to_forward_edge(rev_info, rev_edge), fwd_edge, denom - t_num, s_num, denom);
+          callbacks.crossing_point(to_forward_edge(rev_info, rev_edge), fwd_edge, denom - t_num, s_num, denom, true);
         }
 
         return true;
@@ -216,11 +216,11 @@ bool find_side_crossing_point(const PolygonInfo& fwd_info, ForwardEdge& fwd_edge
 
         if constexpr (fwd_is_first_input_polygon)
         {
-          callbacks.crossing_point(fwd_edge, to_forward_edge(rev_info, rev_edge), s_num, denom - t_num, denom);
+          callbacks.crossing_point(fwd_edge, to_forward_edge(rev_info, rev_edge), s_num, denom - t_num, denom, false);
         }
         else
         {
-          callbacks.crossing_point(to_forward_edge(rev_info, rev_edge), fwd_edge, denom - t_num, s_num, denom);
+          callbacks.crossing_point(to_forward_edge(rev_info, rev_edge), fwd_edge, denom - t_num, s_num, denom, true);
         }
 
         return true;
@@ -256,7 +256,7 @@ void find_on_arc_crossing_points(const PolygonInfo& a_info, ForwardEdge& a_edge,
         ScalarDeg2 t_num = cross(a_edge.dir, ends_diff);
         ScalarDeg2 denom = cross(b_edge.dir, a_edge.dir);
 
-        callbacks.crossing_point(a_edge, b_edge, s_num, t_num, denom);
+        callbacks.crossing_point(a_edge, b_edge, s_num, t_num, denom, a_is_inner);
 
         a_is_inner = a_end_is_inner;
       }
@@ -282,7 +282,7 @@ void find_on_arc_crossing_points(const PolygonInfo& a_info, ForwardEdge& a_edge,
         ScalarDeg2 s_num = cross(b_edge.dir, ends_diff);
         ScalarDeg2 denom = cross(a_edge.dir, b_edge.dir);
 
-        callbacks.crossing_point(a_edge, b_edge, s_num, t_num, denom);
+        callbacks.crossing_point(a_edge, b_edge, s_num, t_num, denom, a_is_inner);
 
         a_is_inner = !a_is_inner;
       }
