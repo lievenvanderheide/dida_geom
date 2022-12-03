@@ -37,7 +37,7 @@ TEST_CASE("intersection_area(ConvexPolygonView2, ConvexPolygonView2)")
     CHECK(intersection_area(a, b) == area(intersection_polygon));
   }
 
-  SECTION("Both leftmosts vertices outside other")
+  SECTION("Both leftmost vertices outside other")
   {
     ConvexPolygon2 a{{-2, -1}, {3, -3}, {8, -3}, {5, 3}, {-2, 3}};
     ConvexPolygon2 b{{-3, 1}, {7, -4}, {8, 0}, {0, 4}};
