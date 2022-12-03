@@ -46,4 +46,11 @@ TEST_CASE("intersection_area(ConvexPolygonView2, ConvexPolygonView2)")
   }
 }
 
+TEST_CASE("intersection_over_union(ConvexPolygonView2, ConvexPolygonView2")
+{
+  ConvexPolygon2 a{{-3, 1}, {2, 1}, {2, 4}, {-3, 4}};
+  ConvexPolygon2 b{{-1, -1}, {5, -1}, {5, 3}, {-1, 3}};
+  CHECK(intersection_over_union(a, b) == 6.0 / 33.0);
+}
+
 } // namespace dida

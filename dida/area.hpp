@@ -18,4 +18,11 @@ double area(ConvexPolygonView2 polygon);
 /// @return The area of the intersection of polygons @c a and @c b.
 double intersection_area(ConvexPolygonView2 a, ConvexPolygonView2 b);
 
+/// Returns the area of the intersection polygon divided by the area of the union polygon of polygons @c a and @c b.
+///
+/// @param a The first polygon.
+/// @param b The second polygon.
+/// @return The intersect over union of polygons @c a and @c b.
+double intersection_over_union(ConvexPolygonView2 a, ConvexPolygonView2 b);
+
 } // namespace dida

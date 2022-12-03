@@ -192,4 +192,13 @@ double intersection_area(ConvexPolygonView2 a, ConvexPolygonView2 b)
   return intersection_area(a, b, a_edge_infos, b_edge_infos);
 }
 
+double intersection_over_union(ConvexPolygonView2 a, ConvexPolygonView2 b)
+{
+  double a_area = area(a);
+  double b_area = area(b);
+  double inters_area = intersection_area(a, b);
+  double union_area = a_area + b_area - inters_area;
+  return inters_area / union_area;
+}
+
 } // namespace dida
