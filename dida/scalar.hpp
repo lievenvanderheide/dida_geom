@@ -85,37 +85,37 @@ public:
 
   /// Compares two scalars for equality.
   ///
-  /// @param b The second of the comparison.
+  /// @param b The second operand of the comparison.
   /// @return True iff the two scalars are equal.
   bool operator==(const Scalar& b) const;
 
   /// Compares two scalars for inequality.
   ///
-  /// @param b The second of the comparison.
+  /// @param b The second operand of the comparison.
   /// @return True iff the two scalars are not equal.
   bool operator!=(const Scalar& b) const;
 
   /// Returns whether this scalar is less than @c b.
   ///
-  /// @param b The second of the comparison.
+  /// @param b The second operand of the comparison.
   /// @return True iff this scalar is less than @c b.
   bool operator<(const Scalar& b) const;
 
   /// Returns whether this scalar is less than or equal to @c b.
   ///
-  /// @param b The second of the comparison.
+  /// @param b The second operand of the comparison.
   /// @return True iff this scalar is less than or equal to @c b.
   bool operator<=(const Scalar& b) const;
 
   /// Returns whether this scalar is greater than or equal to @c b.
   ///
-  /// @param b The second of the comparison.
+  /// @param b The second operand of the comparison.
   /// @return True iff this scalar is greater than or equal to @c b.
   bool operator>=(const Scalar& b) const;
 
   /// Returns whether this scalar is greater than @c b.
   ///
-  /// @param b The second of the comparison.
+  /// @param b The second operand of the comparison.
   /// @return True iff this scalar is greater than @c b.
   bool operator>(const Scalar& b) const;
 
@@ -123,7 +123,7 @@ public:
   ///
   /// @note @c b is rounded to the resultion of scalars of the current degree
   /// before the comparison.
-  /// @param b The second of the comparison.
+  /// @param b The second operand of the comparison.
   /// @return True iff the scalar is equal to @c b.
   bool operator==(const double b) const;
 
@@ -131,7 +131,7 @@ public:
   ///
   /// @note @c b is rounded to the resultion of scalars of the current degree
   /// before the comparison.
-  /// @param b The second of the comparison.
+  /// @param b The second operand of the comparison.
   /// @return True iff the scalar is not equal to @c b.
   bool operator!=(const double b) const;
 
@@ -139,7 +139,7 @@ public:
   ///
   /// @note @c b is rounded to the resultion of scalars of the current degree
   /// before the comparison.
-  /// @param b The second of the comparison.
+  /// @param b The second operand of the comparison.
   /// @return True iff the scalar is less than @c b.
   bool operator<(const double b) const;
 
@@ -147,7 +147,7 @@ public:
   ///
   /// @note @c b is rounded to the resultion of scalars of the current degree
   /// before the comparison.
-  /// @param b The second of the comparison.
+  /// @param b The second operand of the comparison.
   /// @return True iff the scalar is less than or equal to @c b.
   bool operator<=(const double b) const;
 
@@ -155,7 +155,7 @@ public:
   ///
   /// @note @c b is rounded to the resultion of scalars of the current degree
   /// before the comparison.
-  /// @param b The second of the comparison.
+  /// @param b The second operand of the comparison.
   /// @return True iff the scalar is greater than or equal to @c b.
   bool operator>=(const double b) const;
 
@@ -163,19 +163,19 @@ public:
   ///
   /// @note @c b is rounded to the resultion of scalars of the current degree
   /// before the comparison.
-  /// @param b The second of the comparison.
+  /// @param b The second operand of the comparison.
   /// @return True iff the scalar is greater than @c b.
   bool operator>(const double b) const;
 
   /// Adds this scalar and @c b and returns the result.
   ///
-  /// @param b The right hand operand.
+  /// @param b The second operand.
   /// @return The result of the addition.
   Scalar operator+(const Scalar& b) const;
 
   /// Subtracts this scalar and @c b and returns the result.
   ///
-  /// @param b The right hand operand.
+  /// @param b The second operand.
   /// @return The result of the subtraction.
   Scalar operator-(const Scalar& b) const;
 
