@@ -10,6 +10,10 @@ include_directories(..)
 add_library(dida
     detail/convex_polygons_intersection.hpp
     detail/convex_polygons_intersection.inl
+    math/big_int_utils.hpp
+    math/big_int_utils.inl
+    math/fraction.hpp
+    math/fraction.inl
     math/int128.cpp
     math/int128.hpp
     math/int128.inl
