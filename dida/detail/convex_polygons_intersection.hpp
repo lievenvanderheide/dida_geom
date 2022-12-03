@@ -209,6 +209,24 @@ template <Arc arc, class Callbacks>
 void find_on_arc_crossing_points(const PolygonInfo& a_info, ForwardEdge& a_edge, const PolygonInfo& b_info,
                                  ForwardEdge& b_edge, bool a_is_inner, Callbacks& callbacks);
 
+/// The return type of @c find_arc_crossing_points. This return value indicates whether the polygons are intersecting,
+/// and if so, whether the side vertex of polygon @c b is inside or outside of polygon @c a (since the side vertex of
+/// polygon @c a must come before the side vertex of polygon @c b, the side vertex of polygon @c a is always outside
+/// polygon @c b).
+enum class FindArcCrossingPointsResult
+{
+  /// The two polygons are disjoint.
+  disjoint,
+
+  /// The side vertex (leftmost vertex for the lower arc, rightmost vertex for the upper arc) of polygon @c b is inside
+  /// polygon @c a.
+  b_side_vertex_inside_a,
+
+  /// The side vertex (leftmost vertex for the lower arc, rightmost vertex for the upper arc) of polygon @c b is outside
+  /// polygon @c a.
+  b_side_vertex_outside_a,
+};
+
 /// Finds all crossing points whose outgoing edge lies on @c arc.
 ///
 /// The input polygons must be ordered such that the sweep position of the first vertex of @c a_info comes before the
@@ -222,10 +240,26 @@ void find_on_arc_crossing_points(const PolygonInfo& a_info, ForwardEdge& a_edge,
 /// @param a_info The @c PolygonInfo of the first input polygon.
 /// @param b_info The @c PolygonInfo of the second input polygon.
 /// @param callbacks The callbacks objects.
-/// @return True if the polygons are intersecting, false if they're disjoint. Note that the polygons also intersect if
-/// one of them is fully contained in the other, even though there are no crossing points in that case.
+/// @return A @c FindArcCrossingPointsResult value with some info about the intersection. See the enum for more details.
 template <Arc arc, bool a_is_first_input_polygon, class Callbacks>
-bool find_arc_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callbacks& callbacks);
+FindArcCrossingPointsResult find_arc_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callbacks& callbacks);
+
+/// The return type of @c find_crossing_points. This return value indicates whether the polygons are intersecting,
+/// and if so, whether the leftmost vertices of either polygon lie inside or outside the other polygon.
+enum class FindCrossingPointsResult
+{
+  /// The two polygons are disjoint.
+  disjoint,
+
+  /// The leftmost vertex of @c a lies inside @c b, the leftmost vertex of @c b outside @c a.
+  a_leftmost_inside_b,
+
+  /// The leftmost vertex of @c b lies inside @c a, the leftmost vertex of @c a outside @c b.
+  b_leftmost_inside_a,
+
+  /// The leftmost vertices of each polygon lie outside the other polygon.
+  both_leftmost_outside_other,
+};
 
 /// Finds all crossing points between segments of the two input polygons.
 ///
@@ -233,10 +267,9 @@ bool find_arc_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callback
 /// @param a_info The @c PolygonInfo of the first input polygon.
 /// @param b_info The @c PolygonInfo of the second input polygon.
 /// @param callbacks The callbacks objects.
-/// @return True if the polygons are intersecting, false if they're disjoint. Note that the polygons also intersect if
-/// one of them is fully contained in the other, even though there are no crossing points in that case.
+/// @return XXX.
 template <class Callbacks>
-bool find_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callbacks& callbacks);
+FindCrossingPointsResult find_crossing_points(PolygonInfo& a_info, PolygonInfo& b_info, Callbacks& callbacks);
 
 } // namespace convex_polygons_intersection
 

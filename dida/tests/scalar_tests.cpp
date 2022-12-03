@@ -211,6 +211,22 @@ TEST_CASE("Unary Scalar::operator-")
   }
 }
 
+TEST_CASE("Scalar::operator+=")
+{
+  ScalarDeg1 a(-8550);
+  ScalarDeg1 b(8463);
+  a += b;
+  CHECK(a == -8550 + 8463);
+}
+
+TEST_CASE("Scalar::operator-=")
+{
+  ScalarDeg1 a(-5871);
+  ScalarDeg1 b(3341);
+  a -= b;
+  CHECK(a == -5871 - 3341);
+}
+
 TEST_CASE("Scalar multiplication")
 {
   SECTION("ScalarDeg1 * ScalarDeg1")
