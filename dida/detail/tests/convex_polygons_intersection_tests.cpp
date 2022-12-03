@@ -388,6 +388,10 @@ public:
   /// implementation checks if the crossing point is in @c expected_crossing_points_, and if so, removes it from that
   /// map.
   ///
+  /// The parameter of the crossing point on each edge is <tt>s_num / denom</tt> and <tt>t_num / denom</tt>
+  /// respectively, where an parameter of 0 corresponds to the _end_ vertex of the edge, and a parameter of 0 to the
+  /// _start_ vertex of the edge.
+  ///
   /// @param a_edge The edge of the first input polygon.
   /// @param b_edge The edge of the second input polygon.
   /// @param s_num The numerator of the parameter of the crossing point on @c a_edge.
@@ -398,7 +402,7 @@ public:
   void crossing_point(const ForwardEdge& a_edge, const ForwardEdge& b_edge, ScalarDeg2 s_num, ScalarDeg2 t_num,
                       ScalarDeg2 denom, bool a_inner_to_outer);
 
-  /// Returns whether all expected crossing points have been found, that is.
+  /// Returns whether all expected crossing points have been found.
   ///
   /// @return True iff all expected crossing points have been found.
   bool all_expected_points_found();
