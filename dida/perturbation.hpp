@@ -19,7 +19,11 @@ enum class PerturbationVector2
   right_up,
 };
 
-constexpr PerturbationVector2 flip_perturbation_vector(PerturbationVector2 a);
+/// Returns the perturbation vector in the opposite direction to @c a.
+///
+/// @param a The original perturbation vector.
+/// @return The inverted perturbation vector.
+constexpr PerturbationVector2 negate_perturbation_vector(PerturbationVector2 a);
 
 /// Returns whether the dot product of vector @c a and perturbation vector @c b is positive.
 ///
