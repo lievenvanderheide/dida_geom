@@ -2,7 +2,6 @@
 
 #define CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
-#include <atomic>
 #include <catch2/catch.hpp>
 #include <cmath>
 
