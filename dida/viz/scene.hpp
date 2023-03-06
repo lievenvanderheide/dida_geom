@@ -27,6 +27,11 @@ public:
     update_is_valid();
   }
 
+  const std::string& name() const
+  {
+    return name_;
+  }
+
   ArrayView<const Point2> vertices() const
   {
     return vertices_;
@@ -60,11 +65,17 @@ public:
 
   void add_primitive(VizPolygon polygon)
   {
+    size_t index = primitives_.size();
+    begin_add_primitive(index);
     primitives_.emplace_back(std::move(polygon));
+    primitive_added(index);
     data_changed();
   }
 
 Q_SIGNALS:
+  void begin_add_primitive(size_t index);
+  void primitive_added(size_t index);
+
   void data_changed();
 
 private:

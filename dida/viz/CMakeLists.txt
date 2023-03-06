@@ -11,6 +11,8 @@ add_executable(dida_viz
     main.cpp
     primitives_view.cpp
     primitives_view.hpp
+    primitives_tree_view.hpp
+    primitives_tree_view.cpp
     scene.cpp
     scene.hpp)
 

@@ -2,20 +2,26 @@
 
 #include <QtGui/QClipboard>
 #include <QtGui/QGuiApplication>
+#include <QtWidgets/QDockWidget>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QMessageBox>
 
+#include "dida/viz/primitives_tree_view.hpp"
 #include "dida/viz/primitives_view.hpp"
 
 namespace dida::viz
 {
 
-MainWindow::MainWindow(std::shared_ptr<Scene> scene)
-    : scene_(scene)
+MainWindow::MainWindow(std::shared_ptr<Scene> scene) : scene_(scene)
 {
-  dida::viz::PrimitivesView* primitives_view = new dida::viz::PrimitivesView(scene);
+  PrimitivesView* primitives_view = new PrimitivesView(scene);
   setCentralWidget(primitives_view);
+
+  PrimitivesTreeView* primitives_tree_view = new PrimitivesTreeView(scene);
+  QDockWidget* primitives_tree_view_dock_widget = new QDockWidget();
+  primitives_tree_view_dock_widget->setWidget(primitives_tree_view);
+  addDockWidget(Qt::LeftDockWidgetArea, primitives_tree_view_dock_widget);
 
   QMenu* add_menu = menuBar()->addMenu("Add");
   add_menu->addAction("Add Primitive from Text", this, &MainWindow::on_add_primitive_from_text);

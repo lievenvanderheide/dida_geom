@@ -8,7 +8,7 @@ namespace dida::viz
 
 PrimitivesView::PrimitivesView(std::shared_ptr<Scene> scene)
     : scene_(scene), scale_(50), translate_x_(500), translate_y_(500), panning_(false)
-{
+{ 
   QObject::connect(scene_.get(), &Scene::data_changed, this, &PrimitivesView::on_scene_data_changed);
 }
 
