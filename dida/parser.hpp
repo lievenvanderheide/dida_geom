@@ -38,8 +38,8 @@ public:
 
   /// Checks whether the character at the head of the parser matches @c c, and returns true iff this is the case.
   ///
-  /// On success, the parser's head is advanced to the next character, on failure, the parser is left in an undefined
-  /// state.
+  /// On success, the parser's head will have advanced to the next character, on failure, the parser is left in an
+  /// undefined state.
   ///
   /// @param c The expected character.
   /// @return True iff the character at the head of the parser matched @c c.
@@ -48,8 +48,8 @@ public:
   /// Checks whether the characters at the head of the parser match the given string, and returns true iff this is the
   /// case.
   ///
-  /// On success, the parser's head is advanced to the first character after the matched characters, on failure, the
-  /// parses is left in an undefined state.
+  /// On success, the parser's head will have advanced to the first character after the matched characters, on failure,
+  /// the parses is left in an undefined state.
   ///
   /// @param string The expected string.
   /// @return True iff the characters at the head of the parser match @c string.
@@ -84,8 +84,8 @@ public:
   /// Parses a C-style identifier and returns the result. If the characters at the head of the parser don't form a valid
   /// identifier, then @c std::nullopt is returned.
   ///
-  /// On success, the parser's head is advanced to the first character after the vector, on failure the parser is left
-  /// in an undefined state.
+  /// On success, the parser's head will have advanced to the first character after the vector, on failure the parser is
+  /// left in an undefined state.
   ///
   /// @return The identifier, or @c std::nullopt on failure.
   std::optional<std::string_view> parse_identifier();
@@ -94,8 +94,8 @@ public:
   /// characters at the head of the parser don't represent a scalar, or if the resulting scalar is out of range, then @c
   /// std::nullopt is returned.
   ///
-  /// On success, the parser's head is advanced to the first character after the scalar, on failure, the parser is left
-  /// in an undefined state.
+  /// On success, the parser's head will have advanced to the first character after the scalar, on failure, the parser
+  /// is left in an undefined state.
   ///
   /// @return The scalar, or @c std::nullopt on failure.
   std::optional<ScalarDeg1> parse_scalar();
@@ -103,8 +103,8 @@ public:
   /// Parses a @c Vector2 and returns the result. If the characters at the head of the parser don't represent a @c
   /// Vector2, then @c std::nullopt is returned.
   ///
-  /// On success, the parser's head is advanced to the first character after the vector, on failure the parser is left
-  /// in an undefined state.
+  /// On success, the parser's head will have advanced to the first character after the vector, on failure the parser is
+  /// left in an undefined state.
   ///
   /// The parses uses c-style formatting, so an example of a valid @c Vector2 string is <tt>{59.21, -40.57}</tt>,
   ///
@@ -114,14 +114,24 @@ public:
   /// Parses a @c Point2 and returns the result. If the characters at the head of the parser don't represent a @c
   /// Point2, then @c std::nullopt is returned.
   ///
-  /// On success, the parser's head is advanced to the first character after the point, on failure the parser is left
-  /// in an undefined state.
+  /// On success, the parser's head will have advanced to the first character after the point, on failure the parser is
+  /// left in an undefined state.
   ///
   /// The parses uses c-style formatting, so an example of a valid @c Point2 string is <tt>{59.21, -40.57}</tt>,
   ///
   /// @return The @c Vector2, or @c std::nullopt on failure.
   inline std::optional<Point2> parse_point2();
 
+  /// Parses a list of @c Point2 elements and returns the result as a @c std::vector<Point2>. If the characters at the
+  /// head of the parser don't represent a @c Point2 list, then @c std::nullopt is returned.
+  ///
+  /// On success, the parser's head will have advanced to the first character of the point list, on failure the parser
+  /// is left in an undefined state.
+  ///
+  /// The parser uses c-style formatting, so an example of a valid @c Point2 list is <tt>{{-2.55, -1.82}, {3.85, 1.8},
+  /// {-1.71, 2.84}}</tt>.
+  ///
+  /// @return The vector of points, or @c std::nullopt on failure.
   std::optional<std::vector<Point2>> parse_point2_vector();
 
 private:
