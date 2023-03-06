@@ -670,7 +670,7 @@ TEST_CASE("Parser::parse_point2_vector")
   SECTION(", after last point")
   {
     Parser parser("{{1.36,-0.22},{8.3,2.62},{5.56,4.6},}");
-    CHECK(parser.parse_point2_vector() == std::nullopt);
+    CHECK(parser.parse_point2_vector() == std::vector<Point2>{{1.36, -0.22}, {8.3, 2.62}, {5.56, 4.6}});
   }
 
   SECTION("No }}")

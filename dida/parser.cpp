@@ -279,7 +279,7 @@ std::optional<std::vector<Point2>> Parser::parse_point2_vector()
   }
 
   skip_optional_whitespace();
-  if(try_match('}'))
+  if (try_match('}'))
   {
     return std::vector<Point2>();
   }
@@ -298,18 +298,24 @@ std::optional<std::vector<Point2>> Parser::parse_point2_vector()
     skip_optional_whitespace();
     if (!try_match(','))
     {
-      break;
+      // If there's no comma, then we must have reached the end of the vector.
+      if (!match('}'))
+      {
+        return std::nullopt;
+      }
+
+      return result;
     }
 
     skip_optional_whitespace();
-  }
 
-  if (!match('}'))
-  {
-    return std::nullopt;
+    if(match('}'))
+    {
+      // There was a comma, but the comma was immediately followed by closing brace, so we've reached the end of the
+      // vector.
+      return result;
+    }
   }
-
-  return result;
 }
 
 } // namespace dida
