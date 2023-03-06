@@ -5,6 +5,12 @@
 namespace dida
 {
 
+TEST_CASE("negate_perturbation_vector")
+{
+  CHECK(negate_perturbation_vector(PerturbationVector2::left_down) == PerturbationVector2::right_up);
+  CHECK(negate_perturbation_vector(PerturbationVector2::right_up) == PerturbationVector2::left_down);
+}
+
 TEST_CASE("dot_is_positive/dot_is_negative(Vector2, PerturbationVector2)")
 {
   SECTION("Left")

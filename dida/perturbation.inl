@@ -1,7 +1,7 @@
 namespace dida
 {
 
-constexpr PerturbationVector2 flip_perturbation_vector(PerturbationVector2 a)
+constexpr PerturbationVector2 negate_perturbation_vector(PerturbationVector2 a)
 {
   return a == PerturbationVector2::left_down ? PerturbationVector2::right_up : PerturbationVector2::left_down;
 }
