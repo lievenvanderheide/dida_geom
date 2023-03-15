@@ -36,10 +36,4 @@ const std::vector<std::shared_ptr<VizPolygon>>& VizScene::primitives()
   return primitives_;
 }
 
-void VizScene::add_primitive(std::shared_ptr<VizPolygon> polygon)
-{
-  primitives_.emplace_back(std::move(polygon));
-  data_changed();
-}
-
 } // namespace dida::viz

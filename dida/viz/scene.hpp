@@ -97,12 +97,25 @@ public:
 
   /// Adds a primitive to this @c VizScene.
   ///
+  /// This function will emit the @c will_add_primitive signal before any changes are made to the @c VizScene, and
+  /// the @c primitive_added and @c data_changed signals after the changes have been made.
+  ///
   /// @param polygon The polygon to add.
-  inline void add_primitive(std::shared_ptr<VizPolygon> polygon);
+  void add_primitive(std::shared_ptr<VizPolygon> polygon);
 
 Q_SIGNALS:
   /// This signal is emitted whenever some data in this scene changes.
   void data_changed();
+
+  /// This signal is emitted right before a new primitive is added.
+  ///
+  /// @param index The index of the new primitive.
+  void will_add_primitive(size_t index);
+
+  /// This signal is emitted after a new primitive was added.
+  ///
+  /// @param index The index of the new primitive.
+  void primitive_added(size_t index);
 
 private:
   std::vector<std::shared_ptr<VizPolygon>> primitives_;

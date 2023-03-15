@@ -5,17 +5,26 @@
 #include <QtGui/QShortcut>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QMenuBar>
+#include <QtWidgets/QDockWidget>
+
+#include "dida/viz/primitives_tree_view.hpp"
 
 namespace dida::viz
 {
 
-MainWindow::MainWindow(std::shared_ptr<VizScene> scene) : scene_(scene)
+MainWindow::MainWindow(std::shared_ptr<VizScene> scene) : scene_(std::move(scene))
 {
   QMenu* edit_menu = menuBar()->addMenu("&Edit");
 
   QAction* paste_action =
       edit_menu->addAction("&Paste", this, &MainWindow::on_paste_primitive);
   paste_action->setShortcut(QKeySequence::Paste);
+
+  VizSceneTreeView* tree_view = new VizSceneTreeView(scene_);
+
+  QDockWidget* tree_view_dock_widget = new QDockWidget();
+  tree_view_dock_widget->setWidget(tree_view);
+  addDockWidget(Qt::LeftDockWidgetArea, tree_view_dock_widget);
 }
 
 void MainWindow::on_paste_primitive()
