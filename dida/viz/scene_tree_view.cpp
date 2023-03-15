@@ -1,16 +1,16 @@
 
-#include "dida/viz/primitives_tree_view.hpp"
+#include "dida/viz/scene_tree_view.hpp"
 
 #include <sstream>
 
 namespace dida::viz
 {
 
-VizSceneTreeView::VizSceneTreeView(std::shared_ptr<VizScene> scene)
+SceneTreeView::SceneTreeView(std::shared_ptr<VizScene> scene)
 {
   setHeaderHidden(true);
 
-  PrimitivesTreeModel* model = new PrimitivesTreeModel(std::move(scene));
+  SceneTreeModel* model = new SceneTreeModel(std::move(scene));
   setModel(model);
 }
 
@@ -114,13 +114,13 @@ size_t ItemIndex::element_index() const
 
 } // namespace
 
-PrimitivesTreeModel::PrimitivesTreeModel(std::shared_ptr<VizScene> scene) : scene_(std::move(scene))
+SceneTreeModel::SceneTreeModel(std::shared_ptr<VizScene> scene) : scene_(std::move(scene))
 {
-  QObject::connect(scene_.get(), &VizScene::will_add_primitive, this, &PrimitivesTreeModel::on_will_add_primitive);
-  QObject::connect(scene_.get(), &VizScene::primitive_added, this, &PrimitivesTreeModel::on_primitive_added);
+  QObject::connect(scene_.get(), &VizScene::will_add_primitive, this, &SceneTreeModel::on_will_add_primitive);
+  QObject::connect(scene_.get(), &VizScene::primitive_added, this, &SceneTreeModel::on_primitive_added);
 }
 
-QModelIndex PrimitivesTreeModel::index(int row, int column, const QModelIndex& parent) const
+QModelIndex SceneTreeModel::index(int row, int column, const QModelIndex& parent) const
 {
   if (!parent.isValid())
   {
@@ -137,7 +137,7 @@ QModelIndex PrimitivesTreeModel::index(int row, int column, const QModelIndex& p
   }
 }
 
-QVariant PrimitivesTreeModel::data(const QModelIndex& index, int role) const
+QVariant SceneTreeModel::data(const QModelIndex& index, int role) const
 {
   ItemIndex item_index = ItemIndex::from_packed_index(index.internalId());
   const VizPolygon& polygon = *scene_->primitives()[item_index.primitive_index()];
@@ -163,7 +163,7 @@ QVariant PrimitivesTreeModel::data(const QModelIndex& index, int role) const
   }
 }
 
-QModelIndex PrimitivesTreeModel::parent(const QModelIndex& index) const
+QModelIndex SceneTreeModel::parent(const QModelIndex& index) const
 {
   ItemIndex item_index = ItemIndex::from_packed_index(index.internalId());
 
@@ -178,7 +178,7 @@ QModelIndex PrimitivesTreeModel::parent(const QModelIndex& index) const
   }
 }
 
-int PrimitivesTreeModel::rowCount(const QModelIndex& parent) const
+int SceneTreeModel::rowCount(const QModelIndex& parent) const
 {
   if (!parent.isValid())
   {
@@ -194,17 +194,17 @@ int PrimitivesTreeModel::rowCount(const QModelIndex& parent) const
   return 0;
 }
 
-int PrimitivesTreeModel::columnCount(const QModelIndex& parent) const
+int SceneTreeModel::columnCount(const QModelIndex& parent) const
 {
   return 1;
 }
 
-void PrimitivesTreeModel::on_will_add_primitive(size_t index)
+void SceneTreeModel::on_will_add_primitive(size_t index)
 {
   beginInsertRows(QModelIndex(), index, index);
 }
 
-void PrimitivesTreeModel::on_primitive_added(size_t index)
+void SceneTreeModel::on_primitive_added(size_t index)
 {
   endInsertRows();
 }

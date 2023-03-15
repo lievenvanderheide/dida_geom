@@ -1,4 +1,4 @@
-#include "dida/viz/primitives_tree_view.hpp"
+#include "dida/viz/scene_tree_view.hpp"
 
 #include <catch2/catch.hpp>
 
@@ -33,10 +33,10 @@ struct TestScene
 
 } // namespace
 
-TEST_CASE("PrimitivesTreeModel::data")
+TEST_CASE("SceneTreeModel::data")
 {
   TestScene test_scene;
-  PrimitivesTreeModel tree_model(test_scene.scene);
+  SceneTreeModel tree_model(test_scene.scene);
 
   SECTION("Primitive")
   {
@@ -63,10 +63,10 @@ TEST_CASE("PrimitivesTreeModel::data")
   }
 }
 
-TEST_CASE("PrimitivesTreeModel::parent")
+TEST_CASE("SceneTreeModel::parent")
 {
   TestScene test_scene;
-  PrimitivesTreeModel tree_model(test_scene.scene);
+  SceneTreeModel tree_model(test_scene.scene);
 
   SECTION("Parent of primitive")
   {
@@ -82,10 +82,10 @@ TEST_CASE("PrimitivesTreeModel::parent")
   }
 }
 
-TEST_CASE("PrimitivesTreeModel::rowCount")
+TEST_CASE("SceneTreeModel::rowCount")
 {
   TestScene test_scene;
-  PrimitivesTreeModel tree_model(test_scene.scene);
+  SceneTreeModel tree_model(test_scene.scene);
 
   SECTION("Root")
   {
@@ -106,24 +106,24 @@ TEST_CASE("PrimitivesTreeModel::rowCount")
   }
 }
 
-TEST_CASE("PrimitivesTreeModel::columnCount")
+TEST_CASE("SceneTreeModel::columnCount")
 {
   TestScene test_scene;
-  PrimitivesTreeModel tree_model(test_scene.scene);
+  SceneTreeModel tree_model(test_scene.scene);
 
   QModelIndex primitive_index = tree_model.index(0, 0, QModelIndex());
   CHECK(tree_model.columnCount(primitive_index) == 1);
 }
 
-TEST_CASE("PrimitivesTreeModel emits beginInsertRows and endInsertRows")
+TEST_CASE("SceneTreeModel emits beginInsertRows and endInsertRows")
 {
   std::shared_ptr<VizScene> scene = std::make_shared<VizScene>();
-  PrimitivesTreeModel tree_model(scene);
+  SceneTreeModel tree_model(scene);
 
   size_t about_to_be_inserted_index = 0;
   size_t inserted_index = 0;
 
-  QObject::connect(&tree_model, &PrimitivesTreeModel::rowsAboutToBeInserted,
+  QObject::connect(&tree_model, &SceneTreeModel::rowsAboutToBeInserted,
                    [&about_to_be_inserted_index, &scene](QModelIndex parent, int first, int last)
                    {
                      CHECK(scene->primitives().size() == about_to_be_inserted_index);
@@ -135,7 +135,7 @@ TEST_CASE("PrimitivesTreeModel emits beginInsertRows and endInsertRows")
                      about_to_be_inserted_index++;
                    });
 
-  QObject::connect(&tree_model, &PrimitivesTreeModel::rowsInserted,
+  QObject::connect(&tree_model, &SceneTreeModel::rowsInserted,
                    [&inserted_index, &scene](QModelIndex parent, int first, int last)
                    {
                      REQUIRE(scene->primitives().size() == inserted_index + 1);

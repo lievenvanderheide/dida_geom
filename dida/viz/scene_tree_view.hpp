@@ -9,34 +9,34 @@ namespace dida::viz
 {
 
 /// A tree view which shows the contents of a @c VizScene.
-class VizSceneTreeView : public QTreeView
+class SceneTreeView : public QTreeView
 {
   Q_OBJECT
 
 public:
-  /// Constructs a @c VizSceneTreeView with the given scene.
+  /// Constructs a @c SceneTreeView with the given scene.
   ///
   /// @param scene The @c VizScene to show in the tree view.
-  VizSceneTreeView(std::shared_ptr<VizScene> scene);
+  SceneTreeView(std::shared_ptr<VizScene> scene);
 };
 
 /// A @c QAbstractItemModel wrapper around @c VizScene.
-class PrimitivesTreeModel : public QAbstractItemModel
+class SceneTreeModel : public QAbstractItemModel
 {
   Q_OBJECT
 
 public:
-  /// Constructs a @c PrimitivesTreeModel with the given scene.
+  /// Constructs a @c SceneTreeModel with the given scene.
   ///
   /// @param scene The @c VizScene to wrap.
-  PrimitivesTreeModel(std::shared_ptr<VizScene> scene);
+  SceneTreeModel(std::shared_ptr<VizScene> scene);
 
   /// Implements the @c index function of @c QAbstractItemModel.
   QModelIndex index(int row, int column, const QModelIndex& parent = QModelIndex()) const override;
   
   /// Implements the @c data function of @c QAbstractItemModel.
   ///
-  /// If role == PrimitivesTreeModel, then the return value is
+  /// If role == SceneTreeModel, then the return value is
   ///  - The name of a primitive if @c index refers to a @c primitive.
   ///  - The c-style representation of the coordinates of @c index refers to a vertex.
   ///

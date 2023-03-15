@@ -8,8 +8,8 @@ find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 add_library(dida_viz_lib
     main_window.cpp
     main_window.hpp
-    primitives_tree_view.cpp
-    primitives_tree_view.hpp
+    scene_tree_view.cpp
+    scene_tree_view.hpp
     scene.cpp
     scene.hpp
     scene.inl)

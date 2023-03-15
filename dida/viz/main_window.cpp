@@ -7,7 +7,7 @@
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QDockWidget>
 
-#include "dida/viz/primitives_tree_view.hpp"
+#include "dida/viz/scene_tree_view.hpp"
 
 namespace dida::viz
 {
@@ -20,7 +20,7 @@ MainWindow::MainWindow(std::shared_ptr<VizScene> scene) : scene_(std::move(scene
       edit_menu->addAction("&Paste", this, &MainWindow::on_paste_primitive);
   paste_action->setShortcut(QKeySequence::Paste);
 
-  VizSceneTreeView* tree_view = new VizSceneTreeView(scene_);
+  SceneTreeView* tree_view = new SceneTreeView(scene_);
 
   QDockWidget* tree_view_dock_widget = new QDockWidget();
   tree_view_dock_widget->setWidget(tree_view);
