@@ -62,4 +62,13 @@ std::shared_ptr<VizPolygon> parse_viz_polygon(std::string_view string)
   return parser.finished() ? result : nullptr;
 }
 
+void VizScene::add_primitive(std::shared_ptr<VizPolygon> polygon)
+{
+  size_t index = primitives_.size();
+  will_add_primitive(index);
+  primitives_.emplace_back(std::move(polygon));
+  primitive_added(index);
+  data_changed();
+}
+
 } // namespace dida::viz

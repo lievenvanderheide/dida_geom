@@ -160,18 +160,46 @@ TEST_CASE("VizScene::add_primitive")
 {
   VizScene scene;
 
+  std::shared_ptr<VizPolygon> polygon = std::make_shared<VizPolygon>(
+      "polygon", std::vector<Point2>{{-3.57, 2.24}, {-3.41, -1.12}, {-1.69, 1.6}, {-1.77, 5.38}}, true);
+
+  bool will_add_primitive_called = false;
+  bool primitive_added_called = false;
   bool data_changed_called = false;
+
+  QObject::connect(&scene, &VizScene::will_add_primitive,
+                   [&scene, &will_add_primitive_called]()
+                   {
+                     CHECK(!will_add_primitive_called);
+                     will_add_primitive_called = true;
+
+                     CHECK(scene.primitives().empty());
+                   });
+
+  QObject::connect(&scene, &VizScene::primitive_added,
+                   [&scene, &polygon, &primitive_added_called]()
+                   {
+                     CHECK(!primitive_added_called);
+                     primitive_added_called = true;
+
+                     REQUIRE(scene.primitives().size() == 1);
+                     CHECK(scene.primitives()[0] == polygon);
+                   });
+
   QObject::connect(&scene, &VizScene::data_changed,
-                   [&data_changed_called]()
+                   [&scene, &polygon, &data_changed_called]()
                    {
                      CHECK(!data_changed_called);
                      data_changed_called = true;
+
+                     REQUIRE(scene.primitives().size() == 1);
+                     CHECK(scene.primitives()[0] == polygon);
                    });
 
-  std::shared_ptr<VizPolygon> polygon = std::make_shared<VizPolygon>(
-      "polygon", std::vector<Point2>{{-3.57, 2.24}, {-3.41, -1.12}, {-1.69, 1.6}, {-1.77, 5.38}}, true);
   scene.add_primitive(polygon);
 
+  CHECK(will_add_primitive_called);
+  CHECK(primitive_added_called);
   CHECK(data_changed_called);
 }
 
