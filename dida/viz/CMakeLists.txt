@@ -10,6 +10,8 @@ add_library(dida_viz_lib
     main_window.hpp
     scene_tree_view.cpp
     scene_tree_view.hpp
+    scene_view.cpp
+    scene_view.hpp
     scene.cpp
     scene.hpp
     scene.inl)
