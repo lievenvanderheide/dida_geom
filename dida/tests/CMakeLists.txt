@@ -5,6 +5,7 @@ find_package(Catch2 2 REQUIRED)
 add_executable(dida_tests
     area_tests.cpp
     array_view_tests.cpp
+    box2_tests.cpp
     convex_polygon2_tests.cpp
     convex_polygon2_utils_tests.cpp
     parser_tests.cpp

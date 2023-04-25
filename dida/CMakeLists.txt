@@ -21,6 +21,9 @@ add_library(dida
     area.hpp
     array_view.hpp
     array_view.inl
+    box2.cpp
+    box2.hpp
+    box2.inl
     assert.hpp
     convex_polygon2_utils.cpp
     convex_polygon2_utils.hpp
