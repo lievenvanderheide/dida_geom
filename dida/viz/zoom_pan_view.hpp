@@ -2,11 +2,15 @@
 
 #include <QtWidgets/QWidget>
 
+class QPainter;
+
 namespace dida
 {
-  class Point2;
-  class Box2;
-}
+
+class Point2;
+class Box2;
+
+} // namespace dida
 
 namespace dida::viz
 {
@@ -28,6 +32,18 @@ class ZoomPanView : public QWidget
 public:
   ZoomPanView();
 
+  /// Converts a point from scene to view space.
+  ///
+  /// @param point The point in scene space.
+  /// @return The point in view space.
+  QPointF point_to_view(Point2 point) const;
+
+  /// Converts a box from scene to view space.
+  ///
+  /// @param box The box in scene space.
+  /// @return The box in view space.
+  QRectF box_to_view(Box2 box) const;
+
 protected:
   /// The implementation of @c mousePressEvent.
   ///
@@ -44,17 +60,11 @@ protected:
   /// @param event The event object.
   void mouseMoveEvent(QMouseEvent* event) override;
 
-  /// Converts a point from scene to view space.
+  /// Paints the grid of this @c ZoomPanView. Derived classes can call this from their @c paintEvent function if they
+  /// want a grid.
   ///
-  /// @param point The point in scene space.
-  /// @return The point in view space.
-  QPointF point_to_view(Point2 point) const;
-
-  /// Converts a box from scene to view space.
-  ///
-  /// @param box The box in scene space.
-  /// @return The box in view space.
-  QRectF box_to_view(Box2 box) const;
+  /// @param painter The painter.
+  void paint_grid(QPainter& painter);
 
 private:
   double scale_;

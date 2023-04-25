@@ -11,6 +11,9 @@ void SceneView::paintEvent(QPaintEvent* event)
 {
   QPainter painter(this);
 
+  painter.fillRect(0, 0, width(), height(), Qt::white);
+  paint_grid(painter);
+
   for (int y = -5; y <= 5; y++)
   {
     for (int x = -5; x <= 5; x++)

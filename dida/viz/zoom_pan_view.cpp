@@ -1,6 +1,8 @@
 #include "dida/viz/zoom_pan_view.hpp"
 
 #include <QtGui/QMouseEvent>
+#include <QtGui/QPainter>
+#include <iostream>
 
 #include "dida/box2.hpp"
 #include "dida/point2.hpp"
@@ -10,6 +12,7 @@ namespace dida::viz
 
 /// The horizontal drag distance which corresponds to a doubling of @c scale_.
 constexpr double scale_doubled_drag_distance = 100;
+constexpr double min_grid_cell_size_in_view = 32;
 
 ZoomPanView::ZoomPanView() : scale_(50), translate_x_(500), translate_y_(500), state_(State::idle)
 {
@@ -84,6 +87,40 @@ QRectF ZoomPanView::box_to_view(Box2 box) const
   double width = static_cast<double>(diag.x()) * scale_;
   double height = static_cast<double>(diag.y()) * scale_;
   return QRectF(point_to_view(Point2(box.min().x(), box.max().y())), QSizeF(width, height));
+}
+
+void ZoomPanView::paint_grid(QPainter& painter)
+{
+  QPen black_pen(Qt::black);
+  QPen gray_pen(Qt::gray);
+
+  // The distance in view space between adjacent grid lines should be the smallest power of 2 which is at least
+  // min_grid_cell_size_in_view.
+  //
+  // scale_ * 2^n >= min_grid_cell_size_in_view
+  //          2^n >= min_grid_cell_size_in_view / scale_
+
+  double grid_cell_size = std::exp2(std::ceil(std::log2(min_grid_cell_size_in_view / scale_)));
+
+  double left_x = ceil(-translate_x_ / (scale_ * grid_cell_size)) * grid_cell_size;
+  double right_x = (width() - translate_x_) / scale_;
+  for(double x = left_x; x <= right_x; x += grid_cell_size)
+  {
+    // Note: 'x' is always exact, so it's safe to compare it to 0.
+    painter.setPen(x == 0 ? black_pen : gray_pen);
+    painter.drawLine(x * scale_ + translate_x_, 0, x * scale_ + translate_x_, height());
+  }
+
+  double top_y = ceil(-translate_y_ / (scale_ * grid_cell_size)) * grid_cell_size;
+  double bottom_y = (width() - translate_y_) / scale_;
+  for(double y = top_y; y <= bottom_y; y += grid_cell_size)
+  {
+    // Note: 'y' is always exact, so it's safe to compare it to 0.
+    painter.setPen(y == 0 ? black_pen : gray_pen);
+    painter.drawLine(0, y * scale_ + translate_y_, width(), y * scale_ + translate_y_);
+  }
+
+  painter.setPen(QPen());
 }
 
 } // namespace dida::viz
