@@ -7,6 +7,8 @@
 namespace dida::viz
 {
 
+class SceneView;
+
 /// The main window of the Dida visualization tool.
 class MainWindow : public QMainWindow
 {
@@ -20,6 +22,8 @@ private:
   void on_paste_primitive();
 
   std::shared_ptr<VizScene> scene_;
+
+  SceneView* scene_view_;
 };
 
 } // namespace dida::viz
