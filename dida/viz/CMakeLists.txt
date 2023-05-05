@@ -16,8 +16,7 @@ add_library(dida_viz_lib
     scene.hpp
     scene.inl
     zoom_pan_view.cpp
-    zoom_pan_view.hpp
-    zoom_pan_view.inl)
+    zoom_pan_view.hpp)
 
 target_link_libraries(dida_viz_lib PRIVATE dida Qt::Core Qt6::Widgets)
 
