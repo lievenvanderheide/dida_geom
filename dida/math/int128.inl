@@ -7,29 +7,86 @@ constexpr Int128::Int128(uint64_t low_word, uint64_t high_word) : words_{low_wor
 {
 }
 
-inline bool Int128::operator==(const Int128& b) const
+constexpr Int128::Int128(int64_t value) : words_{static_cast<uint64_t>(value), value < 0 ? 0xffffffffffffffff : 0}
+{
+}
+
+const uint64_t* Int128::words() const
+{
+  return words_;
+}
+
+bool Int128::operator==(const Int128& b) const
 {
   return words_[0] == b.words_[0] && words_[1] == b.words_[1];
 }
 
-inline bool Int128::operator!=(const Int128& b) const
+bool Int128::operator!=(const Int128& b) const
 {
   return words_[0] != b.words_[0] || words_[1] != b.words_[1];
 }
 
-inline Int128& Int128::operator+=(Int128 b)
+bool Int128::operator<(const Int128& b) const
+{
+  if (words_[1] != b.words_[1])
+  {
+    return static_cast<int64_t>(words_[1]) < static_cast<int64_t>(b.words_[1]);
+  }
+  else
+  {
+    return words_[0] < b.words_[0];
+  }
+}
+
+bool Int128::operator<=(const Int128& b) const
+{
+  if (words_[1] != b.words_[1])
+  {
+    return static_cast<int64_t>(words_[1]) <= static_cast<int64_t>(b.words_[1]);
+  }
+  else
+  {
+    return words_[0] <= b.words_[0];
+  }
+}
+
+bool Int128::operator>=(const Int128& b) const
+{
+  if (words_[1] != b.words_[1])
+  {
+    return static_cast<int64_t>(words_[1]) >= static_cast<int64_t>(b.words_[1]);
+  }
+  else
+  {
+    return words_[0] >= b.words_[0];
+  }
+}
+
+bool Int128::operator>(const Int128& b) const
+{
+  if (words_[1] != b.words_[1])
+  {
+    return static_cast<int64_t>(words_[1]) > static_cast<int64_t>(b.words_[1]);
+  }
+  else
+  {
+    return words_[0] > b.words_[0];
+  }
+}
+
+Int128& Int128::operator+=(Int128 b)
 {
   *this = *this + b;
   return *this;
 }
 
-inline Int128& Int128::operator-=(Int128 b)
+Int128& Int128::operator-=(Int128 b)
 {
   *this = *this - b;
   return *this;
 }
 
-inline Int128 Int128::operator+(Int128 b) const
+Int128 Int128::operator+(Int128 b) const
 {
   Int128 result;
   char carry = add_with_carry(0, words_[0], b.words_[0], result.words_[0]);
@@ -37,7 +94,7 @@ inline Int128 Int128::operator+(Int128 b) const
   return result;
 }
 
-inline Int128 Int128::operator-(Int128 b) const
+Int128 Int128::operator-(Int128 b) const
 {
   Int128 result;
   char borrow = sub_with_borrow(0, words_[0], b.words_[0], result.words_[0]);
@@ -45,7 +102,7 @@ inline Int128 Int128::operator-(Int128 b) const
   return result;
 }
 
-inline Int128 Int128::operator-() const
+Int128 Int128::operator-() const
 {
   Int128 result;
   char borrow = sub_with_borrow(0, 0, words_[0], result.words_[0]);
@@ -53,7 +110,7 @@ inline Int128 Int128::operator-() const
   return result;
 }
 
-inline Int128 Int128::multiply(int64_t a, int64_t b)
+Int128 Int128::multiply(int64_t a, int64_t b)
 {
   SignedMul128Result mul_result = mul128(a, b);
   return Int128(mul_result.low_word, static_cast<uint64_t>(mul_result.high_word));

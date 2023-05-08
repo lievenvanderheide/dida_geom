@@ -20,17 +20,51 @@ public:
   /// @param high_word The high word.
   constexpr Int128(uint64_t low_word, uint64_t high_word);
 
+  /// Constructs an @c Int128 with the given value.
+  ///
+  /// @param value The value.
+  constexpr explicit Int128(int64_t value);
+
+  /// Returns a pointer the 2 64 bit words of this @c Int128.
+  ///
+  /// @return A pointer to the words.
+  inline const uint64_t* words() const;
+
   /// Compares this @c Int128 and @c b for equality.
   ///
   /// @param b The second operand.
-  /// @return True iff this Int128 and @p b are equal.
+  /// @return True iff this @c Int128 and @p b are equal.
   inline bool operator==(const Int128& b) const;
 
   /// Compares this @c Int128 and @c b for inequality.
   ///
   /// @param b The second operand.
-  /// @return True iff this Int128 and @p b are not equal.
+  /// @return True iff this @c Int128 and @p b are not equal.
   inline bool operator!=(const Int128& b) const;
+
+  /// Returns whether this @c Int128 is less than @c b.
+  ///
+  /// @param b The second operand.
+  /// @return True iff this @c Int128 is less than @c b.
+  inline bool operator<(const Int128& b) const;
+
+  /// Returns whether this @c Int128 is less than or equal to @c b.
+  ///
+  /// @param b The second operand.
+  /// @return True iff this @c Int128 is less than or equal to @c b.
+  inline bool operator<=(const Int128& b) const;
+
+  /// Returns whether this @c Int128 is greater than or equal to @c b.
+  ///
+  /// @param b The second operand.
+  /// @return True iff this @c Int128 is greater than or equal to @c b.
+  inline bool operator>=(const Int128& b) const;
+
+  /// Returns whether this @c Int128 is greater than @c b.
+  ///
+  /// @param b The second operand.
+  /// @return True iff this @c Int128 is greater than @c b.
+  inline bool operator>(const Int128& b) const;
 
   /// Adds @c b to this @c Int128.
   ///

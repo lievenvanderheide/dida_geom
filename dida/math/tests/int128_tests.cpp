@@ -5,30 +5,112 @@
 namespace dida::math
 {
 
+TEST_CASE("Int128 construction and word access")
+{
+  Int128 a(0xec9eb04b6389873f, 0x8e92df8d9c4ffb3d);
+  CHECK(a.words()[0] == 0xec9eb04b6389873f);
+  CHECK(a.words()[1] == 0x8e92df8d9c4ffb3d);
+}
+
+TEST_CASE("Int128::Int128(int64_t)")
+{
+  SECTION("Positive value")
+  {
+    Int128 a(177);
+    CHECK(a.words()[0] == 177);
+    CHECK(a.words()[1] == 0);
+  }
+
+  SECTION("Negative value")
+  {
+    Int128 a(-340);
+    CHECK(a.words()[0] == static_cast<uint64_t>(-340));
+    CHECK(a.words()[1] == 0xffffffffffffffff);
+  }
+}
+
 TEST_CASE("Int128::operator==/!=")
 {
   SECTION("Equal")
   {
-    const Int128 a(0x14db818e2187895a, 0x863d518366f95809);
-    const Int128 b(0x14db818e2187895a, 0x863d518366f95809);
+    Int128 a(0x14db818e2187895a, 0x863d518366f95809);
+    Int128 b(0x14db818e2187895a, 0x863d518366f95809);
     CHECK(a == b);
     CHECK_FALSE(a != b);
   }
 
   SECTION("Word 0 different")
   {
-    const Int128 a(0x14db818e2187895a, 0x863d518366f95809);
-    const Int128 b(0x89995abdcc1bf533, 0x863d518366f95809);
+    Int128 a(0x14db818e2187895a, 0x863d518366f95809);
+    Int128 b(0x89995abdcc1bf533, 0x863d518366f95809);
     CHECK_FALSE(a == b);
     CHECK(a != b);
   }
 
   SECTION("Word 1 different")
   {
-    const Int128 a(0x14db818e2187895a, 0x863d518366f95809);
-    const Int128 b(0x14db818e2187895a, 0xfaa9c3d2c6496984);
+    Int128 a(0x14db818e2187895a, 0x863d518366f95809);
+    Int128 b(0x14db818e2187895a, 0xfaa9c3d2c6496984);
     CHECK_FALSE(a == b);
     CHECK(a != b);
+  }
+}
+
+TEST_CASE("Int128 inequality operators")
+{
+  SECTION("a == b")
+  {
+    Int128 a(452);
+    Int128 b(452);
+
+    CHECK_FALSE(a < b);
+    CHECK(a <= b);
+    CHECK(a >= b);
+    CHECK_FALSE(a > b);
+  }
+
+  SECTION("High words equal, a < b")
+  {
+    Int128 a(36);
+    Int128 b(153);
+
+    CHECK(a < b);
+    CHECK(a <= b);
+    CHECK_FALSE(a >= b);
+    CHECK_FALSE(a > b);
+  }
+
+  SECTION("High words equal, a > b")
+  {
+    Int128 a(153);
+    Int128 b(36);
+
+    CHECK_FALSE(a < b);
+    CHECK_FALSE(a <= b);
+    CHECK(a >= b);
+    CHECK(a > b);
+  }
+
+  SECTION("High different equal, a < b")
+  {
+    Int128 a(-36);
+    Int128 b(153);
+
+    CHECK(a < b);
+    CHECK(a <= b);
+    CHECK_FALSE(a >= b);
+    CHECK_FALSE(a > b);
+  }
+
+  SECTION("High words different, a > b")
+  {
+    Int128 a(153);
+    Int128 b(-36);
+
+    CHECK_FALSE(a < b);
+    CHECK_FALSE(a <= b);
+    CHECK(a >= b);
+    CHECK(a > b);
   }
 }
 
