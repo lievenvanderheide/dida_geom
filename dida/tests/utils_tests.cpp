@@ -59,4 +59,54 @@ TEST_CASE("succ_modulo")
   }
 }
 
+TEST_CASE("cyclic_order")
+{
+  SECTION("All distinct")
+  {
+    CHECK(cyclic_order(1, 2, 3));
+    CHECK(cyclic_order(2, 3, 1));
+    CHECK(cyclic_order(3, 1, 2));
+
+    CHECK_FALSE(cyclic_order(2, 1, 3));
+    CHECK_FALSE(cyclic_order(3, 2, 1));
+    CHECK_FALSE(cyclic_order(1, 3, 2));
+  }
+
+  SECTION("Equal operands")
+  {
+    CHECK_FALSE(cyclic_order(1, 1, 1));
+    CHECK_FALSE(cyclic_order(1, 1, 2));
+    CHECK_FALSE(cyclic_order(1, 2, 1));
+    CHECK_FALSE(cyclic_order(2, 1, 1));
+  }
+
+  SECTION("With user provided less_than functor")
+  {
+    std::string operand_1 = "31";
+    std::string operand_2 = "22";
+    std::string operand_3 = "13";
+
+    auto less_than = [](const std::string& a, const std::string& b) { return a[1] < b[1]; };
+
+    SECTION("All distinct")
+    {
+      CHECK(cyclic_order(operand_1, operand_2, operand_3, less_than));
+      CHECK(cyclic_order(operand_2, operand_3, operand_1, less_than));
+      CHECK(cyclic_order(operand_3, operand_1, operand_2, less_than));
+
+      CHECK_FALSE(cyclic_order(operand_2, operand_1, operand_3, less_than));
+      CHECK_FALSE(cyclic_order(operand_3, operand_2, operand_1, less_than));
+      CHECK_FALSE(cyclic_order(operand_1, operand_3, operand_2, less_than));
+    }
+
+    SECTION("Equal operands")
+    {
+      CHECK_FALSE(cyclic_order(operand_1, operand_1, operand_1, less_than));
+      CHECK_FALSE(cyclic_order(operand_1, operand_1, operand_2, less_than));
+      CHECK_FALSE(cyclic_order(operand_1, operand_2, operand_1, less_than));
+      CHECK_FALSE(cyclic_order(operand_2, operand_1, operand_1, less_than));
+    }
+  }
+}
+
 } // namespace dida

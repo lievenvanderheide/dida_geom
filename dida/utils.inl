@@ -1,5 +1,7 @@
 #include "dida/assert.hpp"
 
+#include <functional>
+
 namespace dida
 {
 
@@ -33,6 +35,25 @@ IntType succ_modulo(IntType a, IntType m)
 
   a++;
   return a != m ? a : 0;
+}
+
+template <class T>
+bool cyclic_order(const T& a, const T& b, const T& c)
+{
+  return cyclic_order(a, b, c, std::less<T>());
+}
+
+template <class T, class LessThan>
+bool cyclic_order(const T& a, const T& b, const T& c, LessThan less_than)
+{
+  if (less_than(a, b))
+  {
+    return less_than(c, a) || less_than(b, c);
+  }
+  else
+  {
+    return less_than(b, c) && less_than(c, a);
+  }
 }
 
 } // namespace dida
