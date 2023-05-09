@@ -23,6 +23,24 @@ const Denominator& Fraction<Numerator, Denominator>::denominator() const
 }
 
 template <class Numerator, class Denominator>
+Fraction<Numerator, Denominator> Fraction<Numerator, Denominator>::infinity()
+{
+  Fraction result;
+  result.numerator_ = Numerator(1);
+  result.denominator_ = Denominator(0);
+  return result;
+}
+
+template <class Numerator, class Denominator>
+Fraction<Numerator, Denominator> Fraction<Numerator, Denominator>::negative_infinity()
+{
+  Fraction result;
+  result.numerator_ = Numerator(-1);
+  result.denominator_ = Denominator(0);
+  return result;
+}
+
+template <class Numerator, class Denominator>
 template <class BNumerator, class BDenominator>
 bool Fraction<Numerator, Denominator>::operator==(const Fraction<BNumerator, BDenominator>& b) const
 {
