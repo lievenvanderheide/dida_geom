@@ -82,6 +82,53 @@ public:
   template <class BNumerator, class BDenominator>
   bool operator>(const Fraction<BNumerator, BDenominator>& b) const;
 
+  /// Returns whether this fraction is equal to scalar @c b.
+  ///
+  /// @tparam B The type of the scalar.
+  /// @param b The second operand of the comparison.
+  /// @return True iff this fraction is equal to @c b.
+  template <class B>
+  bool operator==(const B& b) const;
+  /// Returns whether this fraction is not equal to scalar @c b.
+  ///
+  /// @tparam B The type of the scalar.
+  /// @param b The second operand of the comparison.
+  /// @return True iff this fraction is not equal to @c b.
+  template <class B>
+  bool operator!=(const B& b) const;
+
+  /// Returns whether this fraction is less than scalar @c b.
+  ///
+  /// @tparam B The type of the scalar.
+  /// @param b The second operand of the comparison.
+  /// @return True iff this fraction is less than @c b.
+  template <class B>
+  bool operator<(const B& b) const;
+
+  /// Returns whether this fraction is less than or equal to scalar @c b.
+  ///
+  /// @tparam B The type of the scalar.
+  /// @param b The second operand of the comparison.
+  /// @return True iff this fraction is less than or equal to @c b.
+  template <class B>
+  bool operator<=(const B& b) const;
+
+  /// Returns whether this fraction is greater than or equal to scalar @c b.
+  ///
+  /// @tparam B The type of the scalar.
+  /// @param b The second operand of the comparison.
+  /// @return True iff this fraction is greater than or equal to @c b.
+  template <class B>
+  bool operator>=(const B& b) const;
+
+  /// Returns whether this fraction is greater than scalar @c b.
+  ///
+  /// @tparam B The type of the scalar.
+  /// @param b The second operand of the comparison.
+  /// @return True iff this fraction is greater than @c b.
+  template <class B>
+  bool operator>(const B& b) const;
+
 private:
   Numerator numerator_;
   Denominator denominator_;

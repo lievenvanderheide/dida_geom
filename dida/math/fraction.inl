@@ -64,4 +64,46 @@ bool Fraction<Numerator, Denominator>::operator>(const Fraction<BNumerator, BDen
   return numerator_ * b.denominator_ > b.numerator_ * denominator_;
 }
 
+template <class Numerator, class Denominator>
+template <class B>
+bool Fraction<Numerator, Denominator>::operator==(const B& b) const
+{
+  return numerator_ == b * denominator_;
+}
+
+template <class Numerator, class Denominator>
+template <class B>
+bool Fraction<Numerator, Denominator>::operator!=(const B& b) const
+{
+  return numerator_ != b * denominator_;
+}
+
+template <class Numerator, class Denominator>
+template <class B>
+bool Fraction<Numerator, Denominator>::operator<(const B& b) const
+{
+  return numerator_ < b * denominator_;
+}
+
+template <class Numerator, class Denominator>
+template <class B>
+bool Fraction<Numerator, Denominator>::operator<=(const B& b) const
+{
+  return numerator_ <= b * denominator_;
+}
+
+template <class Numerator, class Denominator>
+template <class B>
+bool Fraction<Numerator, Denominator>::operator>=(const B& b) const
+{
+  return numerator_ >= b * denominator_;
+}
+
+template <class Numerator, class Denominator>
+template <class B>
+bool Fraction<Numerator, Denominator>::operator>(const B& b) const
+{
+  return numerator_ > b * denominator_;
+}
+
 } // namespace dida::math

@@ -18,7 +18,7 @@ TEST_CASE("Fraction comparison operators")
   {
     Fraction<int, int> a(811, 964);
     Fraction<int, int> b(708, 533);
-    
+
     CHECK_FALSE(a == b);
     CHECK(a != b);
     CHECK(a < b);
@@ -31,7 +31,7 @@ TEST_CASE("Fraction comparison operators")
   {
     Fraction<int, int> a(4480, 890);
     Fraction<int, int> b(6272, 1246);
-    
+
     CHECK(a == b);
     CHECK_FALSE(a != b);
     CHECK_FALSE(a < b);
@@ -44,11 +44,51 @@ TEST_CASE("Fraction comparison operators")
   {
     Fraction<int, int> a(657, 36);
     Fraction<int, int> b(617, 364);
-    
+
     CHECK_FALSE(a == b);
     CHECK(a != b);
     CHECK_FALSE(a < b);
     CHECK_FALSE(a <= b);
+    CHECK(a >= b);
+    CHECK(a > b);
+  }
+}
+
+TEST_CASE("Fraction - scalar comparison operators")
+{
+  SECTION("a < b")
+  {
+    Fraction<int, int> a(24, 3);
+    int b = 9;
+
+    CHECK_FALSE(a == b);
+    CHECK(a != b);
+    CHECK(a < b);
+    CHECK(a <= b);
+    CHECK_FALSE(a >= b);
+    CHECK_FALSE(a > b);
+  }
+
+  SECTION("a == b")
+  {
+    Fraction<int, int> a(24, 3);
+    int b = 8;
+    CHECK(a == b);
+    CHECK_FALSE(a != b);
+    CHECK_FALSE(a < b);
+    CHECK(a <= b);
+    CHECK(a >= b);
+    CHECK_FALSE(a > b);
+  }
+
+  SECTION("a > b")
+  {
+    Fraction<int, int> a(24, 3);
+    int b = 7;
+    CHECK_FALSE(a == b);
+    CHECK(a != b);
+    CHECK_FALSE(a < b);
+    CHECK_FALSE(a < b);
     CHECK(a >= b);
     CHECK(a > b);
   }
