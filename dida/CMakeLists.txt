@@ -3,15 +3,17 @@ project(dida)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#set(CMAKE_CXX_FLAGS "-O3 -DNDEBUG")
 
 include_directories(..)
 
 add_library(dida
     detail/convex_polygons_intersection.hpp
     detail/convex_polygons_intersection.inl
+    detail/vertical_decomposition_sweep_line_builder.cpp
+    detail/vertical_decomposition_sweep_line_builder.hpp
     detail/vertical_decomposition.cpp
     detail/vertical_decomposition.hpp
+    detail/vertical_decomposition.inl
     math/big_int_utils.hpp
     math/big_int_utils.inl
     math/fraction.hpp

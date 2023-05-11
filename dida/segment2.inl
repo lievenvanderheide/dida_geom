@@ -3,12 +3,12 @@
 namespace dida
 {
 
-inline Segment2::Segment2(Point2 start, Point2 end) : start_(start), end_(end)
+Segment2::Segment2(Point2 start, Point2 end) : start_(start), end_(end)
 {
   DIDA_ASSERT(start != end);
 }
 
-inline Segment2 Segment2::unsafe_from_endpoints(Point2 start, Point2 end)
+Segment2 Segment2::unsafe_from_endpoints(Point2 start, Point2 end)
 {
   DIDA_DEBUG_ASSERT(start != end);
 
@@ -18,17 +18,27 @@ inline Segment2 Segment2::unsafe_from_endpoints(Point2 start, Point2 end)
   return result;
 }
 
-inline Point2 Segment2::start() const
+Point2 Segment2::start() const
 {
   return start_;
 }
 
-inline Point2 Segment2::end() const
+Point2 Segment2::end() const
 {
   return end_;
 }
 
-inline SegmentsCrossingPointParams::SegmentsCrossingPointParams(ScalarDeg2 s_num, ScalarDeg2 t_num, ScalarDeg2 denom)
+bool Segment2::operator==(const Segment2& b) const
+{
+  return start_ == b.start_ && end_ == b.end_;
+}
+
+bool Segment2::operator!=(const Segment2& b) const
+{
+  return start_ != b.start_ || end_ != b.end_;
+}
+
+SegmentsCrossingPointParams::SegmentsCrossingPointParams(ScalarDeg2 s_num, ScalarDeg2 t_num, ScalarDeg2 denom)
     : s_num_(s_num), t_num_(t_num), denom_(denom)
 {
   DIDA_ASSERT(denom > 0);

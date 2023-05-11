@@ -39,6 +39,18 @@ public:
   /// @return the end point.
   inline Point2 end() const;
 
+  /// Compares two segments for equality.
+  ///
+  /// @param b The second operand.
+  /// @return True iff the two segments are equal.
+  inline bool operator==(const Segment2& b) const;
+
+  /// Compares two segments for inequality.
+  ///
+  /// @param b The second operand.
+  /// @return True iff the two segments are inequal.
+  inline bool operator!=(const Segment2& b) const;
+
 private:
   Point2 start_;
   Point2 end_;
