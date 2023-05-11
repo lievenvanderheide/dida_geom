@@ -94,4 +94,58 @@ TEST_CASE("Fraction - scalar comparison operators")
   }
 }
 
+TEST_CASE("Fraction::infinity")
+{
+  Fraction<int, int> inf = Fraction<int, int>::infinity();
+
+  SECTION("Compare against finite fraction")
+  {
+    Fraction<int, int> a(56, 15);
+
+    CHECK_FALSE(a == inf);
+    CHECK(a != inf);
+    CHECK(a < inf);
+    CHECK(a <= inf);
+    CHECK_FALSE(a >= inf);
+    CHECK_FALSE(a > inf);
+  }
+
+  SECTION("Compare against itself")
+  {
+    CHECK(inf == inf);
+    CHECK_FALSE(inf != inf);
+    CHECK_FALSE(inf < inf);
+    CHECK(inf <= inf);
+    CHECK(inf >= inf);
+    CHECK_FALSE(inf > inf);
+  }
+}
+
+TEST_CASE("Fraction::negative_infinity")
+{
+  Fraction<int, int> neg_inf = Fraction<int, int>::negative_infinity();
+
+  SECTION("Compare against finite fraction")
+  {
+    Fraction<int, int> a(56, 15);
+
+    CHECK_FALSE(a == neg_inf);
+    CHECK(a != neg_inf);
+    CHECK_FALSE(a < neg_inf);
+    CHECK_FALSE(a <= neg_inf);
+    CHECK(a >= neg_inf);
+    CHECK(a > neg_inf);
+  }
+
+  SECTION("Compare against itself")
+  {
+    CHECK(neg_inf == neg_inf);
+    CHECK_FALSE(neg_inf != neg_inf);
+    CHECK_FALSE(neg_inf < neg_inf);
+    CHECK(neg_inf <= neg_inf);
+    CHECK(neg_inf >= neg_inf);
+    CHECK_FALSE(neg_inf > neg_inf);
+  }
+}
+
 } // namespace dida::math

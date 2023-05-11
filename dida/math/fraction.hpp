@@ -11,6 +11,9 @@ template <class Numerator, class Denominator>
 class Fraction
 {
 public:
+  /// Constructs an uninitialized fraction.
+  Fraction() = default;
+
   /// Constructs a fraction with the given numerator and denominator.
   ///
   /// @pre denominator must be positive.
@@ -27,6 +30,12 @@ public:
   ///
   /// @return The denominator.
   const Denominator& denominator() const;
+
+  /// Returns a @c Fraction which is greater than all finite fractions.
+  static Fraction infinity();
+
+  /// Returns a @c Fraction which is less than all finite fractions.
+  static Fraction negative_infinity();
 
   /// Compares two fractions for equality.
   ///
