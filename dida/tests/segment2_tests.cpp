@@ -6,6 +6,47 @@
 namespace dida
 {
 
+TEST_CASE("Segment2 construction and access")
+{
+  Segment2 segment({-7.20, 4.26}, {-2.78, 7.38});
+  CHECK(segment.start() == Point2(-7.20, 4.26));
+  CHECK(segment.end() == Point2(-2.78, 7.38));
+}
+
+TEST_CASE("Segment2::unsafe_from_endpoints and access")
+{
+  Segment2 segment = Segment2::unsafe_from_endpoints({-7.20, 4.26}, {-2.78, 7.38});
+  CHECK(segment.start() == Point2(-7.20, 4.26));
+  CHECK(segment.end() == Point2(-2.78, 7.38));
+}
+
+TEST_CASE("Segment2::operator==/operator!=")
+{
+  SECTION("Equal")
+  {
+    Segment2 a({-3.50, 0.66}, {3.22, -3.14});
+    Segment2 b({-3.50, 0.66}, {3.22, -3.14});
+    CHECK(a == b);
+    CHECK_FALSE(a != b);
+  }
+
+  SECTION("Start points different")
+  {
+    Segment2 a({-3.50, 0.66}, {3.22, -3.14});
+    Segment2 b({0.74, 1.12}, {3.22, -3.14});
+    CHECK_FALSE(a == b);
+    CHECK(a != b);
+  }
+  
+  SECTION("End points different")
+  {
+    Segment2 a({-3.50, 0.66}, {3.22, -3.14});
+    Segment2 b({-3.50, 0.66}, {-1.30, 1.28});
+    CHECK_FALSE(a == b);
+    CHECK(a != b);
+  }
+}
+
 TEST_CASE("SegmentsCrossingPointParams construction and access")
 {
   SegmentsCrossingPointParams params(ScalarDeg2(236.836), ScalarDeg2(6836.12), ScalarDeg2(13618.33));
