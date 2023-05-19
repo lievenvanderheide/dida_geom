@@ -75,22 +75,22 @@ ConvexPolygonView2 ConvexPolygonView2::unsafe_from_vertices(ArrayView<const Poin
   return result;
 }
 
-inline size_t ConvexPolygonView2::size() const
+size_t ConvexPolygonView2::size() const
 {
   return vertices_.size();
 }
 
-inline Point2 ConvexPolygonView2::operator[](size_t index) const
+Point2 ConvexPolygonView2::operator[](size_t index) const
 {
   return vertices_[index];
 }
 
-inline ConvexPolygonView2::const_iterator ConvexPolygonView2::begin() const
+ConvexPolygonView2::const_iterator ConvexPolygonView2::begin() const
 {
   return vertices_.begin();
 }
 
-inline ConvexPolygonView2::const_iterator ConvexPolygonView2::end() const
+ConvexPolygonView2::const_iterator ConvexPolygonView2::end() const
 {
   return vertices_.end();
 }

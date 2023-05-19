@@ -11,6 +11,7 @@ add_executable(dida_tests
     parser_tests.cpp
     perturbation_tests.cpp
     point2_tests.cpp
+    polygon2_tests.cpp
     utils_tests.cpp
     scalar_tests.cpp
     segment2_tests.cpp

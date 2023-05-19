@@ -37,6 +37,11 @@ add_library(dida
     parser.inl
     perturbation.hpp
     perturbation.inl
+    point2.hpp
+    point2.inl
+    polygon2.cpp
+    polygon2.hpp
+    polygon2.inl
     scalar.cpp
     scalar.hpp
     scalar.inl
