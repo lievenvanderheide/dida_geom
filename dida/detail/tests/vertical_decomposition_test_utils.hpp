@@ -2,8 +2,6 @@
 
 #include "dida/detail/vertical_decomposition.hpp"
 
-#include <set>
-
 namespace dida::detail::vertical_decomposition
 {
 
