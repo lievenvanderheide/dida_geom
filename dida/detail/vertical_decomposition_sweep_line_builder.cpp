@@ -241,7 +241,7 @@ void SweepState::handle_appear_event(const Event& event)
     ActiveEdge& upper_opp_edge = *insert_location_it;
 
     Node& new_node = *(nodes_it_++);
-    new_node.type = NodeType::right_branches;
+    new_node.direction = HorizontalDirection::right;
     new_node.vertex_it = event.vertex_it;
     new_node.lower_opp_edge = lower_opp_edge.edge();
     new_node.upper_opp_edge = upper_opp_edge.edge();
@@ -295,7 +295,7 @@ void SweepState::handle_vanish_event(const Event& event)
     ActiveEdge& upper_vanishing_edge = *(removal_it + 1);
 
     Node& node = *(nodes_it_++);
-    node.type = NodeType::left_branches;
+    node.direction = HorizontalDirection::left;
     node.vertex_it = event.vertex_it;
     node.lower_opp_edge = lower_opp_edge.edge();
     node.upper_opp_edge = upper_opp_edge.edge();

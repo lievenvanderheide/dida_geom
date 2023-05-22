@@ -21,14 +21,14 @@ using YOnEdge = math::Fraction<ScalarDeg2, ScalarDeg1>;
 /// @return The y-coordinate of the point with x-coordinate @c x.
 YOnEdge y_on_edge_for_x(Segment2 edge, ScalarDeg1 x);
 
-/// The type of a vertical decompositon node.
-enum class NodeType : uint8_t
+/// A horizontal direction.
+enum class HorizontalDirection : uint8_t
 {
-  /// This node is the location where a channel branches into 2 channels when going towards the left.
-  left_branches,
+  /// The direction to the left.
+  left,
 
-  /// This node is the location where a channel branches into 2 channels when going towards the right.
-  right_branches,
+  /// The direction to the right.
+  right,
 };
 
 /// An edge of the input polygon.
@@ -75,8 +75,13 @@ struct Edge
 /// A node in the vertical decomposition graph.
 struct Node
 {
-  /// The node type.
-  NodeType type;
+  /// The direction of this node. This indicate the direction into which the vertical decomposition splits into two,
+  /// that is
+  ///
+  ///  - If this is @c HorizontalDirection::left then it has one region on its left and 2 regions on its right.
+  ///  - If this is @c HorizontalDirection::right then it has one region on its right and 2 regions on its left.
+  ///
+  HorizontalDirection direction;
 
   /// An iterator pointing to the vertex from which the vertical extensions corresponding to this node extend.
   VertexIt vertex_it;
