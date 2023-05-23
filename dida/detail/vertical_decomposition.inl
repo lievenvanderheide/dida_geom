@@ -30,19 +30,19 @@ bool Edge::operator==(const Edge b) const
   return start_vertex_it == b.start_vertex_it && end_vertex_it == b.end_vertex_it;
 }
 
-VerticalDecompositionTypesIterator::Region VerticalDecompositionTypesIterator::region() const
+VerticalDecompositionRegionsIterator::Region VerticalDecompositionRegionsIterator::region() const
 {
   if (direction_ == HorizontalDirection::left)
   {
-    return Region{next_node_, cur_node_, next_node_incoming_branch_, cur_node_outgoing_branch_};
+    return Region{next_node_, cur_node_, next_node_branch_index_, cur_node_branch_index_};
   }
   else
   {
-    return Region{cur_node_, next_node_, cur_node_outgoing_branch_, next_node_incoming_branch_};
+    return Region{cur_node_, next_node_, cur_node_branch_index_, next_node_branch_index_};
   }
 }
 
-bool VerticalDecompositionTypesIterator::Region::operator==(const Region& b) const
+bool VerticalDecompositionRegionsIterator::Region::operator==(const Region& b) const
 {
   return left_node == b.left_node && right_node == b.right_node &&
          (!left_node || left_node_branch_index == b.left_node_branch_index) &&

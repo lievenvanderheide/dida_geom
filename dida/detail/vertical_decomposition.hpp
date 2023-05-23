@@ -117,23 +117,24 @@ struct VerticalDecomposition
 ///
 /// Image that we start at the vertex of the @c first_node passed to the constructor, and then follow the boundary of
 /// the decomposition's polygon all the way around until we reach the first vertex again. While doing this, we encounter
-/// all regions of the vertical decomposition, the only problem is that most regions are encountered twice. Once when
-/// we're traversing their lower boundary and once when we're traversing their upper boundary. The exceptions are the
-/// infinite regions of an external decomposition and leaf regions. To account for this, we'll only include these
-/// regions when traversing their lower boundary while skipping them when traversing their upper boundary.
+/// all regions of the vertical decomposition in some order, the only problem is that most regions are encountered
+/// twice, once while traversing their lower boundary and once while're traversing their upper boundary. The exceptions
+/// are the infinite regions of an external decomposition and leaf regions. Since we only want to include each region
+/// once, we'll only include these regions when traversing their lower boundary while skipping them when traversing
+/// their upper boundary.
 ///
 /// We refer to the point which traverses the boundary as the "traversal point". The traversal point is used throughout
 /// the documentation of this class, but is never actually computed during runtime.
-class VerticalDecompositionTypesIterator
+class VerticalDecompositionRegionsIterator
 {
 public:
-  /// Constructs a @c VerticalDecompositionTypesIterator for a traversal starting with traversal point @c
+  /// Constructs a @c VerticalDecompositionRegionsIterator for a traversal starting with traversal point @c
   /// first_node->vertex_it.
   ///
   /// The first region will be available immediately after construction. Use @c move_next to move to subsequent regions.
   ///
   /// @param first_node The first node.
-  VerticalDecompositionTypesIterator(const Node* first_node);
+  VerticalDecompositionRegionsIterator(const Node* first_node);
 
   /// Moves to the next region of this iteration.
   ///
@@ -146,8 +147,7 @@ public:
   /// A struct with information about the current region.
   ///
   /// One of @c left_node, @c right_node can be @c nullptr (but not both), which indicates that the current region is
-  /// a "leaf" region. If it's a leaf region, then @c leaf_region_branch_index indicates the branch of the non-null node
-  /// to which the leaf is connected.
+  /// a "leaf" region.
   struct Region
   {
     /// The vertical decomposition node on the left side of this region, or @c nullptr if there's no left node.
@@ -156,8 +156,12 @@ public:
     /// The vertical decomposition node on the right side of this region, or @c nullptr if there's no right node.
     const Node* right_node;
 
+    /// The index of the branch of @c left_node which connects to this region. If there's no left node, then this value
+    /// is undefined.
     uint8_t left_node_branch_index;
 
+    /// The index of the branch of @c right_node which connects to this region. If there's no right node, then this
+    /// value is undefined.
     uint8_t right_node_branch_index;
 
     /// Compares two @c Region instances for equality. Note that the @c leaf_region_branch_index fields are only
@@ -177,7 +181,7 @@ private:
   /// Returns true if the current region should be skipped.
   bool should_skip_current_region() const;
 
-  /// The first node, passed to the @c VerticalDecompositionTypesIterator constructor.
+  /// The first node, passed to the @c VerticalDecompositionRegionsIterator constructor.
   const Node* first_node_;
 
   /// The node where the current traversal point is at (that is, the current traversal point is either
@@ -187,9 +191,9 @@ private:
   /// The next node which will be reached, or @c nullptr if we're currently in a leaf region.
   const Node* next_node_;
 
-  uint8_t cur_node_outgoing_branch_;
+  uint8_t cur_node_branch_index_;
 
-  uint8_t next_node_incoming_branch_;
+  uint8_t next_node_branch_index_;
 
   // The direction of the boundary at traversal point. If the traversal point is a reflex vertex, then this is the
   // direction of the outgoing part.

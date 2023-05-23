@@ -27,17 +27,17 @@ YOnEdge y_on_edge_for_x(Segment2 edge, ScalarDeg1 x)
   return YOnEdge(num, denom);
 }
 
-VerticalDecompositionTypesIterator::VerticalDecompositionTypesIterator(const Node* first_node)
+VerticalDecompositionRegionsIterator::VerticalDecompositionRegionsIterator(const Node* first_node)
 {
   first_node_ = first_node;
 
   cur_node_ = first_node;
-  cur_node_outgoing_branch_ = first_node->direction == HorizontalDirection::left ? 1 : 2;
+  cur_node_branch_index_ = first_node->direction == HorizontalDirection::left ? 1 : 2;
 
-  next_node_ = first_node->neighbors[cur_node_outgoing_branch_];
+  next_node_ = first_node->neighbors[cur_node_branch_index_];
   if (next_node_)
   {
-    next_node_incoming_branch_ =
+    next_node_branch_index_ =
         next_node_->neighbors[0] == cur_node_ ? 0 : (next_node_->neighbors[1] == cur_node_ ? 1 : 2);
   }
 
@@ -49,15 +49,14 @@ VerticalDecompositionTypesIterator::VerticalDecompositionTypesIterator(const Nod
   }
 }
 
-bool VerticalDecompositionTypesIterator::move_next()
+bool VerticalDecompositionRegionsIterator::move_next()
 {
   if (!next_node_)
   {
     // We're at a leaf region.
 
     next_node_ = cur_node_;
-    cur_node_ = nullptr;
-    next_node_incoming_branch_ = cur_node_outgoing_branch_;
+    next_node_branch_index_ = cur_node_branch_index_;
     direction_ = direction_ == HorizontalDirection::left ? HorizontalDirection::right : HorizontalDirection::left;
   }
 
@@ -69,14 +68,14 @@ bool VerticalDecompositionTypesIterator::move_next()
 
       cur_node_ = next_node_;
 
-      cur_node_outgoing_branch_ = direction_ == HorizontalDirection::right ? 1 : 2;
-      next_node_ = cur_node_->neighbors[cur_node_outgoing_branch_];
+      cur_node_branch_index_ = direction_ == HorizontalDirection::right ? 1 : 2;
+      next_node_ = cur_node_->neighbors[cur_node_branch_index_];
     }
     else
     {
       // The direction of 'next_node_' is opposite to the current direction.
 
-      if (next_node_incoming_branch_ == (direction_ == HorizontalDirection::left ? 1 : 2))
+      if (next_node_branch_index_ == (direction_ == HorizontalDirection::left ? 1 : 2))
       {
         // We're turning around, entering the branch above/below the incoming branch.
 
@@ -86,8 +85,8 @@ bool VerticalDecompositionTypesIterator::move_next()
         }
 
         cur_node_ = next_node_;
-        cur_node_outgoing_branch_ = direction_ == HorizontalDirection::left ? 2 : 1;
-        next_node_ = cur_node_->neighbors[cur_node_outgoing_branch_];
+        cur_node_branch_index_ = direction_ == HorizontalDirection::left ? 2 : 1;
+        next_node_ = cur_node_->neighbors[cur_node_branch_index_];
         direction_ = direction_ == HorizontalDirection::left ? HorizontalDirection::right : HorizontalDirection::left;
       }
       else
@@ -97,13 +96,13 @@ bool VerticalDecompositionTypesIterator::move_next()
 
         cur_node_ = next_node_;
         next_node_ = cur_node_->neighbors[0];
-        cur_node_outgoing_branch_ = 0;
+        cur_node_branch_index_ = 0;
       }
     }
 
     if (next_node_)
     {
-      next_node_incoming_branch_ =
+      next_node_branch_index_ =
           next_node_->neighbors[0] == cur_node_ ? 0 : (next_node_->neighbors[1] == cur_node_ ? 1 : 2);
     }
 
@@ -112,7 +111,7 @@ bool VerticalDecompositionTypesIterator::move_next()
   return true;
 }
 
-bool VerticalDecompositionTypesIterator::should_skip_current_region() const
+bool VerticalDecompositionRegionsIterator::should_skip_current_region() const
 {
   // We should skip the current region if we're on the upper boundary of a region which also has a lower boundary.
 
