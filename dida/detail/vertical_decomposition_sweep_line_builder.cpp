@@ -14,13 +14,13 @@ namespace
 class SweepState
 {
 public:
-  /// Constructs a sweep state for the given vertices and region.
-  SweepState(ArrayView<const Point2> vertices, VerticalDecompositionRegion region);
+  /// Constructs a sweep state for the given vertices and decomposition type.
+  SweepState(ArrayView<const Point2> vertices, VerticalDecompositionType decomposition_type);
 
   /// Initializes the sweep state to the state it should have right before the first event is processed.
   ///
   ///  - It initializes the @c events_ list.
-  ///  - If the region is @c VerticalDecompositionRegion::exterior, then @c active_edges_ is initialized with the
+  ///  - If the region is @c VerticalDecompositionType::exterior, then @c active_edges_ is initialized with the
   ///    two edges at positive and negative infinity.
   ///
   void init_sweep();
@@ -105,8 +105,8 @@ private:
   /// The vertices of the input polygon.
   ArrayView<const Point2> vertices_;
 
-  /// The region we're decomposing.
-  VerticalDecompositionRegion region_;
+  /// The type of decomposition we're computing
+  VerticalDecompositionType decomposition_type_;
 
   /// The list of events, sorted lexicographically by their vertex position.
   std::vector<Event> events_;
@@ -123,8 +123,8 @@ private:
   std::vector<Node>::iterator nodes_it_;
 };
 
-SweepState::SweepState(ArrayView<const Point2> vertices, VerticalDecompositionRegion region)
-    : vertices_(vertices), region_(region)
+SweepState::SweepState(ArrayView<const Point2> vertices, VerticalDecompositionType decomposition_type)
+    : vertices_(vertices), decomposition_type_(decomposition_type)
 {
 }
 
@@ -149,7 +149,7 @@ void SweepState::init_sweep()
     if (incoming_towards_right != outgoing_towards_right)
     {
       ScalarDeg2 orientation = cross(*cur_vertex_it - *prev_vertex_it, *next_vertex_it - *cur_vertex_it);
-      if (region_ == VerticalDecompositionRegion::interior)
+      if (decomposition_type_ == VerticalDecompositionType::interior_decomposition)
       {
         events_[i].is_concave_corner = orientation < 0;
       }
@@ -172,7 +172,7 @@ void SweepState::init_sweep()
   std::sort(events_.begin(), events_.end(),
             [](const Event& a, const Event& b) { return lex_less_than(*a.vertex_it, *b.vertex_it); });
 
-  if (region_ == VerticalDecompositionRegion::exterior)
+  if (decomposition_type_ == VerticalDecompositionType::exterior_decomposition)
   {
     // If we're decomposing the exterior, then there are regions which extend infinitely upwards and downwards. To make
     // these regions mostly behave like normal regions, we'll add two extra edges which indicate the edges at negative
@@ -219,7 +219,7 @@ void SweepState::handle_appear_event(const Event& event)
   VertexIt next_vertex_it = next_cyclic(vertices_, event.vertex_it);
 
   VertexIt lower_right_vertex_it, upper_right_vertex_it;
-  if (event.is_concave_corner == (region_ == VerticalDecompositionRegion::interior))
+  if (event.is_concave_corner == (decomposition_type_ == VerticalDecompositionType::interior_decomposition))
   {
     lower_right_vertex_it = prev_vertex_it;
     upper_right_vertex_it = next_vertex_it;
@@ -342,7 +342,7 @@ void SweepState::handle_transition_event(const Event& event)
 SweepState::ActiveEdgesIt SweepState::insert_location(Point2 vertex)
 {
   size_t range_begin, range_end;
-  if (region_ == VerticalDecompositionRegion::interior)
+  if (decomposition_type_ == VerticalDecompositionType::interior_decomposition)
   {
     range_begin = 0;
     range_end = active_edges_.size();
@@ -404,7 +404,7 @@ Edge SweepState::ActiveEdge::edge() const
 } // namespace
 
 VerticalDecomposition vertical_decomposition_with_sweep_line_builder(ArrayView<const Point2> vertices,
-                                                                     VerticalDecompositionRegion decomposition_type)
+                                                                     VerticalDecompositionType decomposition_type)
 {
   SweepState sweep_state(vertices, decomposition_type);
   sweep_state.init_sweep();

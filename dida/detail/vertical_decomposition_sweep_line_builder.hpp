@@ -5,22 +5,22 @@
 namespace dida::detail::vertical_decomposition
 {
 
-/// The region to compute the decomposition for.
-enum class VerticalDecompositionRegion
+/// The type of vertical decomposition to compute.
+enum class VerticalDecompositionType
 {
-  /// The interior of the polygon.
-  interior,
+  /// The decomposition of the interior of a polygon.
+  interior_decomposition,
 
-  /// The exterior of the polygon.
-  exterior,
+  /// The decomposition of the exterior of a polygon.
+  exterior_decomposition,
 };
 
 /// Computes the vertical decomposition of the given region of the polygon formed by @c vertices.
 ///
 /// @param vertices The vertices of the polygon.
-/// @param region The region to decompose.
+/// @param decomposition_type The type of the vertical decomposition.
 /// @return The decomposition.
 VerticalDecomposition vertical_decomposition_with_sweep_line_builder(ArrayView<const Point2> vertices,
-                                                                     VerticalDecompositionRegion region);
+                                                                     VerticalDecompositionType decomposition_type);
 
 } // namespace dida::detail::vertical_decomposition

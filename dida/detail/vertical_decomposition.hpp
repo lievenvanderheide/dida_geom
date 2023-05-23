@@ -124,16 +124,16 @@ struct VerticalDecomposition
 ///
 /// We refer to the point which traverses the boundary as the "traversal point". The traversal point is used throughout
 /// the documentation of this class, but is never actually computed during runtime.
-class VerticalDecompositionRegionsIterator
+class VerticalDecompositionTypesIterator
 {
 public:
-  /// Constructs a @c VerticalDecompositionRegionsIterator for a traversal starting with traversal point @c
+  /// Constructs a @c VerticalDecompositionTypesIterator for a traversal starting with traversal point @c
   /// first_node->vertex_it.
   ///
   /// The first region will be available immediately after construction. Use @c move_next to move to subsequent regions.
   ///
   /// @param first_node The first node.
-  VerticalDecompositionRegionsIterator(const Node* first_node);
+  VerticalDecompositionTypesIterator(const Node* first_node);
 
   /// Moves to the next region of this iteration.
   ///
@@ -156,11 +156,9 @@ public:
     /// The vertical decomposition node on the right side of this region, or @c nullptr if there's no right node.
     const Node* right_node;
 
-    /// If this is a leaf region (which is the case if either @c left_node or @c right_node is @c nullptr), then this is
-    /// the index of the branch in the non-null node to which this leaf is connected.
-    ///
-    /// If both @c left_node and @c right_node are set then this value is undefined.
-    uint8_t leaf_region_branch_index;
+    uint8_t left_node_branch_index;
+
+    uint8_t right_node_branch_index;
 
     /// Compares two @c Region instances for equality. Note that the @c leaf_region_branch_index fields are only
     /// compared when one of @c left_node, @c right_node is @c nullptr.
@@ -179,7 +177,7 @@ private:
   /// Returns true if the current region should be skipped.
   bool should_skip_current_region() const;
 
-  /// The first node, passed to the @c VerticalDecompositionRegionsIterator constructor.
+  /// The first node, passed to the @c VerticalDecompositionTypesIterator constructor.
   const Node* first_node_;
 
   /// The node where the current traversal point is at (that is, the current traversal point is either
@@ -189,15 +187,13 @@ private:
   /// The next node which will be reached, or @c nullptr if we're currently in a leaf region.
   const Node* next_node_;
 
+  uint8_t cur_node_outgoing_branch_;
+
+  uint8_t next_node_incoming_branch_;
+
   // The direction of the boundary at traversal point. If the traversal point is a reflex vertex, then this is the
   // direction of the outgoing part.
   HorizontalDirection direction_;
-
-  /// If we're in a leaf region (that is, if <tt>next_node_ == nullptr</tt>), then this is the index of the branch in @c
-  /// cur_node_ which corresponds to this leaf.
-  ///
-  /// If we're not in a leaf region then its value is undefined.
-  uint8_t leaf_region_branch_index_;
 };
 
 } // namespace dida::detail::vertical_decomposition

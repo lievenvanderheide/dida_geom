@@ -13,7 +13,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     ArrayView<const Point2> vertices(vertices_storage);
 
     VerticalDecomposition vertical_decomposition =
-        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionRegion::interior);
+        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::interior_decomposition);
 
     REQUIRE(vertical_decomposition.nodes.size() == 1);
 
@@ -33,7 +33,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     ArrayView<const Point2> vertices(vertices_storage);
 
     VerticalDecomposition vertical_decomposition =
-        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionRegion::interior);
+        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::interior_decomposition);
 
     REQUIRE(vertical_decomposition.nodes.size() == 1);
 
@@ -56,7 +56,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     ArrayView<const Point2> vertices(vertices_storage);
 
     VerticalDecomposition vertical_decomposition =
-        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionRegion::interior);
+        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::interior_decomposition);
 
     REQUIRE(vertical_decomposition.nodes.size() == 6);
 
@@ -118,7 +118,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     ArrayView<const Point2> vertices(vertices_storage);
 
     VerticalDecomposition vertical_decomposition =
-        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionRegion::exterior);
+        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::exterior_decomposition);
 
     REQUIRE(vertical_decomposition.nodes.size() == 4);
     const std::vector<Node>& nodes = vertical_decomposition.nodes;
@@ -163,7 +163,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     ArrayView<const Point2> vertices(vertices_storage);
 
     VerticalDecomposition vertical_decomposition =
-        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionRegion::interior);
+        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::interior_decomposition);
 
     REQUIRE(vertical_decomposition.nodes.size() == 4);
     const std::vector<Node>& nodes = vertical_decomposition.nodes;
