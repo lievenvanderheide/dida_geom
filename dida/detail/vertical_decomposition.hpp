@@ -111,6 +111,95 @@ struct VerticalDecomposition
   std::vector<Node> nodes;
 };
 
+/// An iterator which iterates over the regions of a vertical decomposition.
+///
+/// The order in which the regions are returned is as follows:
+///
+/// Image that we start at the vertex of the @c first_node passed to the constructor, and then follow the boundary of
+/// the decomposition's polygon all the way around until we reach the first vertex again. While doing this, we encounter
+/// all regions of the vertical decomposition, the only problem is that most regions are encountered twice. Once when
+/// we're traversing their lower boundary and once when we're traversing their upper boundary. The exceptions are the
+/// infinite regions of an external decomposition and leaf regions. To account for this, we'll only include these
+/// regions when traversing their lower boundary while skipping them when traversing their upper boundary.
+///
+/// We refer to the point which traverses the boundary as the "traversal point". The traversal point is used throughout
+/// the documentation of this class, but is never actually computed during runtime.
+class VerticalDecompositionRegionsIterator
+{
+public:
+  /// Constructs a @c VerticalDecompositionRegionsIterator for a traversal starting with traversal point @c
+  /// first_node->vertex_it.
+  ///
+  /// The first region will be available immediately after construction. Use @c move_next to move to subsequent regions.
+  ///
+  /// @param first_node The first node.
+  VerticalDecompositionRegionsIterator(const Node* first_node);
+
+  /// Moves to the next region of this iteration.
+  ///
+  /// If the end of the iteration was reached, @c false is returned. The iterator should not be used anymore after this.
+  ///
+  /// @return True iff the iterator successfully advanced to the next region, false if the end of the iteration was
+  /// reached.
+  bool move_next();
+
+  /// A struct with information about the current region.
+  ///
+  /// One of @c left_node, @c right_node can be @c nullptr (but not both), which indicates that the current region is
+  /// a "leaf" region. If it's a leaf region, then @c leaf_region_branch_index indicates the branch of the non-null node
+  /// to which the leaf is connected.
+  struct Region
+  {
+    /// The vertical decomposition node on the left side of this region, or @c nullptr if there's no left node.
+    const Node* left_node;
+
+    /// The vertical decomposition node on the right side of this region, or @c nullptr if there's no right node.
+    const Node* right_node;
+
+    /// If this is a leaf region (which is the case if either @c left_node or @c right_node is @c nullptr), then this is
+    /// the index of the branch in the non-null node to which this leaf is connected.
+    ///
+    /// If both @c left_node and @c right_node are set then this value is undefined.
+    uint8_t leaf_region_branch_index;
+
+    /// Compares two @c Region instances for equality. Note that the @c leaf_region_branch_index fields are only
+    /// compared when one of @c left_node, @c right_node is @c nullptr.
+    ///
+    /// @param b The second operand of the comparison.
+    /// @return True iff the two regions are equal.
+    inline bool operator==(const Region& b) const;
+  };
+
+  /// Returns the current region.
+  ///
+  /// @return
+  inline Region region() const;
+
+private:
+  /// Returns true if the current region should be skipped.
+  bool should_skip_current_region() const;
+
+  /// The first node, passed to the @c VerticalDecompositionRegionsIterator constructor.
+  const Node* first_node_;
+
+  /// The node where the current traversal point is at (that is, the current traversal point is either
+  /// cur_node_->vertex_it, or one of the two points at the end of the vertical extension of cur_node_->vertex_it.
+  const Node* cur_node_;
+
+  /// The next node which will be reached, or @c nullptr if we're currently in a leaf region.
+  const Node* next_node_;
+
+  // The direction of the boundary at traversal point. If the traversal point is a reflex vertex, then this is the
+  // direction of the outgoing part.
+  HorizontalDirection direction_;
+
+  /// If we're in a leaf region (that is, if <tt>next_node_ == nullptr</tt>), then this is the index of the branch in @c
+  /// cur_node_ which corresponds to this leaf.
+  ///
+  /// If we're not in a leaf region then its value is undefined.
+  uint8_t leaf_region_branch_index_;
+};
+
 } // namespace dida::detail::vertical_decomposition
 
 #include "dida/detail/vertical_decomposition.inl"
