@@ -27,7 +27,7 @@ YOnEdge y_on_edge_for_x(Segment2 edge, ScalarDeg1 x)
   return YOnEdge(num, denom);
 }
 
-VerticalDecompositionRegionsIterator::VerticalDecompositionRegionsIterator(const Node* first_node)
+RegionIterator::RegionIterator(const Node* first_node)
 {
   first_node_ = first_node;
 
@@ -49,7 +49,7 @@ VerticalDecompositionRegionsIterator::VerticalDecompositionRegionsIterator(const
   }
 }
 
-bool VerticalDecompositionRegionsIterator::move_next()
+bool RegionIterator::move_next()
 {
   if (!next_node_)
   {
@@ -111,7 +111,7 @@ bool VerticalDecompositionRegionsIterator::move_next()
   return true;
 }
 
-bool VerticalDecompositionRegionsIterator::should_skip_current_region() const
+bool RegionIterator::should_skip_current_region() const
 {
   // We should skip the current region if we're on the upper boundary of a region which also has a lower boundary.
 

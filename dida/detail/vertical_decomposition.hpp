@@ -104,11 +104,92 @@ struct Node
   Node* neighbors[3];
 };
 
+/// A range of edges of the input polygon.
+struct EdgeRange
+{
+  /// An iterator pointing to the start vertex of the first edge.
+  VertexIt start_vertex_it;
+
+  /// An iterator pointing to the end vertex of the last edge. This should not be equal to @c start_vertex_it.
+  VertexIt end_vertex_it;
+
+  /// Returns the invalid edge range.
+  ///
+  /// @return The invalid edge range.
+  static inline EdgeRange invalid();
+
+  /// Returns whether this edge range is valid.
+  ///
+  /// @return True iff the edge range is valid.
+  bool inline is_valid() const;
+};
+
+/// The type of a vertical decomposition.
+enum class VerticalDecompositionType
+{
+  /// The decomposition of the interior of a polygon.
+  interior_decomposition,
+
+  /// The decomposition of the exterior of a polygon.
+  exterior_decomposition,
+};
+
 /// A vertical decomposition of a polygon.
 struct VerticalDecomposition
 {
   /// The vertical decomposition nodes.
   std::vector<Node> nodes;
+};
+
+/// A struct with information about the current region.
+///
+/// One of @c left_node, @c right_node can be @c nullptr (but not both), which indicates that the current region is
+/// a "leaf" region.
+struct Region
+{
+  /// The vertical decomposition node on the left side of this region, or @c nullptr if there's no left node.
+  const Node* left_node;
+
+  /// The vertical decomposition node on the right side of this region, or @c nullptr if there's no right node.
+  const Node* right_node;
+
+  /// The index of the branch of @c left_node which connects to this region. If there's no left node, then this value
+  /// is undefined.
+  uint8_t left_node_branch_index;
+
+  /// The index of the branch of @c right_node which connects to this region. If there's no right node, then this
+  /// value is undefined.
+  uint8_t right_node_branch_index;
+
+  /// Compares two @c Region instances for equality. Note that the @c leaf_region_branch_index fields are only
+  /// compared when one of @c left_node, @c right_node is @c nullptr.
+  ///
+  /// @param b The second operand of the comparison.
+  /// @return True iff the two regions are equal.
+  inline bool operator==(const Region& b) const;
+
+  /// Returns whether this region is a leaf region. A leaf region is a region which is adjacent to only one @c Node.
+  ///
+  /// @return True iff this is a leaf region.
+  inline bool is_leaf() const;
+
+  /// Returns the @c EdgeRange of the lower boundary of this region, or @c EdgeRange::invalid if there's no lower
+  /// boundary.
+  ///
+  /// The resulting @c EdgeRange includes all edges which are fully or partially part of of the lower boundary.
+  ///
+  /// @param vd_type The type of the vertical decomposition this region belongs to.
+  /// @return The edge range.
+  inline EdgeRange lower_boundary(VerticalDecompositionType vd_type) const;
+
+  /// Returns the @c EdgeRange of the upper boundary of this region, or @c EdgeRange::invalid if there's no upper
+  /// boundary.
+  ///
+  /// The resulting @c EdgeRange includes all edges which are fully or partially part of of the lower boundary.
+  ///
+  /// @param vd_type The type of the vertical decomposition this region belongs to.
+  /// @return The edge range.
+  inline EdgeRange upper_boundary(VerticalDecompositionType vd_type) const;
 };
 
 /// An iterator which iterates over the regions of a vertical decomposition.
@@ -125,16 +206,16 @@ struct VerticalDecomposition
 ///
 /// We refer to the point which traverses the boundary as the "traversal point". The traversal point is used throughout
 /// the documentation of this class, but is never actually computed during runtime.
-class VerticalDecompositionRegionsIterator
+class RegionIterator
 {
 public:
-  /// Constructs a @c VerticalDecompositionRegionsIterator for a traversal starting with traversal point @c
+  /// Constructs a @c RegionIterator for a traversal starting with traversal point @c
   /// first_node->vertex_it.
   ///
   /// The first region will be available immediately after construction. Use @c move_next to move to subsequent regions.
   ///
   /// @param first_node The first node.
-  VerticalDecompositionRegionsIterator(const Node* first_node);
+  RegionIterator(const Node* first_node);
 
   /// Moves to the next region of this iteration.
   ///
@@ -143,34 +224,6 @@ public:
   /// @return True iff the iterator successfully advanced to the next region, false if the end of the iteration was
   /// reached.
   bool move_next();
-
-  /// A struct with information about the current region.
-  ///
-  /// One of @c left_node, @c right_node can be @c nullptr (but not both), which indicates that the current region is
-  /// a "leaf" region.
-  struct Region
-  {
-    /// The vertical decomposition node on the left side of this region, or @c nullptr if there's no left node.
-    const Node* left_node;
-
-    /// The vertical decomposition node on the right side of this region, or @c nullptr if there's no right node.
-    const Node* right_node;
-
-    /// The index of the branch of @c left_node which connects to this region. If there's no left node, then this value
-    /// is undefined.
-    uint8_t left_node_branch_index;
-
-    /// The index of the branch of @c right_node which connects to this region. If there's no right node, then this
-    /// value is undefined.
-    uint8_t right_node_branch_index;
-
-    /// Compares two @c Region instances for equality. Note that the @c leaf_region_branch_index fields are only
-    /// compared when one of @c left_node, @c right_node is @c nullptr.
-    ///
-    /// @param b The second operand of the comparison.
-    /// @return True iff the two regions are equal.
-    inline bool operator==(const Region& b) const;
-  };
 
   /// Returns the current region.
   ///
@@ -181,7 +234,7 @@ private:
   /// Returns true if the current region should be skipped.
   bool should_skip_current_region() const;
 
-  /// The first node, passed to the @c VerticalDecompositionRegionsIterator constructor.
+  /// The first node, passed to the @c RegionIterator constructor.
   const Node* first_node_;
 
   /// The node where the current traversal point is at (that is, the current traversal point is either

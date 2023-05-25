@@ -79,7 +79,7 @@ template <class IntType>
 IntType sub_modulo(IntType a, IntType b, IntType m);
 
 /// Returns whether @c a, @c b and @c c occur in that order in a cyclically ordered set, that is, when starting from @c
-/// a, and cyclically iterating over the elements, element @c b is encountered before element @c c.
+/// a, and cyclically iterating over the elements, whether element @c b is encountered before element @c c.
 ///
 /// If @c a, @c b, @c c are not all distinct then the reslt is @c false.
 ///
