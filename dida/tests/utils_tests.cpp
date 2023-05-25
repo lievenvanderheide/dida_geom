@@ -33,6 +33,20 @@ TEST_CASE("next_cyclic")
   }
 }
 
+TEST_CASE("distance_cyclic")
+{
+  std::vector<int> elements{7, 90, 94, 95};
+  for (std::vector<int>::iterator a = elements.begin(); a != elements.end(); ++a)
+  {
+    std::vector<int>::iterator b = a;
+    for (size_t expected_distance = 0; expected_distance < elements.size(); expected_distance++)
+    {
+      size_t distance = distance_cyclic(elements, a, b);
+      b = next_cyclic(elements, b);
+    }
+  }
+}
+
 TEST_CASE("pred_modulo")
 {
   int32_t a = 4;
@@ -55,6 +69,30 @@ TEST_CASE("succ_modulo")
     {
       CHECK(a == i);
       a = succ_modulo(a, 5);
+    }
+  }
+}
+
+TEST_CASE("add_modulo")
+{
+  size_t m = 7;
+  for(size_t i = 0; i < m; i++)
+  {
+    for(size_t j = 0; j <= m; j++)
+    {
+      CHECK(add_modulo(i, j, m) == (i + j) % m);
+    }
+  }
+}
+
+TEST_CASE("sub_modulo")
+{
+  size_t m = 7;
+  for(size_t i = 0; i < m; i++)
+  {
+    for(size_t j = 0; j <= m; j++)
+    {
+      CHECK(sub_modulo(i, j, m) == (m + i - j) % m);
     }
   }
 }
