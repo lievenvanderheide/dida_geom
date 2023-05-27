@@ -1,10 +1,21 @@
 #include "dida/viz/scene.hpp"
 
+#include <sstream>
+
 #include "dida/convex_polygon2.hpp"
 #include "dida/parser.hpp"
 
 namespace dida::viz
 {
+
+void VizPolygon::add_vertex(Point2 vertex)
+{
+  size_t index = vertices_.size();
+  will_add_vertex(index);
+  vertices_.push_back(vertex);
+  vertex_added(index);
+  data_changed();
+}
 
 void VizPolygon::update_is_polygon_valid()
 {
@@ -28,7 +39,7 @@ std::shared_ptr<VizPolygon> parse_viz_polygon(Parser& parser)
     return nullptr;
   }
 
-  if(!parser.skip_required_whitespace())
+  if (!parser.skip_required_whitespace())
   {
     return nullptr;
   }
@@ -47,7 +58,7 @@ std::shared_ptr<VizPolygon> parse_viz_polygon(Parser& parser)
   }
 
   parser.skip_optional_whitespace();
-  if(!parser.match(';'))
+  if (!parser.match(';'))
   {
     return nullptr;
   }
@@ -62,8 +73,23 @@ std::shared_ptr<VizPolygon> parse_viz_polygon(std::string_view string)
   return parser.finished() ? result : nullptr;
 }
 
+std::ostream& operator<<(std::ostream& s, const VizPolygon& polygon)
+{
+  s << "ConvexPolygon2 " << polygon.name() << "{";
+
+  const std::vector<Point2>& vertices = polygon.vertices();
+  for(size_t i = 0; i < vertices.size(); i++)
+  {
+    s << vertices[i] << (i != vertices.size() - 1 ? ", " : "};");
+  }
+
+  return s;
+}
+
 void VizScene::add_primitive(std::shared_ptr<VizPolygon> polygon)
 {
+  QObject::connect(polygon.get(), &VizPolygon::data_changed, this, &VizScene::data_changed);
+
   size_t index = primitives_.size();
   will_add_primitive(index);
   primitives_.emplace_back(std::move(polygon));

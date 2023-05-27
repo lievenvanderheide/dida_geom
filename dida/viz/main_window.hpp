@@ -19,7 +19,9 @@ public:
   MainWindow(std::shared_ptr<VizScene> scene);
 
 private:
-  void on_paste_primitive();
+  void on_copy();
+
+  void on_paste();
 
   std::shared_ptr<VizScene> scene_;
 

@@ -1,6 +1,7 @@
 
 #include "dida/viz/scene_tree_view.hpp"
 
+#include <iomanip>
 #include <sstream>
 
 namespace dida::viz
@@ -12,6 +13,15 @@ SceneTreeView::SceneTreeView(std::shared_ptr<VizScene> scene)
 
   SceneTreeModel* model = new SceneTreeModel(std::move(scene));
   setModel(model);
+
+  QObject::connect(model, &SceneTreeModel::rowsInserted,
+                   [this, model](QModelIndex parent, int first, int last)
+                   {
+                     for (int i = first; i <= last; i++)
+                     {
+                       expand(model->index(i, 0, parent));
+                     }
+                   });
 }
 
 namespace
@@ -154,6 +164,7 @@ QVariant SceneTreeModel::data(const QModelIndex& index, int role) const
       Point2 vertex = polygon.vertices()[item_index.element_index()];
 
       std::stringstream s;
+      s << std::fixed << std::setprecision(2);
       s << vertex;
       return QString::fromUtf8(s.str().c_str());
     }
@@ -199,14 +210,23 @@ int SceneTreeModel::columnCount(const QModelIndex& parent) const
   return 1;
 }
 
-void SceneTreeModel::on_will_add_primitive(size_t index)
+void SceneTreeModel::on_will_add_primitive(size_t primitive_index)
 {
-  beginInsertRows(QModelIndex(), index, index);
+  beginInsertRows(QModelIndex(), primitive_index, primitive_index);
 }
 
-void SceneTreeModel::on_primitive_added(size_t index)
+void SceneTreeModel::on_primitive_added(size_t primitive_index)
 {
   endInsertRows();
+
+  VizPolygon* polygon = scene_->primitives()[primitive_index].get();
+  QObject::connect(polygon, &VizPolygon::will_add_vertex,
+                   [this, primitive_index](size_t vertex_index)
+                   {
+                     QModelIndex parent_index = index(primitive_index, 0, QModelIndex());
+                     beginInsertRows(parent_index, vertex_index, vertex_index);
+                   });
+  QObject::connect(polygon, &VizPolygon::will_add_vertex, this, &SceneTreeModel::endInsertRows);
 }
 
 } // namespace dida::viz
