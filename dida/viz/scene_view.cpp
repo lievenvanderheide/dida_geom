@@ -25,7 +25,7 @@ bool points_within_click_tolerance(QPointF a, QPointF b)
 
 } // namespace
 
-SceneView::SceneView(std::shared_ptr<VizScene> scene) : scene_(scene), tool_(AddPolygonTool{})
+SceneView::SceneView(std::shared_ptr<VizScene> scene) : scene_(scene), tool_(SelectMoveTool{})
 {
   QPalette palette;
   palette.setColor(QPalette::Window, Qt::white);
@@ -33,6 +33,16 @@ SceneView::SceneView(std::shared_ptr<VizScene> scene) : scene_(scene), tool_(Add
   setAutoFillBackground(true);
 
   QObject::connect(scene_.get(), &VizScene::data_changed, this, &SceneView::on_scene_data_changed);
+}
+
+void SceneView::switch_to_select_move_tool()
+{
+  tool_ = SelectMoveTool{};
+}
+
+void SceneView::switch_to_add_polygon_tool(bool add_convex_polygons)
+{
+  tool_ = AddPolygonTool{add_convex_polygons, nullptr};
 }
 
 void SceneView::paintEvent(QPaintEvent* event)
@@ -99,6 +109,18 @@ void SceneView::on_scene_data_changed()
   update();
 }
 
+void SceneView::mouse_press_event_with_tool(QMouseEvent* event, SelectMoveTool& tool)
+{
+}
+
+void SceneView::mouse_release_event_with_tool(QMouseEvent* event, SelectMoveTool& tool)
+{
+}
+
+void SceneView::mouse_move_event_with_tool(QMouseEvent* event, SelectMoveTool& tool)
+{
+}
+
 void SceneView::mouse_press_event_with_tool(QMouseEvent* event, AddPolygonTool& tool)
 {
   if (event->button() == Qt::LeftButton && event->modifiers() == Qt::NoModifier)
@@ -107,7 +129,7 @@ void SceneView::mouse_press_event_with_tool(QMouseEvent* event, AddPolygonTool& 
 
     if (!tool.new_polygon)
     {
-      tool.new_polygon = std::make_shared<VizPolygon>("polygon", std::vector<Point2>{vertex}, true);
+      tool.new_polygon = std::make_shared<VizPolygon>("polygon", std::vector<Point2>{vertex}, tool.add_convex_polygons);
       scene_->add_primitive(tool.new_polygon);
     }
     else
@@ -117,7 +139,8 @@ void SceneView::mouse_press_event_with_tool(QMouseEvent* event, AddPolygonTool& 
       {
         tool.new_polygon = nullptr;
 
-        // The scene is not changed, but we still need to redraw.
+        // We've closed the polygon. No new vertices were added, so the scene hasn't changed, but since the closing edge
+        // should now be drawn as a true edge, not a dashed edge, we still need a redraw.
         update();
       }
       else

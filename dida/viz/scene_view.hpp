@@ -16,6 +16,14 @@ public:
   ///
   /// @param scene The scene.
   SceneView(std::shared_ptr<VizScene> scene);
+
+  /// Changes the active tool to the "Select/Move tool.
+  void switch_to_select_move_tool();
+
+  /// Changes the active tool to the "Add Polygon" tool.
+  ///
+  /// @param add_convex_polygons Whether the newly added polygons should be convex.
+  void switch_to_add_polygon_tool(bool add_convex_polygons);
   
 protected:
   void paintEvent(QPaintEvent* event) override;
@@ -28,8 +36,17 @@ private Q_SLOTS:
   void on_scene_data_changed();
 
 private:
+  struct SelectMoveTool
+  {
+  };
+
+  void mouse_press_event_with_tool(QMouseEvent* event, SelectMoveTool& tool);
+  void mouse_release_event_with_tool(QMouseEvent* event, SelectMoveTool& tool);
+  void mouse_move_event_with_tool(QMouseEvent* event, SelectMoveTool& tool);
+
   struct AddPolygonTool
   {
+    bool add_convex_polygons;
     std::shared_ptr<VizPolygon> new_polygon;
   };
 
@@ -41,7 +58,7 @@ private:
 
   std::shared_ptr<VizScene> scene_;
 
-  std::variant<AddPolygonTool> tool_;
+  std::variant<SelectMoveTool, AddPolygonTool> tool_;
 };
 
 } // namespace dida::viz
