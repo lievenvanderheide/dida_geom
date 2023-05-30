@@ -25,7 +25,7 @@ TEST_CASE("y_on_edge_for_x")
 TEST_CASE("Edge::edge_from_index")
 {
   std::vector<Point2> vertices_storage{{1.64, 2.04}, {4.52, 1.74}, {5.92, 4.52}, {0.50, 6.34}};
-  ArrayView<const Point2> vertices(vertices_storage);
+  VerticesView vertices(vertices_storage);
 
   SECTION("General")
   {
@@ -54,7 +54,7 @@ TEST_CASE("Edge::is_valid")
   SECTION("Valid")
   {
     std::vector<Point2> vertices_storage{{1.64, 2.04}, {4.52, 1.74}, {5.92, 4.52}, {0.50, 6.34}};
-    ArrayView<const Point2> vertices(vertices_storage);
+    VerticesView vertices(vertices_storage);
 
     Edge edge = Edge::edge_from_index(vertices, 1);
     CHECK(edge.is_valid());
@@ -70,7 +70,7 @@ TEST_CASE("Edge::is_valid")
 TEST_CASE("Edge::segment")
 {
   std::vector<Point2> vertices_storage{{1.64, 2.04}, {4.52, 1.74}, {5.92, 4.52}, {0.50, 6.34}};
-  ArrayView<const Point2> vertices(vertices_storage);
+  VerticesView vertices(vertices_storage);
   Edge edge = Edge::edge_from_index(vertices, 0);
   CHECK(edge.segment() == Segment2(vertices[0], vertices[1]));
 }
@@ -78,7 +78,7 @@ TEST_CASE("Edge::segment")
 TEST_CASE("Edge::operator==")
 {
   std::vector<Point2> vertices_storage{{1.64, 2.04}, {4.52, 1.74}, {5.92, 4.52}, {0.50, 6.34}};
-  ArrayView<const Point2> vertices(vertices_storage);
+  VerticesView vertices(vertices_storage);
 
   SECTION("Equal")
   {
@@ -114,7 +114,7 @@ TEST_CASE("EdgeRange::is_valid")
   SECTION("Valid")
   {
     std::vector<Point2> vertices_storage{{3.46, 4.52}, {8.48, 3.62}, {7.16, 5.80}};
-    ArrayView<const Point2> vertices(vertices_storage);
+    VerticesView vertices(vertices_storage);
     EdgeRange range{vertices.begin(), vertices.begin() + 2};
     CHECK(range.is_valid());
   }
@@ -126,13 +126,79 @@ TEST_CASE("EdgeRange::is_valid")
   }
 }
 
+TEST_CASE("edge_for_point_with_monotone_edge_range")
+{
+  std::vector<Point2> vertices_storage{
+      {-3.62, 2.84}, {-0.14, 1.78}, {2.18, 3.26},  {5.32, 2.84},  {7.84, 3.86},  {6.56, 5.00},
+      {1.36, 7.20},  {-1.88, 6.06}, {-5.90, 4.88}, {-7.98, 5.74}, {-9.48, 3.98}, {-7.28, 2.50},
+  };
+  VerticesView vertices(vertices_storage);
+
+  VertexIt leftmost_vertex_it = vertices.begin() + 10;
+  VertexIt rightmost_vertex_it = vertices.begin() + 4;
+
+  SECTION("Towards right")
+  {
+    EdgeRange edge_range{leftmost_vertex_it, rightmost_vertex_it};
+
+    SECTION("General")
+    {
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {-5.24, 1.42}) ==
+            Edge::edge_from_index(vertices, 11));
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {3.38, 2.18}) ==
+            Edge::edge_from_index(vertices, 2));
+    }
+
+    SECTION("x on vertex, y different")
+    {
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {-7.28, 1.5}) ==
+            Edge::edge_from_index(vertices, 10));
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {-7.28, 3.5}) ==
+            Edge::edge_from_index(vertices, 11));
+    }
+
+    SECTION("On vertex")
+    {
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {-7.28, 2.5}) ==
+            Edge::edge_from_index(vertices, 11));
+    }
+  }
+
+  SECTION("Towards left")
+  {
+    EdgeRange edge_range{rightmost_vertex_it, leftmost_vertex_it};
+
+    SECTION("General")
+    {
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-0.04, 8.08}) ==
+            Edge::edge_from_index(vertices, 6));
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-7.01, 6.89}) ==
+            Edge::edge_from_index(vertices, 8));
+    }
+
+    SECTION("x on vertex, y different")
+    {
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-7.98, 6.74}) ==
+            Edge::edge_from_index(vertices, 8));
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-7.98, 4.74}) ==
+            Edge::edge_from_index(vertices, 9));
+    }
+
+    SECTION("On vertex")
+    {
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-7.98, 5.74}) ==
+            Edge::edge_from_index(vertices, 9));
+    }
+  }
+}
+
 TEST_CASE("Region::operator==")
 {
   std::vector<Point2> vertices_storage{
       {-5.42, 2.82}, {3.92, 3.62}, {2.26, 5.74}, {3.74, 7.82}, {-4.52, 6.74}, {-1.10, 4.48},
   };
 
-  ArrayView<const Point2> vertices(vertices_storage);
+  VerticesView vertices(vertices_storage);
 
   VerticalDecomposition vd;
   vd.nodes.resize(2);
@@ -191,7 +257,7 @@ TEST_CASE("Region::is_leaf")
 {
   std::vector<Point2> vertices_storage{{-4.10, 2.96}, {5.48, 1.94},  {3.84, 4.36},
                                        {6.82, 8.06},  {-7.42, 6.68}, {-3.62, 5.78}};
-  ArrayView<const Point2> vertices(vertices_storage);
+  VerticesView vertices(vertices_storage);
 
   VerticalDecomposition vd =
       vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::interior_decomposition);
@@ -223,7 +289,7 @@ TEST_CASE("Region::lower_boundary/upper_boundary")
         {-5.96, 3.04}, {-2.12, 3.26}, {-4.12, 1.02}, {2.60, 1.02},  {0.32, 3.30}, {5.48, 3.26},  {3.74, 4.68},
         {6.72, 6.10},  {2.52, 5.98},  {4.22, 7.82},  {-2.06, 7.42}, {0.86, 5.44}, {-5.36, 6.26}, {-3.44, 4.58},
     };
-    ArrayView<const Point2> vertices(vertices_storage);
+    VerticesView vertices(vertices_storage);
 
     VerticalDecomposition vd =
         vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::interior_decomposition);
@@ -278,7 +344,7 @@ TEST_CASE("Region::lower_boundary/upper_boundary")
           {7.90, -0.58}, {9.02, -0.12}, {10.12, -0.04}, {9.44, -0.68}, {9.16, -2.26}, {10.08, -1.42},
           {12.84, 0.64}, {10.28, 2.06}, {6.60, 2.94},   {1.96, 1.56},
       };
-      ArrayView<const Point2> vertices(vertices_storage);
+      VerticesView vertices(vertices_storage);
 
       VerticalDecomposition vd =
           vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::exterior_decomposition);
@@ -318,7 +384,7 @@ TEST_CASE("Region::lower_boundary/upper_boundary")
           {-7.90, 0.58},   {-9.02, 0.12},   {-10.12, 0.04}, {-9.44, 0.68},  {-9.16, 2.26},   {-10.08, 1.42},
           {-12.84, -0.64}, {-10.28, -2.06}, {-6.60, -2.94}, {-1.96, -1.56},
       };
-      ArrayView<const Point2> vertices(vertices_storage);
+      VerticesView vertices(vertices_storage);
 
       VerticalDecomposition vd =
           vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::exterior_decomposition);
@@ -398,7 +464,7 @@ TEST_CASE("RegionIterator")
                                          {13.02, 7.12}, {12.84, 5.96}, {15.02, 8.46}, {-0.62, 8.72}, {2.02, 6.58},
                                          {1.26, 7.88},  {5.86, 5.18},  {2.02, 3.86},  {4.90, 3.02}};
 
-    ArrayView<const Point2> vertices(vertices_storage);
+    VerticesView vertices(vertices_storage);
 
     VerticalDecomposition vd;
     vd.nodes.resize(6);
@@ -590,7 +656,7 @@ TEST_CASE("RegionIterator")
         {12.62, 2.52}, {6.08, 6.02},  {8.28, 2.96}, {0.42, 3.28}, {1.88, 7.18},
     };
 
-    ArrayView<const Point2> vertices(vertices_storage);
+    VerticesView vertices(vertices_storage);
 
     VerticalDecomposition vd;
     vd.nodes.resize(6);

@@ -124,6 +124,22 @@ struct EdgeRange
   bool inline is_valid() const;
 };
 
+/// Returns the edge in the given monotone edge range for which <tt>edge_range.start_vertex <= point <
+/// edge_range.end_vertex</tt>, where the ordering used is the lexicographical ordering if <tt>direction ==
+/// HorizontalDirection::right</tt> and the reverse lexicographical ordering if <tt>direction ==
+/// HorizontalDirection::left</tt>.
+///
+/// The edge range must be a monotone edge range, which means that all edges in it should satisfy
+/// <tt>edge_range.start_vertex < edge_range.end_vertex</tt>.
+///
+/// @tparam direction The direction of monotonicity.
+/// @param vertices The vertices.
+/// @param edge_range The edge range to search.
+/// @param point The query point.
+/// @return The edge in @c edge_range corresponding to @c point.
+template <HorizontalDirection direction>
+Edge edge_for_point_with_monotone_edge_range(VerticesView vertices, EdgeRange edge_range, Point2 point);
+
 /// The type of a vertical decomposition.
 enum class VerticalDecompositionType
 {
