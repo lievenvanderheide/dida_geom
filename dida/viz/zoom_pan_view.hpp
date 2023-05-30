@@ -66,6 +66,10 @@ protected:
   /// @param painter The painter.
   void paint_grid(QPainter& painter);
 
+  QPointF point_to_qt(Point2 point) const;
+
+  Point2 point_from_qt(QPointF point) const;
+
 private:
   double scale_;
   double translate_x_;

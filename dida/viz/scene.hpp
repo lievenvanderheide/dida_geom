@@ -41,6 +41,14 @@ public:
   /// @return The vertices.
   inline const std::vector<Point2>& vertices() const;
 
+  /// Adds a vertex to this @c VizPolygon.
+  ///
+  /// The @c will_add_vertex signal is emitted before the change is made, the @c vertex_added and @c data_changed
+  /// signals are emitted after the change is made
+  ///
+  /// @param add_vertex The vertex to add.
+  void add_vertex(Point2 vertex);
+
   /// Returns whether this @c VizPolygon should be convex.
   ///
   /// This flag affects the result of the @c is_valid function, but convexity is not otherwise enforced.
@@ -51,6 +59,20 @@ public:
   ///
   /// @return True iff the vertices form a valid polygon of the expected type.
   inline bool is_polygon_valid() const;
+
+Q_SIGNALS:
+  /// This signal is emitted when a new vertex is about to be added to this @c VizPolygon.
+  ///
+  /// @param index The index the new vertex will have.
+  void will_add_vertex(size_t index);
+
+  /// This signal is emitted after a new vertex is added to this @c VizPolygon.
+  ///
+  /// @param index The index of the newly added vertex.
+  void vertex_added(size_t index);
+
+  /// This signal is emitted when this polygon changes.
+  void data_changed();
 
 private:
   void update_is_polygon_valid();
@@ -75,6 +97,8 @@ std::shared_ptr<VizPolygon> parse_viz_polygon(Parser& parser);
 /// @param string The string to parse.
 /// @return A pointer to the @c VizPolygon, or @c nullptr on failure.
 std::shared_ptr<VizPolygon> parse_viz_polygon(std::string_view string);
+
+std::ostream& operator<<(std::ostream& s, const VizPolygon& polygon);
 
 /// The scene containing all the primitives currently shown in the visualizer.
 class VizScene : public QObject

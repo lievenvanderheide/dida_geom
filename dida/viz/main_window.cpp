@@ -3,9 +3,12 @@
 #include <QtGui/QClipboard>
 #include <QtGui/QGuiApplication>
 #include <QtGui/QShortcut>
-#include <QtWidgets/QMessageBox>
-#include <QtWidgets/QMenuBar>
 #include <QtWidgets/QDockWidget>
+#include <QtWidgets/QMenuBar>
+#include <QtWidgets/QMessageBox>
+
+#include <iomanip>
+#include <sstream>
 
 #include "dida/viz/scene_tree_view.hpp"
 #include "dida/viz/scene_view.hpp"
@@ -17,11 +20,13 @@ MainWindow::MainWindow(std::shared_ptr<VizScene> scene) : scene_(std::move(scene
 {
   QMenu* edit_menu = menuBar()->addMenu("&Edit");
 
-  QAction* paste_action =
-      edit_menu->addAction("&Paste", this, &MainWindow::on_paste_primitive);
+  QAction* copy_action = edit_menu->addAction("&Copy", this, &MainWindow::on_copy);
+  copy_action->setShortcut(QKeySequence::Copy);
+
+  QAction* paste_action = edit_menu->addAction("&Paste", this, &MainWindow::on_paste);
   paste_action->setShortcut(QKeySequence::Paste);
 
-  scene_view_ = new SceneView();
+  scene_view_ = new SceneView(scene_);
   setCentralWidget(scene_view_);
 
   SceneTreeView* tree_view = new SceneTreeView(scene_);
@@ -30,7 +35,20 @@ MainWindow::MainWindow(std::shared_ptr<VizScene> scene) : scene_(std::move(scene
   addDockWidget(Qt::LeftDockWidgetArea, tree_view_dock_widget);
 }
 
-void MainWindow::on_paste_primitive()
+void MainWindow::on_copy()
+{
+  std::stringstream s;
+  s << std::fixed << std::setprecision(2);
+
+  for (const std::shared_ptr<VizPolygon>& primitive : scene_->primitives())
+  {
+    s << *primitive << std::endl;
+  }
+
+  QGuiApplication::clipboard()->setText(QString::fromUtf8(s.str().c_str()));
+}
+
+void MainWindow::on_paste()
 {
   QString clipboard_text = QGuiApplication::clipboard()->text();
   QByteArray clipboard_text_utf8 = clipboard_text.toUtf8();

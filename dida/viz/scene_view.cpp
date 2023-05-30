@@ -1,29 +1,151 @@
 #include "dida/viz/scene_view.hpp"
 
+#include <QtGui/QMouseEvent>
 #include <QtGui/QPainter>
-
-#include "dida/box2.hpp"
 
 namespace dida::viz
 {
+
+namespace
+{
+
+/// The maximum L^inf distance in screen space between a point and the location of a mouse click for which the click is
+/// considered to have hit that point.
+constexpr float click_tolerance = 3;
+
+/// Returns whether two points are within @c click_tolerance L^inf distance of each other.
+///
+/// @param a The first point.
+/// @param b The second point.
+/// @return True iff there was a hit.
+bool points_within_click_tolerance(QPointF a, QPointF b)
+{
+  return std::abs(a.x() - b.x()) <= click_tolerance && std::abs(a.y() - b.y()) <= click_tolerance;
+}
+
+} // namespace
+
+SceneView::SceneView(std::shared_ptr<VizScene> scene) : scene_(scene), tool_(AddPolygonTool{})
+{
+  QPalette palette;
+  palette.setColor(QPalette::Window, Qt::white);
+  setPalette(palette);
+  setAutoFillBackground(true);
+
+  QObject::connect(scene_.get(), &VizScene::data_changed, this, &SceneView::on_scene_data_changed);
+}
 
 void SceneView::paintEvent(QPaintEvent* event)
 {
   QPainter painter(this);
 
-  painter.fillRect(0, 0, width(), height(), Qt::white);
   paint_grid(painter);
 
-  for (int y = -5; y <= 5; y++)
+  painter.setRenderHint(QPainter::Antialiasing);
+
+  for (const std::shared_ptr<VizPolygon>& polygon : scene_->primitives())
   {
-    for (int x = -5; x <= 5; x++)
+    const ArrayView<const Point2> vertices = polygon->vertices();
+
+    std::vector<QPointF> qt_vertices(vertices.size());
+    for (size_t i = 0; i < vertices.size(); i++)
     {
-      QPointF point = point_to_view(Point2(static_cast<double>(x), static_cast<double>(y)));
+      qt_vertices[i] = point_to_qt(vertices[i]);
+    }
+
+    if (is_polygon_being_drawn(polygon))
+    {
+      painter.drawPolyline(qt_vertices.data(), static_cast<int>(qt_vertices.size()));
+
+      painter.setPen(Qt::DashLine);
+      painter.drawLine(qt_vertices.front(), qt_vertices.back());
+      painter.setPen(Qt::SolidLine);
+    }
+    else
+    {
+      painter.drawPolygon(qt_vertices.data(), static_cast<int>(qt_vertices.size()));
+    }
+
+    for (QPointF point : qt_vertices)
+    {
       painter.fillRect(QRect(point.x() - 2, point.y() - 2, 5, 5), Qt::black);
     }
   }
+}
 
-  painter.drawRect(box_to_view(Box2(Point2(-11.5, -10.5), Point2(6.5, 5.5))));
+void SceneView::mousePressEvent(QMouseEvent* event)
+{
+  std::visit([this, event](auto& tool) { mouse_press_event_with_tool(event, tool); }, tool_);
+
+  ZoomPanView::mousePressEvent(event);
+}
+
+void SceneView::mouseReleaseEvent(QMouseEvent* event)
+{
+  std::visit([this, event](auto& tool) { mouse_release_event_with_tool(event, tool); }, tool_);
+
+  ZoomPanView::mouseReleaseEvent(event);
+}
+
+void SceneView::mouseMoveEvent(QMouseEvent* event)
+{
+  std::visit([this, event](auto& tool) { mouse_move_event_with_tool(event, tool); }, tool_);
+
+  ZoomPanView::mouseMoveEvent(event);
+}
+
+void SceneView::on_scene_data_changed()
+{
+  update();
+}
+
+void SceneView::mouse_press_event_with_tool(QMouseEvent* event, AddPolygonTool& tool)
+{
+  if (event->button() == Qt::LeftButton && event->modifiers() == Qt::NoModifier)
+  {
+    Point2 vertex = point_from_qt(event->position());
+
+    if (!tool.new_polygon)
+    {
+      tool.new_polygon = std::make_shared<VizPolygon>("polygon", std::vector<Point2>{vertex}, true);
+      scene_->add_primitive(tool.new_polygon);
+    }
+    else
+    {
+      QPointF first_vertex = point_to_qt(tool.new_polygon->vertices().front());
+      if (points_within_click_tolerance(first_vertex, event->position()))
+      {
+        tool.new_polygon = nullptr;
+
+        // The scene is not changed, but we still need to redraw.
+        update();
+      }
+      else
+      {
+        tool.new_polygon->add_vertex(vertex);
+      }
+    }
+  }
+}
+
+void SceneView::mouse_release_event_with_tool(QMouseEvent* event, AddPolygonTool& tool)
+{
+}
+
+void SceneView::mouse_move_event_with_tool(QMouseEvent* event, AddPolygonTool& tool)
+{
+}
+
+bool SceneView::is_polygon_being_drawn(const std::shared_ptr<VizPolygon>& polygon)
+{
+  if (AddPolygonTool* add_polygon_tool = std::get_if<AddPolygonTool>(&tool_))
+  {
+    return polygon == add_polygon_tool->new_polygon;
+  }
+  else
+  {
+    return false;
+  }
 }
 
 } // namespace dida::viz

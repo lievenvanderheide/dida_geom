@@ -123,4 +123,17 @@ void ZoomPanView::paint_grid(QPainter& painter)
   painter.setPen(QPen());
 }
 
+QPointF ZoomPanView::point_to_qt(Point2 point) const
+{
+  double x = static_cast<double>(point.x());
+  double y = static_cast<double>(-point.y());
+  return QPointF(x * scale_ + translate_x_, y * scale_ + translate_y_);
+}
+
+Point2 ZoomPanView::point_from_qt(QPointF point) const
+{
+  double inv_scale = 1 / scale_;
+  return Point2(inv_scale * (point.x() - translate_x_), inv_scale * (translate_y_ - point.y()));
+}
+
 } // namespace dida::viz

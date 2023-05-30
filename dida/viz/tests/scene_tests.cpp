@@ -44,7 +44,53 @@ TEST_CASE("VizPolygon::is_polygon_valid()")
   }
 }
 
-TEST_CASE("Parser VizPolygon2")
+TEST_CASE("add_vertex")
+{
+  VizPolygon polygon("polygon", {}, true);
+
+  size_t will_add_vertex_num_calls = 0;
+  size_t vertex_added_num_calls = 0;
+  size_t data_changed_num_calls = 0;
+
+  QObject::connect(&polygon, &VizPolygon::will_add_vertex,
+    [&will_add_vertex_num_calls, &polygon](size_t index)
+    {
+      CHECK(polygon.vertices().size() == index);
+      CHECK(index == will_add_vertex_num_calls);
+
+      will_add_vertex_num_calls++;
+    });
+
+  QObject::connect(&polygon, &VizPolygon::vertex_added,
+    [&vertex_added_num_calls, &polygon](size_t index)
+    {
+      CHECK(polygon.vertices().size() == index + 1);
+      CHECK(index == vertex_added_num_calls);
+
+      vertex_added_num_calls++;
+    });
+
+  QObject::connect(&polygon, &VizPolygon::data_changed,
+    [&data_changed_num_calls, &polygon]()
+    {
+      data_changed_num_calls++;
+      
+      CHECK(polygon.vertices().size() == data_changed_num_calls);
+    });
+
+  Point2 vertices[]{{1.30, 0.82}, {5.58, 1.48}, {3.42, 2.76}};
+
+  for(size_t i = 0; i < 3; i++)
+  {
+    polygon.add_vertex(vertices[i]);
+  }
+
+  CHECK(will_add_vertex_num_calls == 3);
+  CHECK(vertex_added_num_calls == 3);
+  CHECK(data_changed_num_calls == 3);
+}
+
+TEST_CASE("parse_viz_polygon")
 {
   SECTION("Valid convex polygon")
   {
