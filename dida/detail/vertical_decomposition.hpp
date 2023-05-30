@@ -260,8 +260,10 @@ private:
   /// The next node which will be reached, or @c nullptr if we're currently in a leaf region.
   const Node* next_node_;
 
+  /// The branch index of the current region in @c cur_node_.
   uint8_t cur_node_branch_index_;
 
+  /// The branch index of the current region in @c next_node_. Undefined if <tt>next_node_ == nullptr</tt>.
   uint8_t next_node_branch_index_;
 
   // The direction of the boundary at traversal point. If the traversal point is a reflex vertex, then this is the
