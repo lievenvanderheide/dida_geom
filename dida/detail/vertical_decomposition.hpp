@@ -31,6 +31,15 @@ enum class HorizontalDirection : uint8_t
   right,
 };
 
+/// Returns whether point @c a comes before point @c b, when going in the given direction.
+///
+/// @tparam direction The direction.
+/// @param a The first operand.
+/// @param b The second operand.
+/// @return True iff @c a comes before @c b.
+template <HorizontalDirection direction>
+bool lex_less_than_with_direction(Point2 a, Point2 b);
+
 /// An edge of the input polygon.
 struct Edge
 {
@@ -124,22 +133,6 @@ struct EdgeRange
   bool inline is_valid() const;
 };
 
-/// Returns the edge in the given monotone edge range for which <tt>edge_range.start_vertex <= point <
-/// edge_range.end_vertex</tt>, where the ordering used is the lexicographical ordering if <tt>direction ==
-/// HorizontalDirection::right</tt> and the reverse lexicographical ordering if <tt>direction ==
-/// HorizontalDirection::left</tt>.
-///
-/// The edge range must be a monotone edge range, which means that all edges in it should satisfy
-/// <tt>edge_range.start_vertex < edge_range.end_vertex</tt>.
-///
-/// @tparam direction The direction of monotonicity.
-/// @param vertices The vertices.
-/// @param edge_range The edge range to search.
-/// @param point The query point.
-/// @return The edge in @c edge_range corresponding to @c point.
-template <HorizontalDirection direction>
-Edge edge_for_point_with_monotone_edge_range(VerticesView vertices, EdgeRange edge_range, Point2 point);
-
 /// The type of a vertical decomposition.
 enum class VerticalDecompositionType
 {
@@ -194,6 +187,7 @@ struct Region
   ///
   /// The resulting @c EdgeRange includes all edges which are fully or partially part of of the lower boundary.
   ///
+  /// @pre This function should only be used with non leaf regions.
   /// @param vd_type The type of the vertical decomposition this region belongs to.
   /// @return The edge range.
   inline EdgeRange lower_boundary(VerticalDecompositionType vd_type) const;
@@ -203,9 +197,21 @@ struct Region
   ///
   /// The resulting @c EdgeRange includes all edges which are fully or partially part of of the lower boundary.
   ///
+  /// @pre This function should only be used with non leaf regions.
   /// @param vd_type The type of the vertical decomposition this region belongs to.
   /// @return The edge range.
   inline EdgeRange upper_boundary(VerticalDecompositionType vd_type) const;
+
+  /// Returns the reflex vertex of a leaf region, or @c nullptr if the leaf is unbounded.
+  ///
+  /// The reflex vertex is the extremal vertex in the direction of the leaf node, that is, it's the rightmost vertex if
+  /// it's a leaf node with a @c left_node but no @c right_node, and the leftmost vertex if it's a leaf node with a @c
+  /// right_node but no @c left_node.
+  ///
+  /// @param vertices The vertices.
+  /// @param vd_type The type of the vertical decomposition this region belongs to.
+  /// @return An iterator pointing to the reflex vertex.
+  inline VertexIt leaf_reflex_vertex(VerticesView vertices, VerticalDecompositionType vd_type) const;
 };
 
 /// An iterator which iterates over the regions of a vertical decomposition.

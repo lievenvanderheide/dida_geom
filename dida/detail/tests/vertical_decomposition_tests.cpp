@@ -22,6 +22,40 @@ TEST_CASE("y_on_edge_for_x")
   }
 }
 
+TEST_CASE("lex_less_than_with_direction")
+{
+  SECTION("x different")
+  {
+    Point2 a(1, 4);
+    Point2 b(2, 3);
+
+    CHECK(lex_less_than_with_direction<HorizontalDirection::right>(a, b));
+    CHECK_FALSE(lex_less_than_with_direction<HorizontalDirection::left>(a, b));
+
+    CHECK_FALSE(lex_less_than_with_direction<HorizontalDirection::right>(b, a));
+    CHECK(lex_less_than_with_direction<HorizontalDirection::left>(b, a));
+  }
+
+  SECTION("Y different")
+  {
+    Point2 a(4, 1);
+    Point2 b(4, 2);
+
+    CHECK(lex_less_than_with_direction<HorizontalDirection::right>(a, b));
+    CHECK_FALSE(lex_less_than_with_direction<HorizontalDirection::left>(a, b));
+
+    CHECK_FALSE(lex_less_than_with_direction<HorizontalDirection::right>(b, a));
+    CHECK(lex_less_than_with_direction<HorizontalDirection::left>(b, a));
+  }
+
+  SECTION("Equal")
+  {
+    Point2 a(4, 1);
+    CHECK_FALSE(lex_less_than_with_direction<HorizontalDirection::right>(a, a));
+    CHECK_FALSE(lex_less_than_with_direction<HorizontalDirection::left>(a, a));
+  }
+}
+
 TEST_CASE("Edge::edge_from_index")
 {
   std::vector<Point2> vertices_storage{{1.64, 2.04}, {4.52, 1.74}, {5.92, 4.52}, {0.50, 6.34}};
@@ -123,72 +157,6 @@ TEST_CASE("EdgeRange::is_valid")
   {
     EdgeRange range = EdgeRange::invalid();
     CHECK(!range.is_valid());
-  }
-}
-
-TEST_CASE("edge_for_point_with_monotone_edge_range")
-{
-  std::vector<Point2> vertices_storage{
-      {-3.62, 2.84}, {-0.14, 1.78}, {2.18, 3.26},  {5.32, 2.84},  {7.84, 3.86},  {6.56, 5.00},
-      {1.36, 7.20},  {-1.88, 6.06}, {-5.90, 4.88}, {-7.98, 5.74}, {-9.48, 3.98}, {-7.28, 2.50},
-  };
-  VerticesView vertices(vertices_storage);
-
-  VertexIt leftmost_vertex_it = vertices.begin() + 10;
-  VertexIt rightmost_vertex_it = vertices.begin() + 4;
-
-  SECTION("Towards right")
-  {
-    EdgeRange edge_range{leftmost_vertex_it, rightmost_vertex_it};
-
-    SECTION("General")
-    {
-      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {-5.24, 1.42}) ==
-            Edge::edge_from_index(vertices, 11));
-      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {3.38, 2.18}) ==
-            Edge::edge_from_index(vertices, 2));
-    }
-
-    SECTION("x on vertex, y different")
-    {
-      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {-7.28, 1.5}) ==
-            Edge::edge_from_index(vertices, 10));
-      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {-7.28, 3.5}) ==
-            Edge::edge_from_index(vertices, 11));
-    }
-
-    SECTION("On vertex")
-    {
-      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {-7.28, 2.5}) ==
-            Edge::edge_from_index(vertices, 11));
-    }
-  }
-
-  SECTION("Towards left")
-  {
-    EdgeRange edge_range{rightmost_vertex_it, leftmost_vertex_it};
-
-    SECTION("General")
-    {
-      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-0.04, 8.08}) ==
-            Edge::edge_from_index(vertices, 6));
-      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-7.01, 6.89}) ==
-            Edge::edge_from_index(vertices, 8));
-    }
-
-    SECTION("x on vertex, y different")
-    {
-      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-7.98, 6.74}) ==
-            Edge::edge_from_index(vertices, 8));
-      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-7.98, 4.74}) ==
-            Edge::edge_from_index(vertices, 9));
-    }
-
-    SECTION("On vertex")
-    {
-      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-7.98, 5.74}) ==
-            Edge::edge_from_index(vertices, 9));
-    }
   }
 }
 
@@ -414,6 +382,140 @@ TEST_CASE("Region::lower_boundary/upper_boundary")
         CHECK(upper_boundary.start_vertex_it == nullptr);
         CHECK(upper_boundary.end_vertex_it == nullptr);
       }
+    }
+  }
+}
+
+TEST_CASE("Region::leaf_reflex_vertex")
+{
+  SECTION("Interior decomposition")
+  {
+    std::vector<Point2> vertices_storage{
+        {-0.64, 4.20}, {1.56, 3.92},  {3.14, 3.92},  {1.90, 2.46},  {0.50, 2.08},  {1.30, 0.86},  {2.34, 0.18},
+        {3.12, 1.08},  {4.52, 2.30},  {7.02, 2.30},  {7.66, 4.34},  {7.90, 8.18},  {7.18, 6.26},  {6.10, 7.22},
+        {5.54, 6.16},  {2.68, 6.78},  {3.42, 7.98},  {4.68, 7.76},  {3.14, 9.10},  {1.24, 6.88},  {-0.24, 6.10},
+        {-1.94, 6.82}, {-3.56, 8.84}, {-5.08, 9.20}, {-6.66, 8.52}, {-7.42, 7.82}, {-8.62, 7.36}, {-7.34, 6.70},
+        {-6.54, 7.32}, {-5.30, 7.72}, {-3.78, 6.24}, {-2.10, 5.52}, {-4.82, 4.48}, {-6.88, 4.72}, {-7.80, 3.24},
+        {-6.30, 2.40}, {-5.18, 3.12}, {-4.04, 2.60}, {-3.42, 3.50}, {-0.92, 0.78}, {2.44, -0.58}, {-0.16, 1.06},
+        {-1.18, 2.74}, {-1.52, 2.50}, {-2.34, 3.68},
+    };
+    ArrayView<const Point2> vertices(vertices_storage);
+
+    VerticalDecomposition vd =
+        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::interior_decomposition);
+
+    SECTION("Leaf towards right, branch 0")
+    {
+      Region region{&vd.nodes[3], nullptr, 0, 0};
+      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result == vertices.begin() + 11);
+    }
+
+    SECTION("Leaf towards right, branch 1")
+    {
+      Region region{&vd.nodes[0], nullptr, 1, 0};
+      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result == vertices.begin() + 40);
+    }
+
+    SECTION("Leaf towards right, branch 2")
+    {
+      Region region{&vd.nodes[2], nullptr, 2, 0};
+      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result == vertices.begin() + 17);
+    }
+
+    SECTION("Leaf towards left, branch 0")
+    {
+      Region region{nullptr, &vd.nodes[0], 0, 0};
+      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result == vertices.begin() + 34);
+    }
+
+    SECTION("Leaf towards left, branch 1")
+    {
+      Region region{nullptr, &vd.nodes[3], 0, 1};
+      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result == vertices.begin() + 4);
+    }
+
+    SECTION("Leaf towards left, branch 2")
+    {
+      Region region{nullptr, &vd.nodes[1], 0, 2};
+      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result == vertices.begin() + 26);
+    }
+  }
+
+  SECTION("Exterior decomposition")
+  {
+    std::vector<Point2> vertices_storage{
+        {-0.72, 6.20}, {0.78, 7.60},  {4.08, 7.08},   {2.14, 4.94},   {4.10, 3.58},   {2.28, 2.38},
+        {0.56, 2.60},  {4.04, 0.88},  {5.90, 0.90},   {6.28, -0.80},  {3.50, -2.52},  {1.12, -2.54},
+        {2.14, -0.76}, {0.34, -0.04}, {-1.94, -0.66}, {-0.94, -2.20}, {-3.92, -1.78}, {-4.66, 0.12},
+        {-1.44, 1.32}, {-5.24, 2.56}, {-3.40, 3.50},  {-5.50, 4.72},  {-4.32, 7.46},  {-2.30, 6.34},
+        {-2.66, 8.74}, {-6.32, 8.64}, {-5.60, -2.52}, {7.02, -2.80},  {6.82, 9.26},   {-0.72, 9.00},
+    };
+
+    ArrayView<const Point2> vertices(vertices_storage);
+
+    VerticalDecomposition vd =
+        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::exterior_decomposition);
+
+    SECTION("Leaf towards right, branch 0")
+    {
+      Region region{&vd.nodes[7], nullptr, 0, 0};
+      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result == vertices.begin() + 9);
+    }
+
+    SECTION("Leaf towards right, branch 1")
+    {
+      Region region{&vd.nodes[8], nullptr, 1, 0};
+      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result == vertices.begin() + 4);
+    }
+
+    SECTION("Leaf towards right, branch 2")
+    {
+      Region region{&vd.nodes[8], nullptr, 2, 0};
+      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result == vertices.begin() + 2);
+    }
+
+    SECTION("Leaf towards left, branch 0")
+    {
+      Region region{nullptr, &vd.nodes[3], 0, 0};
+      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result == vertices.begin() + 17);
+    }
+
+    SECTION("Leaf towards left, branch 1")
+    {
+      Region region{nullptr, &vd.nodes[1], 0, 1};
+      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result == vertices.begin() + 19);
+    }
+
+    SECTION("Leaf towards left, branch 2")
+    {
+      Region region{nullptr, &vd.nodes[1], 0, 2};
+      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result == vertices.begin() + 21);
+    }
+
+    SECTION("Unbounded leaf towards right")
+    {
+      Region region{&vd.nodes[9], nullptr, 0, 0};
+      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result == nullptr);
+    }
+
+    SECTION("Unbounded leaf towards left")
+    {
+      Region region{nullptr, &vd.nodes[0], 0, 0};
+      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result == nullptr);
     }
   }
 }
