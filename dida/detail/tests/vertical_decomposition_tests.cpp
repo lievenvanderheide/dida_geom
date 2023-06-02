@@ -160,6 +160,72 @@ TEST_CASE("EdgeRange::is_valid")
   }
 }
 
+TEST_CASE("edge_for_point_with_monotone_edge_range")
+{
+  std::vector<Point2> vertices_storage{
+      {-3.62, 2.84}, {-0.14, 1.78}, {2.18, 3.26},  {5.32, 2.84},  {7.84, 3.86},  {6.56, 5.00},
+      {1.36, 7.20},  {-1.88, 6.06}, {-5.90, 4.88}, {-7.98, 5.74}, {-9.48, 3.98}, {-7.28, 2.50},
+  };
+  VerticesView vertices(vertices_storage);
+
+  VertexIt leftmost_vertex_it = vertices.begin() + 10;
+  VertexIt rightmost_vertex_it = vertices.begin() + 4;
+
+  SECTION("Towards right")
+  {
+    EdgeRange edge_range{leftmost_vertex_it, rightmost_vertex_it};
+
+    SECTION("General")
+    {
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {-5.24, 1.42}) ==
+            Edge::edge_from_index(vertices, 11));
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {3.38, 2.18}) ==
+            Edge::edge_from_index(vertices, 2));
+    }
+
+    SECTION("x on vertex, y different")
+    {
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {-7.28, 1.5}) ==
+            Edge::edge_from_index(vertices, 10));
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {-7.28, 3.5}) ==
+            Edge::edge_from_index(vertices, 11));
+    }
+
+    SECTION("On vertex")
+    {
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, edge_range, {-7.28, 2.5}) ==
+            Edge::edge_from_index(vertices, 11));
+    }
+  }
+
+  SECTION("Towards left")
+  {
+    EdgeRange edge_range{rightmost_vertex_it, leftmost_vertex_it};
+
+    SECTION("General")
+    {
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-0.04, 8.08}) ==
+            Edge::edge_from_index(vertices, 6));
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-7.01, 6.89}) ==
+            Edge::edge_from_index(vertices, 8));
+    }
+
+    SECTION("x on vertex, y different")
+    {
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-7.98, 6.74}) ==
+            Edge::edge_from_index(vertices, 8));
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-7.98, 4.74}) ==
+            Edge::edge_from_index(vertices, 9));
+    }
+
+    SECTION("On vertex")
+    {
+      CHECK(edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, edge_range, {-7.98, 5.74}) ==
+            Edge::edge_from_index(vertices, 9));
+    }
+  }
+}
+
 TEST_CASE("Region::operator==")
 {
   std::vector<Point2> vertices_storage{
