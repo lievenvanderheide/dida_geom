@@ -315,9 +315,9 @@ TEST_CASE("Region::is_leaf")
   }
 }
 
-TEST_CASE("Region::lower_boundary/upper_boundary")
+TEST_CASE("Region::boundary_edge_ranges")
 {
-  SECTION("Interior decomposition")
+  SECTION("Interior decomposition, non leaf nodes")
   {
     std::vector<Point2> vertices_storage{
         {-5.96, 3.04}, {-2.12, 3.26}, {-4.12, 1.02}, {2.60, 1.02},  {0.32, 3.30}, {5.48, 3.26},  {3.74, 4.68},
@@ -332,43 +332,40 @@ TEST_CASE("Region::lower_boundary/upper_boundary")
     {
       Region region{&vd.nodes[0], &vd.nodes[1], 0, 2};
 
-      EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::interior_decomposition);
-      CHECK(lower_boundary.start_vertex_it == vertices.begin());
-      CHECK(lower_boundary.end_vertex_it == vertices.begin() + 1);
-
-      EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::interior_decomposition);
-      CHECK(upper_boundary.start_vertex_it == vertices.begin() + 11);
-      CHECK(upper_boundary.end_vertex_it == vertices.begin() + 12);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin());
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 1);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 11);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + 12);
     }
 
     SECTION("Left neighbor 1, right neighbor 0")
     {
       Region region{&vd.nodes[4], &vd.nodes[5], 1, 0};
 
-      EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::interior_decomposition);
-      CHECK(lower_boundary.start_vertex_it == vertices.begin() + 4);
-      CHECK(lower_boundary.end_vertex_it == vertices.begin() + 5);
-
-      EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::interior_decomposition);
-      CHECK(upper_boundary.start_vertex_it == vertices.begin() + 7);
-      CHECK(upper_boundary.end_vertex_it == vertices.begin() + 8);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin() + 4);
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 5);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 7);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + 8);
     }
 
     SECTION("Left neighbor 2, right neighbor 1")
     {
       Region region{&vd.nodes[2], &vd.nodes[3], 2, 1};
 
-      EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::interior_decomposition);
-      CHECK(lower_boundary.start_vertex_it == vertices.begin() + 4);
-      CHECK(lower_boundary.end_vertex_it == vertices.begin() + 5);
-
-      EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::interior_decomposition);
-      CHECK(upper_boundary.start_vertex_it == vertices.begin() + 11);
-      CHECK(upper_boundary.end_vertex_it == vertices.begin() + 12);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin() + 4);
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 5);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 11);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + 12);
     }
   }
 
-  SECTION("Exterior decomposition")
+  SECTION("Exterior decomposition, non leaf nodes")
   {
     SECTION("No lower boundary")
     {
@@ -387,26 +384,24 @@ TEST_CASE("Region::lower_boundary/upper_boundary")
       {
         Region region{&vd.nodes[1], &vd.nodes[2], 0, 1};
 
-        EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::exterior_decomposition);
-        CHECK(lower_boundary.start_vertex_it == nullptr);
-        CHECK(lower_boundary.end_vertex_it == nullptr);
-
-        EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::exterior_decomposition);
-        CHECK(upper_boundary.start_vertex_it == vertices.begin() + 4);
-        CHECK(upper_boundary.end_vertex_it == vertices.begin() + 6);
+        Region::BoundaryEdgeRanges result =
+            region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
+        CHECK(result.lower.start_vertex_it == nullptr);
+        CHECK(result.lower.end_vertex_it == nullptr);
+        CHECK(result.upper.start_vertex_it == vertices.begin() + 4);
+        CHECK(result.upper.end_vertex_it == vertices.begin() + 6);
       }
 
       SECTION("Left neighbor 1, right neighbor 0")
       {
         Region region{&vd.nodes[3], &vd.nodes[4], 1, 0};
 
-        EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::exterior_decomposition);
-        CHECK(lower_boundary.start_vertex_it == nullptr);
-        CHECK(lower_boundary.end_vertex_it == nullptr);
-
-        EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::exterior_decomposition);
-        CHECK(upper_boundary.start_vertex_it == vertices.begin() + 12);
-        CHECK(upper_boundary.end_vertex_it == vertices.begin() + 14);
+        Region::BoundaryEdgeRanges result =
+            region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
+        CHECK(result.lower.start_vertex_it == nullptr);
+        CHECK(result.lower.end_vertex_it == nullptr);
+        CHECK(result.upper.start_vertex_it == vertices.begin() + 12);
+        CHECK(result.upper.end_vertex_it == vertices.begin() + 14);
       }
     }
 
@@ -427,34 +422,29 @@ TEST_CASE("Region::lower_boundary/upper_boundary")
       {
         Region region{&vd.nodes[1], &vd.nodes[2], 0, 2};
 
-        EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::exterior_decomposition);
-        CHECK(lower_boundary.start_vertex_it == vertices.begin() + 12);
-        CHECK(lower_boundary.end_vertex_it == vertices.begin() + 14);
-
-        EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::exterior_decomposition);
-        CHECK(upper_boundary.start_vertex_it == nullptr);
-        CHECK(upper_boundary.end_vertex_it == nullptr);
+        Region::BoundaryEdgeRanges result =
+            region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
+        CHECK(result.lower.start_vertex_it == vertices.begin() + 12);
+        CHECK(result.lower.end_vertex_it == vertices.begin() + 14);
+        CHECK(result.upper.start_vertex_it == nullptr);
+        CHECK(result.upper.end_vertex_it == nullptr);
       }
 
       SECTION("Left neighbor 2, right neighbor 0")
       {
         Region region{&vd.nodes[3], &vd.nodes[4], 2, 0};
 
-        EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::exterior_decomposition);
-        CHECK(lower_boundary.start_vertex_it == vertices.begin() + 4);
-        CHECK(lower_boundary.end_vertex_it == vertices.begin() + 6);
-
-        EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::exterior_decomposition);
-        CHECK(upper_boundary.start_vertex_it == nullptr);
-        CHECK(upper_boundary.end_vertex_it == nullptr);
+        Region::BoundaryEdgeRanges result =
+            region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
+        CHECK(result.lower.start_vertex_it == vertices.begin() + 4);
+        CHECK(result.lower.end_vertex_it == vertices.begin() + 6);
+        CHECK(result.upper.start_vertex_it == nullptr);
+        CHECK(result.upper.end_vertex_it == nullptr);
       }
     }
   }
-}
 
-TEST_CASE("Region::leaf_reflex_vertex")
-{
-  SECTION("Interior decomposition")
+  SECTION("Interior decomposition, leaf nodes")
   {
     std::vector<Point2> vertices_storage{
         {-0.64, 4.20}, {1.56, 3.92},  {3.14, 3.92},  {1.90, 2.46},  {0.50, 2.08},  {1.30, 0.86},  {2.34, 0.18},
@@ -473,47 +463,71 @@ TEST_CASE("Region::leaf_reflex_vertex")
     SECTION("Leaf towards right, branch 0")
     {
       Region region{&vd.nodes[3], nullptr, 0, 0};
-      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result == vertices.begin() + 11);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin() + 7);
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 11);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 11);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + 15);
     }
 
     SECTION("Leaf towards right, branch 1")
     {
       Region region{&vd.nodes[0], nullptr, 1, 0};
-      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result == vertices.begin() + 40);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin() + 38);
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 40);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 40);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + 44);
     }
 
     SECTION("Leaf towards right, branch 2")
     {
       Region region{&vd.nodes[2], nullptr, 2, 0};
-      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result == vertices.begin() + 17);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin() + 15);
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 17);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 17);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + 19);
     }
 
     SECTION("Leaf towards left, branch 0")
     {
       Region region{nullptr, &vd.nodes[0], 0, 0};
-      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result == vertices.begin() + 34);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin() + +34);
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 39);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 31);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + +34);
     }
 
     SECTION("Leaf towards left, branch 1")
     {
       Region region{nullptr, &vd.nodes[3], 0, 1};
-      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result == vertices.begin() + 4);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin() + 4);
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 8);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 2);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + 4);
     }
 
     SECTION("Leaf towards left, branch 2")
     {
       Region region{nullptr, &vd.nodes[1], 0, 2};
-      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result == vertices.begin() + 26);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin() + 26);
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 31);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 21);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + 26);
     }
   }
 
-  SECTION("Exterior decomposition")
+  SECTION("Exterior decomposition, leaf nodes")
   {
     std::vector<Point2> vertices_storage{
         {-0.72, 6.20}, {0.78, 7.60},  {4.08, 7.08},   {2.14, 4.94},   {4.10, 3.58},   {2.28, 2.38},
@@ -531,57 +545,89 @@ TEST_CASE("Region::leaf_reflex_vertex")
     SECTION("Leaf towards right, branch 0")
     {
       Region region{&vd.nodes[7], nullptr, 0, 0};
-      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result == vertices.begin() + 9);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin() + 9);
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 11);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 6);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + 9);
     }
 
     SECTION("Leaf towards right, branch 1")
     {
       Region region{&vd.nodes[8], nullptr, 1, 0};
-      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result == vertices.begin() + 4);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin() + 4);
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 6);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 3);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + 4);
     }
 
     SECTION("Leaf towards right, branch 2")
     {
       Region region{&vd.nodes[8], nullptr, 2, 0};
-      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result == vertices.begin() + 2);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin() + 2);
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 3);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 1);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + 2);
     }
 
     SECTION("Leaf towards left, branch 0")
     {
       Region region{nullptr, &vd.nodes[3], 0, 0};
-      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result == vertices.begin() + 17);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin() + 15);
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 17);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 17);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + 18);
     }
 
     SECTION("Leaf towards left, branch 1")
     {
       Region region{nullptr, &vd.nodes[1], 0, 1};
-      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result == vertices.begin() + 19);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin() + 18);
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 19);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 19);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + 20);
     }
 
     SECTION("Leaf towards left, branch 2")
     {
       Region region{nullptr, &vd.nodes[1], 0, 2};
-      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result == vertices.begin() + 21);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result.lower.start_vertex_it == vertices.begin() + 20);
+      CHECK(result.lower.end_vertex_it == vertices.begin() + 21);
+      CHECK(result.upper.start_vertex_it == vertices.begin() + 21);
+      CHECK(result.upper.end_vertex_it == vertices.begin() + 23);
     }
 
     SECTION("Unbounded leaf towards right")
     {
       Region region{&vd.nodes[9], nullptr, 0, 0};
-      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result == nullptr);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result.lower.start_vertex_it == nullptr);
+      CHECK(result.lower.end_vertex_it == nullptr);
+      CHECK(result.upper.start_vertex_it == nullptr);
+      CHECK(result.upper.end_vertex_it == nullptr);
     }
 
     SECTION("Unbounded leaf towards left")
     {
       Region region{nullptr, &vd.nodes[0], 0, 0};
-      VertexIt result = region.leaf_reflex_vertex(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result == nullptr);
+      Region::BoundaryEdgeRanges result =
+          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
+      CHECK(result.lower.start_vertex_it == nullptr);
+      CHECK(result.lower.end_vertex_it == nullptr);
+      CHECK(result.upper.start_vertex_it == nullptr);
+      CHECK(result.upper.end_vertex_it == nullptr);
     }
   }
 }

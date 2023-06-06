@@ -19,7 +19,7 @@ using YOnEdge = math::Fraction<ScalarDeg2, ScalarDeg1>;
 /// @param edge The edge.
 /// @param x The x-coordinate.
 /// @return The y-coordinate of the point with x-coordinate @c x.
-YOnEdge y_on_edge_for_x(Segment2 edge, ScalarDeg1 x);
+inline YOnEdge y_on_edge_for_x(Segment2 edge, ScalarDeg1 x);
 
 /// A horizontal direction.
 enum class HorizontalDirection : uint8_t
@@ -133,6 +133,12 @@ struct EdgeRange
   bool inline is_valid() const;
 };
 
+struct EdgeRangePair
+{
+  EdgeRange lower_edge_range;
+  EdgeRange upper_edge_range;
+};
+
 /// Returns the edge in the given monotone edge range for which <tt>edge_range.start_vertex <= point <
 /// edge_range.end_vertex</tt>, where the ordering used is the lexicographical ordering if <tt>direction ==
 /// HorizontalDirection::right</tt> and the reverse lexicographical ordering if <tt>direction ==
@@ -198,36 +204,24 @@ struct Region
   /// @return True iff this is a leaf region.
   inline bool is_leaf() const;
 
-  /// Returns the @c EdgeRange of the lower boundary of this region, or @c EdgeRange::invalid if there's no lower
-  /// boundary.
-  ///
-  /// The resulting @c EdgeRange includes all edges which are fully or partially part of of the lower boundary.
-  ///
-  /// @pre This function should only be used with non leaf regions.
-  /// @param vd_type The type of the vertical decomposition this region belongs to.
-  /// @return The edge range.
-  inline EdgeRange lower_boundary(VerticalDecompositionType vd_type) const;
+  /// A struct holding the @c EdgeRanges of the lower and upper boundary of a region.
+  struct BoundaryEdgeRanges
+  {
+    /// The @c EdgeRange containing the edges which form the region's upper boundary, or @c EdgeRange::invalid() if it's
+    /// an unbounded region.
+    EdgeRange lower;
 
-  /// Returns the @c EdgeRange of the upper boundary of this region, or @c EdgeRange::invalid if there's no upper
-  /// boundary.
-  ///
-  /// The resulting @c EdgeRange includes all edges which are fully or partially part of of the lower boundary.
-  ///
-  /// @pre This function should only be used with non leaf regions.
-  /// @param vd_type The type of the vertical decomposition this region belongs to.
-  /// @return The edge range.
-  inline EdgeRange upper_boundary(VerticalDecompositionType vd_type) const;
+    /// The @c EdgeRange containg the edges which form the region's lower boundary, or @c EdgeRange::invalid() if it's
+    /// an unbounded region.
+    EdgeRange upper;
+  };
 
-  /// Returns the reflex vertex of a leaf region, or @c nullptr if the leaf is unbounded.
-  ///
-  /// The reflex vertex is the extremal vertex in the direction of the leaf node, that is, it's the rightmost vertex if
-  /// it's a leaf node with a @c left_node but no @c right_node, and the leftmost vertex if it's a leaf node with a @c
-  /// right_node but no @c left_node.
+  /// Returns a @c BoundaryEdgesRanges containing the two edge ranges which form the lower and upper boundary of this
+  /// region.
   ///
   /// @param vertices The vertices.
   /// @param vd_type The type of the vertical decomposition this region belongs to.
-  /// @return An iterator pointing to the reflex vertex.
-  inline VertexIt leaf_reflex_vertex(VerticesView vertices, VerticalDecompositionType vd_type) const;
+  inline BoundaryEdgeRanges boundary_edge_ranges(VerticesView vertices, VerticalDecompositionType vd_type) const;
 };
 
 /// An iterator which iterates over the regions of a vertical decomposition.
@@ -253,7 +247,7 @@ public:
   /// The first region will be available immediately after construction. Use @c move_next to move to subsequent regions.
   ///
   /// @param first_node The first node.
-  RegionIterator(const Node* first_node);
+  inline RegionIterator(const Node* first_node);
 
   /// Moves to the next region of this iteration.
   ///
@@ -261,7 +255,7 @@ public:
   ///
   /// @return True iff the iterator successfully advanced to the next region, false if the end of the iteration was
   /// reached.
-  bool move_next();
+  inline bool move_next();
 
   /// Returns the current region.
   ///
@@ -270,7 +264,7 @@ public:
 
 private:
   /// Returns true if the current region should be skipped.
-  bool should_skip_current_region() const;
+  inline bool should_skip_current_region() const;
 
   /// The first node, passed to the @c RegionIterator constructor.
   const Node* first_node_;
