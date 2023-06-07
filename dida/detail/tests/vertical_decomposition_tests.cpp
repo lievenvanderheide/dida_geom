@@ -237,93 +237,23 @@ TEST_CASE("Region::operator==")
   std::vector<Point2> vertices_storage{
       {-5.42, 2.82}, {3.92, 3.62}, {2.26, 5.74}, {3.74, 7.82}, {-4.52, 6.74}, {-1.10, 4.48},
   };
-
-  VerticesView vertices(vertices_storage);
-
-  VerticalDecomposition vd;
-  vd.nodes.resize(2);
-
-  vd.nodes[0].direction = HorizontalDirection::left;
-  vd.nodes[0].vertex_it = vertices.begin() + 5;
-  vd.nodes[0].lower_opp_edge = Edge::edge_from_index(vertices, 0);
-  vd.nodes[0].upper_opp_edge = Edge::edge_from_index(vertices, 3);
-  vd.nodes[0].neighbors[0] = &vd.nodes[1];
-  vd.nodes[0].neighbors[1] = nullptr;
-  vd.nodes[0].neighbors[2] = nullptr;
-
-  vd.nodes[1].direction = HorizontalDirection::right;
-  vd.nodes[1].vertex_it = vertices.begin() + 2;
-  vd.nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 0);
-  vd.nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 3);
-  vd.nodes[1].neighbors[0] = &vd.nodes[0];
-  vd.nodes[1].neighbors[1] = nullptr;
-  vd.nodes[1].neighbors[2] = nullptr;
-
-  SECTION("With left and right node")
-  {
-    Region a{&vd.nodes[0], &vd.nodes[1], 0, 0};
-
-    CHECK(a == a);
-    CHECK_FALSE(a == Region{&vd.nodes[1], &vd.nodes[1], 0, 0});
-    CHECK_FALSE(a == Region{&vd.nodes[0], &vd.nodes[0], 0, 0});
-    CHECK_FALSE(a == Region{&vd.nodes[0], &vd.nodes[1], 1, 0});
-    CHECK_FALSE(a == Region{&vd.nodes[0], &vd.nodes[1], 0, 1});
-  }
-
-  SECTION("No left node")
-  {
-    Region a{nullptr, &vd.nodes[0], 0, 0};
-
-    CHECK(a == a);
-    CHECK_FALSE(a == Region{&vd.nodes[0], &vd.nodes[0], 0, 0});
-    CHECK_FALSE(a == Region{nullptr, &vd.nodes[1], 0, 0});
-    CHECK(a == Region{nullptr, &vd.nodes[0], 1, 0});
-    CHECK_FALSE(a == Region{nullptr, &vd.nodes[0], 0, 1});
-  }
-
-  SECTION("No right node")
-  {
-    Region a{&vd.nodes[1], nullptr, 0, 0};
-
-    CHECK(a == a);
-    CHECK_FALSE(a == Region{&vd.nodes[0], nullptr, 0, 0});
-    CHECK_FALSE(a == Region{&vd.nodes[1], &vd.nodes[0], 0, 0});
-    CHECK_FALSE(a == Region{&vd.nodes[1], nullptr, 1, 0});
-    CHECK(a == Region{&vd.nodes[1], nullptr, 0, 1});
-  }
-}
-
-TEST_CASE("Region::is_leaf")
-{
-  std::vector<Point2> vertices_storage{{-4.10, 2.96}, {5.48, 1.94},  {3.84, 4.36},
-                                       {6.82, 8.06},  {-7.42, 6.68}, {-3.62, 5.78}};
   VerticesView vertices(vertices_storage);
 
   VerticalDecomposition vd =
       vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::interior_decomposition);
 
-  SECTION("Left leaf")
-  {
-    Region region{nullptr, &vd.nodes[0], 0, 2};
-    CHECK(region.is_leaf());
-  }
+  Region a{&vd.nodes[2], &vd.nodes[3], 0, 0};
 
-  SECTION("Right leaf")
-  {
-    Region region{&vd.nodes[1], nullptr, 1, 0};
-    CHECK(region.is_leaf());
-  }
-
-  SECTION("Not a leaf")
-  {
-    Region region{&vd.nodes[0], &vd.nodes[1], 0, 0};
-    CHECK_FALSE(region.is_leaf());
-  }
+  CHECK(a == a);
+  CHECK_FALSE(a == Region{&vd.nodes[1], &vd.nodes[3], 0, 0});
+  CHECK_FALSE(a == Region{&vd.nodes[2], &vd.nodes[4], 0, 0});
+  CHECK_FALSE(a == Region{&vd.nodes[2], &vd.nodes[3], 1, 0});
+  CHECK_FALSE(a == Region{&vd.nodes[2], &vd.nodes[3], 0, 1});
 }
 
-TEST_CASE("Region::boundary_edge_ranges")
+TEST_CASE("Region::lower_boundary")
 {
-  SECTION("Interior decomposition, non leaf nodes")
+  SECTION("Interior decomposition")
   {
     std::vector<Point2> vertices_storage{
         {-5.96, 3.04}, {-2.12, 3.26}, {-4.12, 1.02}, {2.60, 1.02},  {0.32, 3.30}, {5.48, 3.26},  {3.74, 4.68},
@@ -334,44 +264,73 @@ TEST_CASE("Region::boundary_edge_ranges")
     VerticalDecomposition vd =
         vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::interior_decomposition);
 
-    SECTION("Left neighbor 0, right neighbor 2")
+    SECTION("Left branch 0, right branch 2")
     {
-      Region region{&vd.nodes[0], &vd.nodes[1], 0, 2};
+      Region region{&vd.nodes[3], &vd.nodes[4], 0, 2};
 
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin());
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 1);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 11);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + 12);
+      EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::interior_decomposition);
+      CHECK(lower_boundary.start_vertex_it == vertices.begin());
+      CHECK(lower_boundary.end_vertex_it == vertices.begin() + 1);
+
+      EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::interior_decomposition);
+      CHECK(upper_boundary.start_vertex_it == vertices.begin() + 11);
+      CHECK(upper_boundary.end_vertex_it == vertices.begin() + 12);
     }
 
-    SECTION("Left neighbor 1, right neighbor 0")
+    SECTION("Left branch 1, right branch 0")
     {
-      Region region{&vd.nodes[4], &vd.nodes[5], 1, 0};
+      Region region{&vd.nodes[8], &vd.nodes[10], 1, 0};
 
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin() + 4);
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 5);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 7);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + 8);
+      EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::interior_decomposition);
+      CHECK(lower_boundary.start_vertex_it == vertices.begin() + 4);
+      CHECK(lower_boundary.end_vertex_it == vertices.begin() + 5);
+
+      EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::interior_decomposition);
+      CHECK(upper_boundary.start_vertex_it == vertices.begin() + 7);
+      CHECK(upper_boundary.end_vertex_it == vertices.begin() + 8);
     }
 
-    SECTION("Left neighbor 2, right neighbor 1")
+    SECTION("Left branch 2, right branch 1")
     {
-      Region region{&vd.nodes[2], &vd.nodes[3], 2, 1};
+      Region region{&vd.nodes[6], &vd.nodes[7], 2, 1};
 
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin() + 4);
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 5);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 11);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + 12);
+      EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::interior_decomposition);
+      CHECK(lower_boundary.start_vertex_it == vertices.begin() + 4);
+      CHECK(lower_boundary.end_vertex_it == vertices.begin() + 5);
+
+      EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::interior_decomposition);
+      CHECK(upper_boundary.start_vertex_it == vertices.begin() + 11);
+      CHECK(upper_boundary.end_vertex_it == vertices.begin() + 12);
+    }
+
+    SECTION("Left leaf, right branch 1")
+    {
+      Region region{&vd.nodes[2], &vd.nodes[4], 0, 1};
+
+      EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::interior_decomposition);
+      CHECK(lower_boundary.start_vertex_it == vertices.begin() + 2);
+      CHECK(lower_boundary.end_vertex_it == vertices.begin() + 3);
+
+      EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::interior_decomposition);
+      CHECK(upper_boundary.start_vertex_it == vertices.begin() + 1);
+      CHECK(upper_boundary.end_vertex_it == vertices.begin() + 2);
+    }
+
+    SECTION("Left branch 2, right leaf")
+    {
+      Region region{&vd.nodes[10], &vd.nodes[13], 2, 0};
+
+      EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::interior_decomposition);
+      CHECK(lower_boundary.start_vertex_it == vertices.begin() + 6);
+      CHECK(lower_boundary.end_vertex_it == vertices.begin() + 7);
+
+      EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::interior_decomposition);
+      CHECK(upper_boundary.start_vertex_it == vertices.begin() + 7);
+      CHECK(upper_boundary.end_vertex_it == vertices.begin() + 8);
     }
   }
 
-  SECTION("Exterior decomposition, non leaf nodes")
+  SECTION("Exterior decomposition")
   {
     SECTION("No lower boundary")
     {
@@ -388,26 +347,28 @@ TEST_CASE("Region::boundary_edge_ranges")
 
       SECTION("Left neighbor 0, right neighbor 1")
       {
-        Region region{&vd.nodes[1], &vd.nodes[2], 0, 1};
+        Region region{&vd.nodes[3], &vd.nodes[4], 0, 1};
 
-        Region::BoundaryEdgeRanges result =
-            region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
-        CHECK(result.lower.start_vertex_it == nullptr);
-        CHECK(result.lower.end_vertex_it == nullptr);
-        CHECK(result.upper.start_vertex_it == vertices.begin() + 4);
-        CHECK(result.upper.end_vertex_it == vertices.begin() + 6);
+        EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::exterior_decomposition);
+        CHECK(lower_boundary.start_vertex_it == nullptr);
+        CHECK(lower_boundary.end_vertex_it == nullptr);
+
+        EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::exterior_decomposition);
+        CHECK(upper_boundary.start_vertex_it == vertices.begin() + 4);
+        CHECK(upper_boundary.end_vertex_it == vertices.begin() + 6);
       }
 
       SECTION("Left neighbor 1, right neighbor 0")
       {
-        Region region{&vd.nodes[3], &vd.nodes[4], 1, 0};
+        Region region{&vd.nodes[5], &vd.nodes[6], 1, 0};
 
-        Region::BoundaryEdgeRanges result =
-            region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
-        CHECK(result.lower.start_vertex_it == nullptr);
-        CHECK(result.lower.end_vertex_it == nullptr);
-        CHECK(result.upper.start_vertex_it == vertices.begin() + 12);
-        CHECK(result.upper.end_vertex_it == vertices.begin() + 14);
+        EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::exterior_decomposition);
+        CHECK(lower_boundary.start_vertex_it == nullptr);
+        CHECK(lower_boundary.end_vertex_it == nullptr);
+
+        EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::exterior_decomposition);
+        CHECK(upper_boundary.start_vertex_it == vertices.begin() + 12);
+        CHECK(upper_boundary.end_vertex_it == vertices.begin() + 14);
       }
     }
 
@@ -426,214 +387,29 @@ TEST_CASE("Region::boundary_edge_ranges")
 
       SECTION("Left neighbor 0, right neighbor 2")
       {
-        Region region{&vd.nodes[1], &vd.nodes[2], 0, 2};
+        Region region{&vd.nodes[3], &vd.nodes[4], 0, 2};
 
-        Region::BoundaryEdgeRanges result =
-            region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
-        CHECK(result.lower.start_vertex_it == vertices.begin() + 12);
-        CHECK(result.lower.end_vertex_it == vertices.begin() + 14);
-        CHECK(result.upper.start_vertex_it == nullptr);
-        CHECK(result.upper.end_vertex_it == nullptr);
+        EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::exterior_decomposition);
+        CHECK(lower_boundary.start_vertex_it == vertices.begin() + 12);
+        CHECK(lower_boundary.end_vertex_it == vertices.begin() + 14);
+
+        EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::exterior_decomposition);
+        CHECK(upper_boundary.start_vertex_it == nullptr);
+        CHECK(upper_boundary.end_vertex_it == nullptr);
       }
 
       SECTION("Left neighbor 2, right neighbor 0")
       {
-        Region region{&vd.nodes[3], &vd.nodes[4], 2, 0};
+        Region region{&vd.nodes[5], &vd.nodes[6], 2, 0};
 
-        Region::BoundaryEdgeRanges result =
-            region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
-        CHECK(result.lower.start_vertex_it == vertices.begin() + 4);
-        CHECK(result.lower.end_vertex_it == vertices.begin() + 6);
-        CHECK(result.upper.start_vertex_it == nullptr);
-        CHECK(result.upper.end_vertex_it == nullptr);
+        EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::exterior_decomposition);
+        CHECK(lower_boundary.start_vertex_it == vertices.begin() + 4);
+        CHECK(lower_boundary.end_vertex_it == vertices.begin() + 6);
+
+        EdgeRange upper_boundary = region.upper_boundary(VerticalDecompositionType::exterior_decomposition);
+        CHECK(upper_boundary.start_vertex_it == nullptr);
+        CHECK(upper_boundary.end_vertex_it == nullptr);
       }
-    }
-  }
-
-  SECTION("Interior decomposition, leaf nodes")
-  {
-    std::vector<Point2> vertices_storage{
-        {-0.64, 4.20}, {1.56, 3.92},  {3.14, 3.92},  {1.90, 2.46},  {0.50, 2.08},  {1.30, 0.86},  {2.34, 0.18},
-        {3.12, 1.08},  {4.52, 2.30},  {7.02, 2.30},  {7.66, 4.34},  {7.90, 8.18},  {7.18, 6.26},  {6.10, 7.22},
-        {5.54, 6.16},  {2.68, 6.78},  {3.42, 7.98},  {4.68, 7.76},  {3.14, 9.10},  {1.24, 6.88},  {-0.24, 6.10},
-        {-1.94, 6.82}, {-3.56, 8.84}, {-5.08, 9.20}, {-6.66, 8.52}, {-7.42, 7.82}, {-8.62, 7.36}, {-7.34, 6.70},
-        {-6.54, 7.32}, {-5.30, 7.72}, {-3.78, 6.24}, {-2.10, 5.52}, {-4.82, 4.48}, {-6.88, 4.72}, {-7.80, 3.24},
-        {-6.30, 2.40}, {-5.18, 3.12}, {-4.04, 2.60}, {-3.42, 3.50}, {-0.92, 0.78}, {2.44, -0.58}, {-0.16, 1.06},
-        {-1.18, 2.74}, {-1.52, 2.50}, {-2.34, 3.68},
-    };
-    ArrayView<const Point2> vertices(vertices_storage);
-
-    VerticalDecomposition vd =
-        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::interior_decomposition);
-
-    SECTION("Leaf towards right, branch 0")
-    {
-      Region region{&vd.nodes[3], nullptr, 0, 0};
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin() + 7);
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 11);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 11);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + 15);
-    }
-
-    SECTION("Leaf towards right, branch 1")
-    {
-      Region region{&vd.nodes[0], nullptr, 1, 0};
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin() + 38);
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 40);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 40);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + 44);
-    }
-
-    SECTION("Leaf towards right, branch 2")
-    {
-      Region region{&vd.nodes[2], nullptr, 2, 0};
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin() + 15);
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 17);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 17);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + 19);
-    }
-
-    SECTION("Leaf towards left, branch 0")
-    {
-      Region region{nullptr, &vd.nodes[0], 0, 0};
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin() + +34);
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 39);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 31);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + +34);
-    }
-
-    SECTION("Leaf towards left, branch 1")
-    {
-      Region region{nullptr, &vd.nodes[3], 0, 1};
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin() + 4);
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 8);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 2);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + 4);
-    }
-
-    SECTION("Leaf towards left, branch 2")
-    {
-      Region region{nullptr, &vd.nodes[1], 0, 2};
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::interior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin() + 26);
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 31);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 21);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + 26);
-    }
-  }
-
-  SECTION("Exterior decomposition, leaf nodes")
-  {
-    std::vector<Point2> vertices_storage{
-        {-0.72, 6.20}, {0.78, 7.60},  {4.08, 7.08},   {2.14, 4.94},   {4.10, 3.58},   {2.28, 2.38},
-        {0.56, 2.60},  {4.04, 0.88},  {5.90, 0.90},   {6.28, -0.80},  {3.50, -2.52},  {1.12, -2.54},
-        {2.14, -0.76}, {0.34, -0.04}, {-1.94, -0.66}, {-0.94, -2.20}, {-3.92, -1.78}, {-4.66, 0.12},
-        {-1.44, 1.32}, {-5.24, 2.56}, {-3.40, 3.50},  {-5.50, 4.72},  {-4.32, 7.46},  {-2.30, 6.34},
-        {-2.66, 8.74}, {-6.32, 8.64}, {-5.60, -2.52}, {7.02, -2.80},  {6.82, 9.26},   {-0.72, 9.00},
-    };
-
-    ArrayView<const Point2> vertices(vertices_storage);
-
-    VerticalDecomposition vd =
-        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::exterior_decomposition);
-
-    SECTION("Leaf towards right, branch 0")
-    {
-      Region region{&vd.nodes[7], nullptr, 0, 0};
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin() + 9);
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 11);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 6);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + 9);
-    }
-
-    SECTION("Leaf towards right, branch 1")
-    {
-      Region region{&vd.nodes[8], nullptr, 1, 0};
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin() + 4);
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 6);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 3);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + 4);
-    }
-
-    SECTION("Leaf towards right, branch 2")
-    {
-      Region region{&vd.nodes[8], nullptr, 2, 0};
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin() + 2);
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 3);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 1);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + 2);
-    }
-
-    SECTION("Leaf towards left, branch 0")
-    {
-      Region region{nullptr, &vd.nodes[3], 0, 0};
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin() + 15);
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 17);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 17);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + 18);
-    }
-
-    SECTION("Leaf towards left, branch 1")
-    {
-      Region region{nullptr, &vd.nodes[1], 0, 1};
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin() + 18);
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 19);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 19);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + 20);
-    }
-
-    SECTION("Leaf towards left, branch 2")
-    {
-      Region region{nullptr, &vd.nodes[1], 0, 2};
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result.lower.start_vertex_it == vertices.begin() + 20);
-      CHECK(result.lower.end_vertex_it == vertices.begin() + 21);
-      CHECK(result.upper.start_vertex_it == vertices.begin() + 21);
-      CHECK(result.upper.end_vertex_it == vertices.begin() + 23);
-    }
-
-    SECTION("Unbounded leaf towards right")
-    {
-      Region region{&vd.nodes[9], nullptr, 0, 0};
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result.lower.start_vertex_it == nullptr);
-      CHECK(result.lower.end_vertex_it == nullptr);
-      CHECK(result.upper.start_vertex_it == nullptr);
-      CHECK(result.upper.end_vertex_it == nullptr);
-    }
-
-    SECTION("Unbounded leaf towards left")
-    {
-      Region region{nullptr, &vd.nodes[0], 0, 0};
-      Region::BoundaryEdgeRanges result =
-          region.boundary_edge_ranges(vertices, VerticalDecompositionType::exterior_decomposition);
-      CHECK(result.lower.start_vertex_it == nullptr);
-      CHECK(result.lower.end_vertex_it == nullptr);
-      CHECK(result.upper.start_vertex_it == nullptr);
-      CHECK(result.upper.end_vertex_it == nullptr);
     }
   }
 }
@@ -644,7 +420,7 @@ namespace
 /// Validates that the set of regions produced with a @c RegionIterator is the same, up to a rotation of the region
 /// list, regardless of the node passed to the @c RegionIterator constructor.
 ///
-/// @param vd The vertical decomposition to validate.
+/// @param vd The vertical decomposition to use to validate the @c RegionIterator.
 void validate_region_iterator_with_each_start_node(const VerticalDecomposition& vd)
 {
   std::vector<Region> expected_regions;
@@ -685,178 +461,141 @@ TEST_CASE("RegionIterator")
                                          {1.26, 7.88},  {5.86, 5.18},  {2.02, 3.86},  {4.90, 3.02}};
 
     VerticesView vertices(vertices_storage);
+    VerticalDecomposition vd =
+        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::interior_decomposition);
 
-    VerticalDecomposition vd;
-    vd.nodes.resize(6);
-
-    vd.nodes[0].direction = HorizontalDirection::right;
-    vd.nodes[0].vertex_it = vertices.begin() + 10;
-    vd.nodes[0].lower_opp_edge = Edge::edge_from_index(vertices, 8);
-    vd.nodes[0].upper_opp_edge = Edge::edge_from_index(vertices, 7);
-    vd.nodes[0].neighbors[0] = nullptr;
-    vd.nodes[0].neighbors[1] = nullptr;
-    vd.nodes[0].neighbors[2] = &vd.nodes[2];
-
-    vd.nodes[1].direction = HorizontalDirection::left;
-    vd.nodes[1].vertex_it = vertices.begin() + 13;
-    vd.nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 0);
-    vd.nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 11);
-    vd.nodes[1].neighbors[0] = &vd.nodes[2];
-    vd.nodes[1].neighbors[1] = nullptr;
-    vd.nodes[1].neighbors[2] = nullptr;
-
-    vd.nodes[2].direction = HorizontalDirection::left;
-    vd.nodes[2].vertex_it = vertices.begin() + 11;
-    vd.nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 0);
-    vd.nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 7);
-    vd.nodes[2].neighbors[0] = &vd.nodes[3];
-    vd.nodes[2].neighbors[1] = &vd.nodes[1];
-    vd.nodes[2].neighbors[2] = &vd.nodes[0];
-
-    vd.nodes[3].direction = HorizontalDirection::right;
-    vd.nodes[3].vertex_it = vertices.begin() + 4;
-    vd.nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 0);
-    vd.nodes[3].upper_opp_edge = Edge::edge_from_index(vertices, 7);
-    vd.nodes[3].neighbors[0] = &vd.nodes[2];
-    vd.nodes[3].neighbors[1] = &vd.nodes[5];
-    vd.nodes[3].neighbors[2] = &vd.nodes[4];
-
-    vd.nodes[4].direction = HorizontalDirection::left;
-    vd.nodes[4].vertex_it = vertices.begin() + 5;
-    vd.nodes[4].lower_opp_edge = Edge::edge_from_index(vertices, 6);
-    vd.nodes[4].upper_opp_edge = Edge::edge_from_index(vertices, 7);
-    vd.nodes[4].neighbors[0] = nullptr;
-    vd.nodes[4].neighbors[1] = nullptr;
-    vd.nodes[4].neighbors[2] = &vd.nodes[3];
-
-    vd.nodes[5].direction = HorizontalDirection::right;
-    vd.nodes[5].vertex_it = vertices.begin() + 2;
-    vd.nodes[5].lower_opp_edge = Edge::edge_from_index(vertices, 0);
-    vd.nodes[5].upper_opp_edge = Edge::edge_from_index(vertices, 3);
-    vd.nodes[5].neighbors[0] = &vd.nodes[3];
-    vd.nodes[5].neighbors[1] = nullptr;
-    vd.nodes[5].neighbors[2] = nullptr;
-
-    SECTION("Start with rightward node, first region not a leaf")
+    SECTION("Start with rightward non leaf node")
     {
-      RegionIterator iterator(&vd.nodes[0]);
+      RegionIterator iterator(&vd.nodes[1]);
 
-      CHECK(iterator.region().left_node == &vd.nodes[0]);
-      CHECK(iterator.region().right_node == &vd.nodes[2]);
+      CHECK(iterator.region().left_node == &vd.nodes[1]);
+      CHECK(iterator.region().right_node == &vd.nodes[6]);
       CHECK(iterator.region().left_node_branch_index == 2);
       CHECK(iterator.region().right_node_branch_index == 2);
-
-      REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == nullptr);
-      CHECK(iterator.region().right_node == &vd.nodes[1]);
-      CHECK(iterator.region().right_node_branch_index == 2);
-
-      REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == nullptr);
-      CHECK(iterator.region().right_node == &vd.nodes[1]);
-      CHECK(iterator.region().right_node_branch_index == 1);
-
-      REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == &vd.nodes[1]);
-      CHECK(iterator.region().right_node == &vd.nodes[2]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 1);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[2]);
-      CHECK(iterator.region().right_node == &vd.nodes[3]);
+      CHECK(iterator.region().right_node == &vd.nodes[5]);
+      CHECK(iterator.region().left_node_branch_index == 0);
+      CHECK(iterator.region().right_node_branch_index == 2);
+
+      REQUIRE(iterator.move_next());
+      CHECK(iterator.region().left_node == &vd.nodes[4]);
+      CHECK(iterator.region().right_node == &vd.nodes[5]);
+      CHECK(iterator.region().left_node_branch_index == 0);
+      CHECK(iterator.region().right_node_branch_index == 1);
+
+      REQUIRE(iterator.move_next());
+      CHECK(iterator.region().left_node == &vd.nodes[5]);
+      CHECK(iterator.region().right_node == &vd.nodes[6]);
+      CHECK(iterator.region().left_node_branch_index == 0);
+      CHECK(iterator.region().right_node_branch_index == 1);
+
+      REQUIRE(iterator.move_next());
+      CHECK(iterator.region().left_node == &vd.nodes[6]);
+      CHECK(iterator.region().right_node == &vd.nodes[7]);
       CHECK(iterator.region().left_node_branch_index == 0);
       CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == &vd.nodes[3]);
-      CHECK(iterator.region().right_node == &vd.nodes[5]);
+      CHECK(iterator.region().left_node == &vd.nodes[7]);
+      CHECK(iterator.region().right_node == &vd.nodes[10]);
       CHECK(iterator.region().left_node_branch_index == 1);
       CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == &vd.nodes[5]);
-      CHECK(iterator.region().right_node == nullptr);
+      CHECK(iterator.region().left_node == &vd.nodes[10]);
+      CHECK(iterator.region().right_node == &vd.nodes[13]);
       CHECK(iterator.region().left_node_branch_index == 1);
+      CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == &vd.nodes[5]);
-      CHECK(iterator.region().right_node == nullptr);
+      CHECK(iterator.region().left_node == &vd.nodes[10]);
+      CHECK(iterator.region().right_node == &vd.nodes[12]);
       CHECK(iterator.region().left_node_branch_index == 2);
+      CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == &vd.nodes[3]);
-      CHECK(iterator.region().right_node == &vd.nodes[4]);
+      CHECK(iterator.region().left_node == &vd.nodes[7]);
+      CHECK(iterator.region().right_node == &vd.nodes[9]);
       CHECK(iterator.region().left_node_branch_index == 2);
       CHECK(iterator.region().right_node_branch_index == 2);
 
       REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == nullptr);
-      CHECK(iterator.region().right_node == &vd.nodes[4]);
+      CHECK(iterator.region().left_node == &vd.nodes[8]);
+      CHECK(iterator.region().right_node == &vd.nodes[9]);
+      CHECK(iterator.region().left_node_branch_index == 0);
       CHECK(iterator.region().right_node_branch_index == 1);
 
       REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == &vd.nodes[4]);
-      CHECK(iterator.region().right_node == nullptr);
+      CHECK(iterator.region().left_node == &vd.nodes[9]);
+      CHECK(iterator.region().right_node == &vd.nodes[11]);
       CHECK(iterator.region().left_node_branch_index == 0);
-
-      REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == nullptr);
-      CHECK(iterator.region().right_node == &vd.nodes[0]);
       CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[0]);
-      CHECK(iterator.region().right_node == nullptr);
+      CHECK(iterator.region().right_node == &vd.nodes[1]);
+      CHECK(iterator.region().left_node_branch_index == 0);
+      CHECK(iterator.region().right_node_branch_index == 0);
+
+      REQUIRE(iterator.move_next());
+      CHECK(iterator.region().left_node == &vd.nodes[1]);
+      CHECK(iterator.region().right_node == &vd.nodes[3]);
       CHECK(iterator.region().left_node_branch_index == 1);
+      CHECK(iterator.region().right_node_branch_index == 0);
 
       CHECK(!iterator.move_next());
     }
 
-    SECTION("Starts with rightward node, first region a leaf")
+    SECTION("Starts with rightward leaf node")
+    {
+      RegionIterator iterator(&vd.nodes[3]);
+
+      CHECK(iterator.region().left_node == &vd.nodes[1]);
+      CHECK(iterator.region().right_node == &vd.nodes[6]);
+      CHECK(iterator.region().left_node_branch_index == 2);
+      CHECK(iterator.region().right_node_branch_index == 2);
+
+      REQUIRE(iterator.move_next());
+      CHECK(iterator.region().left_node == &vd.nodes[2]);
+      CHECK(iterator.region().right_node == &vd.nodes[5]);
+      CHECK(iterator.region().left_node_branch_index == 0);
+      CHECK(iterator.region().right_node_branch_index == 2);
+
+      // The rest is the same as in "Start with rightward non leaf node" section, so no need to test it again.
+    }
+
+    SECTION("Starts with leftward non leaf node")
+    {
+      RegionIterator iterator(&vd.nodes[6]);
+
+      CHECK(iterator.region().left_node == &vd.nodes[2]);
+      CHECK(iterator.region().right_node == &vd.nodes[5]);
+      CHECK(iterator.region().left_node_branch_index == 0);
+      CHECK(iterator.region().right_node_branch_index == 2);
+
+      REQUIRE(iterator.move_next());
+      CHECK(iterator.region().left_node == &vd.nodes[4]);
+      CHECK(iterator.region().right_node == &vd.nodes[5]);
+      CHECK(iterator.region().left_node_branch_index == 0);
+      CHECK(iterator.region().right_node_branch_index == 1);
+
+      // The rest belongs to the general case, so no need to test it again.
+    }
+
+    SECTION("Starts with lefward leaf node")
     {
       RegionIterator iterator(&vd.nodes[5]);
 
+      CHECK(iterator.region().left_node == &vd.nodes[4]);
+      CHECK(iterator.region().right_node == &vd.nodes[5]);
+      CHECK(iterator.region().left_node_branch_index == 0);
+      CHECK(iterator.region().right_node_branch_index == 1);
+
+      REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[5]);
-      CHECK(iterator.region().right_node == nullptr);
-      CHECK(iterator.region().left_node_branch_index == 2);
-
-      REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == &vd.nodes[3]);
-      CHECK(iterator.region().right_node == &vd.nodes[4]);
-      CHECK(iterator.region().left_node_branch_index == 2);
-      CHECK(iterator.region().right_node_branch_index == 2);
-
-      // The rest belongs to the general case, so no need to test it again.
-    }
-
-    SECTION("Starts with leftward node, first skipped region not a leaf")
-    {
-      RegionIterator iterator(&vd.nodes[2]);
-
-      CHECK(iterator.region().left_node == nullptr);
-      CHECK(iterator.region().right_node == &vd.nodes[1]);
-      CHECK(iterator.region().right_node_branch_index == 2);
-
-      REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == nullptr);
-      CHECK(iterator.region().right_node == &vd.nodes[1]);
-      CHECK(iterator.region().right_node_branch_index == 1);
-
-      // The rest belongs to the general case, so no need to test it again.
-    }
-
-    SECTION("Starts with lefward node, first skipped region a leaf")
-    {
-      RegionIterator iterator(&vd.nodes[1]);
-
-      CHECK(iterator.region().left_node == nullptr);
-      CHECK(iterator.region().right_node == &vd.nodes[1]);
-      CHECK(iterator.region().right_node_branch_index == 1);
-
-      REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == &vd.nodes[1]);
-      CHECK(iterator.region().right_node == &vd.nodes[2]);
+      CHECK(iterator.region().right_node == &vd.nodes[6]);
       CHECK(iterator.region().left_node_branch_index == 0);
       CHECK(iterator.region().right_node_branch_index == 1);
 
@@ -871,120 +610,75 @@ TEST_CASE("RegionIterator")
 
   SECTION("Exterior")
   {
-    std::vector<Point2> vertices_storage = {
+    std::vector<Point2> vertices_storage{
         {-2.72, 2.30}, {2.84, -2.38}, {2.04, 1.30}, {8.40, 1.34}, {7.36, -0.96},
         {12.62, 2.52}, {6.08, 6.02},  {8.28, 2.96}, {0.42, 3.28}, {1.88, 7.18},
     };
 
     VerticesView vertices(vertices_storage);
-
-    VerticalDecomposition vd;
-    vd.nodes.resize(6);
-
-    vd.nodes[0].direction = HorizontalDirection::right;
-    vd.nodes[0].vertex_it = vertices.begin() + 0;
-    vd.nodes[0].lower_opp_edge = Edge::invalid();
-    vd.nodes[0].upper_opp_edge = Edge::invalid();
-    vd.nodes[0].neighbors[0] = nullptr;
-    vd.nodes[0].neighbors[1] = &vd.nodes[2];
-    vd.nodes[0].neighbors[2] = &vd.nodes[1];
-
-    vd.nodes[1].direction = HorizontalDirection::left;
-    vd.nodes[1].vertex_it = vertices.begin() + 9;
-    vd.nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 7);
-    vd.nodes[1].upper_opp_edge = Edge::invalid();
-    vd.nodes[1].neighbors[0] = &vd.nodes[3];
-    vd.nodes[1].neighbors[1] = nullptr;
-    vd.nodes[1].neighbors[2] = &vd.nodes[0];
-
-    vd.nodes[2].direction = HorizontalDirection::left;
-    vd.nodes[2].vertex_it = vertices.begin() + 1;
-    vd.nodes[2].lower_opp_edge = Edge::invalid();
-    vd.nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 2);
-    vd.nodes[2].neighbors[0] = &vd.nodes[4];
-    vd.nodes[2].neighbors[1] = &vd.nodes[0];
-    vd.nodes[2].neighbors[2] = nullptr;
-
-    vd.nodes[3].direction = HorizontalDirection::right;
-    vd.nodes[3].vertex_it = vertices.begin() + 6;
-    vd.nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 7);
-    vd.nodes[3].upper_opp_edge = Edge::invalid();
-    vd.nodes[3].neighbors[0] = &vd.nodes[1];
-    vd.nodes[3].neighbors[1] = nullptr;
-    vd.nodes[3].neighbors[2] = &vd.nodes[5];
-
-    vd.nodes[4].direction = HorizontalDirection::right;
-    vd.nodes[4].vertex_it = vertices.begin() + 4;
-    vd.nodes[4].lower_opp_edge = Edge::invalid();
-    vd.nodes[4].upper_opp_edge = Edge::edge_from_index(vertices, 2);
-    vd.nodes[4].neighbors[0] = &vd.nodes[2];
-    vd.nodes[4].neighbors[1] = &vd.nodes[5];
-    vd.nodes[4].neighbors[2] = nullptr;
-
-    vd.nodes[5].direction = HorizontalDirection::left;
-    vd.nodes[5].vertex_it = vertices.begin() + 5;
-    vd.nodes[5].lower_opp_edge = Edge::invalid();
-    vd.nodes[5].upper_opp_edge = Edge::invalid();
-    vd.nodes[5].neighbors[0] = nullptr;
-    vd.nodes[5].neighbors[1] = &vd.nodes[4];
-    vd.nodes[5].neighbors[2] = &vd.nodes[3];
+    VerticalDecomposition vd =
+        vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::exterior_decomposition);
 
     SECTION("Start at node[0]")
     {
       RegionIterator iterator(&vd.nodes[0]);
 
       CHECK(iterator.region().left_node == &vd.nodes[0]);
-      CHECK(iterator.region().right_node == &vd.nodes[1]);
+      CHECK(iterator.region().right_node == &vd.nodes[2]);
       CHECK(iterator.region().left_node_branch_index == 2);
       CHECK(iterator.region().right_node_branch_index == 2);
-
-      REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == nullptr);
-      CHECK(iterator.region().right_node == &vd.nodes[1]);
-      CHECK(iterator.region().right_node_branch_index == 1);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[1]);
-      CHECK(iterator.region().right_node == &vd.nodes[3]);
+      CHECK(iterator.region().right_node == &vd.nodes[2]);
+      CHECK(iterator.region().left_node_branch_index == 0);
+      CHECK(iterator.region().right_node_branch_index == 1);
+
+      REQUIRE(iterator.move_next());
+      CHECK(iterator.region().left_node == &vd.nodes[2]);
+      CHECK(iterator.region().right_node == &vd.nodes[5]);
       CHECK(iterator.region().left_node_branch_index == 0);
       CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == &vd.nodes[3]);
-      CHECK(iterator.region().right_node == nullptr);
+      CHECK(iterator.region().left_node == &vd.nodes[5]);
+      CHECK(iterator.region().right_node == &vd.nodes[7]);
       CHECK(iterator.region().left_node_branch_index == 1);
+      CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == &vd.nodes[3]);
-      CHECK(iterator.region().right_node == &vd.nodes[5]);
+      CHECK(iterator.region().left_node == &vd.nodes[5]);
+      CHECK(iterator.region().right_node == &vd.nodes[9]);
       CHECK(iterator.region().left_node_branch_index == 2);
       CHECK(iterator.region().right_node_branch_index == 2);
 
       REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == &vd.nodes[4]);
-      CHECK(iterator.region().right_node == &vd.nodes[5]);
+      CHECK(iterator.region().left_node == &vd.nodes[6]);
+      CHECK(iterator.region().right_node == &vd.nodes[9]);
       CHECK(iterator.region().left_node_branch_index == 1);
       CHECK(iterator.region().right_node_branch_index == 1);
 
       REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == &vd.nodes[4]);
-      CHECK(iterator.region().right_node == nullptr);
+      CHECK(iterator.region().left_node == &vd.nodes[6]);
+      CHECK(iterator.region().right_node == &vd.nodes[8]);
       CHECK(iterator.region().left_node_branch_index == 2);
+      CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == &vd.nodes[2]);
-      CHECK(iterator.region().right_node == &vd.nodes[4]);
+      CHECK(iterator.region().left_node == &vd.nodes[4]);
+      CHECK(iterator.region().right_node == &vd.nodes[6]);
       CHECK(iterator.region().left_node_branch_index == 0);
       CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
-      CHECK(iterator.region().left_node == nullptr);
-      CHECK(iterator.region().right_node == &vd.nodes[2]);
+      CHECK(iterator.region().left_node == &vd.nodes[3]);
+      CHECK(iterator.region().right_node == &vd.nodes[4]);
+      CHECK(iterator.region().left_node_branch_index == 0);
       CHECK(iterator.region().right_node_branch_index == 2);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[0]);
-      CHECK(iterator.region().right_node == &vd.nodes[2]);
+      CHECK(iterator.region().right_node == &vd.nodes[4]);
       CHECK(iterator.region().left_node_branch_index == 1);
       CHECK(iterator.region().right_node_branch_index == 1);
 
