@@ -25,6 +25,11 @@ YOnEdge y_on_edge_for_x(Segment2 edge, ScalarDeg1 x)
   return YOnEdge(num, denom);
 }
 
+constexpr HorizontalDirection other_direction(HorizontalDirection direction)
+{
+  return direction == HorizontalDirection::left ? HorizontalDirection::right : HorizontalDirection::left;
+}
+
 template <HorizontalDirection direction>
 bool lex_less_than_with_direction(Point2 a, Point2 b)
 {

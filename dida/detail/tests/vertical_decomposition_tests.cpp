@@ -22,6 +22,12 @@ TEST_CASE("y_on_edge_for_x")
   }
 }
 
+TEST_CASE("other_direction")
+{
+  CHECK(other_direction(HorizontalDirection::left) == HorizontalDirection::right);
+  CHECK(other_direction(HorizontalDirection::right) == HorizontalDirection::left);
+}
+
 TEST_CASE("lex_less_than_with_direction")
 {
   SECTION("x different")

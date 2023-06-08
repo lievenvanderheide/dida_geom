@@ -31,6 +31,12 @@ enum class HorizontalDirection : uint8_t
   right,
 };
 
+/// Returns the other direction of @c direction.
+///
+/// @param direction The original direction.
+/// @return The other direction.
+constexpr HorizontalDirection other_direction(HorizontalDirection direction);
+
 /// Returns whether point @c a comes before point @c b, when going in the given direction.
 ///
 /// @tparam direction The direction.
