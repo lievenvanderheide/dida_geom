@@ -4,6 +4,8 @@
 
 #include "dida/utils.hpp"
 
+#include <iostream>
+
 namespace dida::detail::vertical_decomposition
 {
 
@@ -158,10 +160,7 @@ void SweepState::init_sweep()
         events_[i].is_concave_corner = orientation > 0;
       }
 
-      if (events_[i].is_concave_corner)
-      {
-        num_nodes++;
-      }
+      num_nodes++;
     }
 
     incoming_towards_right = outgoing_towards_right;
@@ -218,17 +217,7 @@ void SweepState::handle_appear_event(const Event& event)
   VertexIt prev_vertex_it = prev_cyclic(vertices_, event.vertex_it);
   VertexIt next_vertex_it = next_cyclic(vertices_, event.vertex_it);
 
-  VertexIt lower_right_vertex_it, upper_right_vertex_it;
-  if (event.is_concave_corner == (decomposition_type_ == VerticalDecompositionType::interior_decomposition))
-  {
-    lower_right_vertex_it = prev_vertex_it;
-    upper_right_vertex_it = next_vertex_it;
-  }
-  else
-  {
-    lower_right_vertex_it = next_vertex_it;
-    upper_right_vertex_it = prev_vertex_it;
-  }
+  ActiveEdge lower_appearing_edge, upper_appearing_edge;
 
   if (event.is_concave_corner)
   {
@@ -242,6 +231,7 @@ void SweepState::handle_appear_event(const Event& event)
 
     Node& new_node = *(nodes_it_++);
     new_node.direction = HorizontalDirection::right;
+    new_node.is_leaf = false;
     new_node.vertex_it = event.vertex_it;
     new_node.lower_opp_edge = lower_opp_edge.edge();
     new_node.upper_opp_edge = upper_opp_edge.edge();
@@ -249,7 +239,7 @@ void SweepState::handle_appear_event(const Event& event)
     new_node.neighbors[1] = nullptr;
     new_node.neighbors[2] = nullptr;
 
-    if (lower_opp_edge.region_left_node)
+    if(lower_opp_edge.region_left_node)
     {
       lower_opp_edge.region_left_node->neighbors[lower_opp_edge.region_left_node_branch_index] = &new_node;
     }
@@ -261,16 +251,58 @@ void SweepState::handle_appear_event(const Event& event)
     // The part above the lower outgoing edge is not part of the region we're decomposing, so its 'region_left_node' is
     // undefined (we just set it to nullptr). The part above the upper outgoing edge is the upper outgoing region, so we
     // set it accordingly.
+
+    VertexIt lower_right_vertex_it, upper_right_vertex_it;
+    if (decomposition_type_ == VerticalDecompositionType::interior_decomposition)
+    {
+      lower_right_vertex_it = prev_vertex_it;
+      upper_right_vertex_it = next_vertex_it;
+    }
+    else
+    {
+      lower_right_vertex_it = next_vertex_it;
+      upper_right_vertex_it = prev_vertex_it;
+    }
+
     active_edges_.insert(insert_location_it, {{event.vertex_it, lower_right_vertex_it, nullptr, 0},
                                               {event.vertex_it, upper_right_vertex_it, &new_node, 2}});
   }
   else
   {
+    VertexIt lower_right_vertex_it, upper_right_vertex_it;
+    Edge lower_appearing_edge, upper_appearing_edge;
+    if (decomposition_type_ == VerticalDecompositionType::interior_decomposition)
+    {
+      lower_right_vertex_it = next_vertex_it;
+      upper_right_vertex_it = prev_vertex_it;
+
+      lower_appearing_edge = Edge{event.vertex_it, next_vertex_it};
+      upper_appearing_edge = Edge{prev_vertex_it, event.vertex_it};
+    }
+    else
+    {
+      lower_right_vertex_it = prev_vertex_it;
+      upper_right_vertex_it = next_vertex_it;
+
+      lower_appearing_edge = Edge{prev_vertex_it, event.vertex_it};
+      upper_appearing_edge = Edge{event.vertex_it, next_vertex_it};
+    }
+
+    Node& new_node = *(nodes_it_++);
+    new_node.direction = HorizontalDirection::left;
+    new_node.is_leaf = true;
+    new_node.vertex_it = event.vertex_it;
+    new_node.lower_opp_edge = lower_appearing_edge;
+    new_node.upper_opp_edge = upper_appearing_edge;
+    new_node.neighbors[0] = nullptr;
+    new_node.neighbors[1] = nullptr;
+    new_node.neighbors[2] = nullptr;
+
     // The current corner is a convex reflex corner. A new region begins between the two outgoing edges, but since this
     // is a region which starts in a convex reflex corner, it doesn't have a 'region_left_node'.
     //
     // The region above the upper outgoing edge is not part of the region we're decomposing.
-    active_edges_.insert(insert_location_it, {{event.vertex_it, lower_right_vertex_it, nullptr, 0},
+    active_edges_.insert(insert_location_it, {{event.vertex_it, lower_right_vertex_it, &new_node, 0},
                                               {event.vertex_it, upper_right_vertex_it, nullptr, 0}});
   }
 }
@@ -296,6 +328,7 @@ void SweepState::handle_vanish_event(const Event& event)
 
     Node& node = *(nodes_it_++);
     node.direction = HorizontalDirection::left;
+    node.is_leaf = false;
     node.vertex_it = event.vertex_it;
     node.lower_opp_edge = lower_opp_edge.edge();
     node.upper_opp_edge = upper_opp_edge.edge();
@@ -303,18 +336,28 @@ void SweepState::handle_vanish_event(const Event& event)
     node.neighbors[1] = lower_opp_edge.region_left_node;
     node.neighbors[2] = upper_vanishing_edge.region_left_node;
 
-    if (lower_opp_edge.region_left_node)
-    {
-      lower_opp_edge.region_left_node->neighbors[lower_opp_edge.region_left_node_branch_index] = &node;
-    }
-
-    if (upper_vanishing_edge.region_left_node)
-    {
-      upper_vanishing_edge.region_left_node->neighbors[upper_vanishing_edge.region_left_node_branch_index] = &node;
-    }
+    lower_opp_edge.region_left_node->neighbors[lower_opp_edge.region_left_node_branch_index] = &node;
+    upper_vanishing_edge.region_left_node->neighbors[upper_vanishing_edge.region_left_node_branch_index] = &node;
 
     lower_opp_edge.region_left_node = &node;
     lower_opp_edge.region_left_node_branch_index = 0;
+  }
+  else
+  {
+    ActiveEdge& lower_vanishing_edge = *removal_it;
+    ActiveEdge& upper_vanishing_edge = *(removal_it + 1);
+
+    Node& node = *(nodes_it_++);
+    node.direction = HorizontalDirection::right;
+    node.is_leaf = true;
+    node.vertex_it = event.vertex_it;
+    node.lower_opp_edge = lower_vanishing_edge.edge();
+    node.upper_opp_edge = upper_vanishing_edge.edge();
+    node.neighbors[0] = lower_vanishing_edge.region_left_node;
+    node.neighbors[1] = nullptr;
+    node.neighbors[2] = nullptr;
+
+    lower_vanishing_edge.region_left_node->neighbors[lower_vanishing_edge.region_left_node_branch_index] = &node;
   }
 
   // If the current vertex is convex corner, then it's the end of the region between the two incoming edges. The

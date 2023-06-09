@@ -108,141 +108,51 @@ Edge edge_for_point_with_monotone_edge_range(VerticesView vertices, EdgeRange ed
 
 bool Region::operator==(const Region& b) const
 {
-  return left_node == b.left_node && right_node == b.right_node &&
-         (!left_node || left_node_branch_index == b.left_node_branch_index) &&
-         (!right_node || right_node_branch_index == b.right_node_branch_index);
+  return left_node == b.left_node && right_node == b.right_node && left_node_branch_index == b.left_node_branch_index &&
+         right_node_branch_index == b.right_node_branch_index;
 }
 
-bool Region::is_leaf() const
+EdgeRange Region::lower_boundary(VerticalDecompositionType vd_type) const
 {
-  return !left_node || !right_node;
-}
+  DIDA_DEBUG_ASSERT(left_node && right_node);
 
-namespace
-{
-
-template <HorizontalDirection direction>
-VertexIt leaf_reflex_vertex_with_direction(VerticesView vertices, EdgeRange edge_range)
-{
-  DIDA_DEBUG_ASSERT(edge_range.start_vertex_it && edge_range.end_vertex_it);
-
-  // Note, edge_range contains at least 3 vertices, and the reflex vertex can't be the first or last vertex of the
-  // range, so we don't need to include those to vertices in the search range.
-
-  size_t range_begin_index = static_cast<size_t>(edge_range.start_vertex_it - vertices.begin()) + 1;
-  size_t range_num_vertices = distance_cyclic(vertices, edge_range.start_vertex_it, edge_range.end_vertex_it) - 1;
-
-  while (range_num_vertices > 1)
+  if (vd_type == VerticalDecompositionType::interior_decomposition)
   {
-    size_t range_mid_offset = range_num_vertices / 2;
-    size_t range_mid_index = add_modulo(range_begin_index, range_mid_offset, vertices.size());
-    size_t range_mid_prev_index = add_modulo(range_begin_index, range_mid_offset - 1, vertices.size());
-    if (lex_less_than_with_direction<direction>(vertices[range_mid_prev_index], vertices[range_mid_index]))
-    {
-      range_begin_index = range_mid_index;
-      range_num_vertices -= range_mid_offset;
-    }
-    else
-    {
-      range_num_vertices = range_mid_offset;
-    }
-  }
-
-  return vertices.begin() + range_begin_index;
-}
-
-} // namespace
-
-Region::BoundaryEdgeRanges Region::boundary_edge_ranges(VerticesView vertices, VerticalDecompositionType vd_type) const
-{
-  if (left_node && right_node)
-  {
-    if (vd_type == VerticalDecompositionType::interior_decomposition)
-    {
-      // In an interior decomposition, lower boundaries go towards the right and upper boundaries to the left.
-      return BoundaryEdgeRanges{
-          {
-              left_node_branch_index == 2 ? left_node->vertex_it : left_node->lower_opp_edge.start_vertex_it,
-              right_node_branch_index == 2 ? right_node->vertex_it : right_node->lower_opp_edge.end_vertex_it,
-          },
-          {
-              right_node_branch_index == 1 ? right_node->vertex_it : right_node->upper_opp_edge.start_vertex_it,
-              left_node_branch_index == 1 ? left_node->vertex_it : left_node->upper_opp_edge.end_vertex_it,
-          }};
-    }
-    else
-    {
-      // In an exterior decomposition, lower boundaries go towards the left and upper boundaries to the right.
-      return BoundaryEdgeRanges{
-          {
-              right_node_branch_index == 2 ? right_node->vertex_it : right_node->lower_opp_edge.start_vertex_it,
-              left_node_branch_index == 2 ? left_node->vertex_it : left_node->lower_opp_edge.end_vertex_it,
-          },
-          {
-              left_node_branch_index == 1 ? left_node->vertex_it : left_node->upper_opp_edge.start_vertex_it,
-              right_node_branch_index == 1 ? right_node->vertex_it : right_node->upper_opp_edge.end_vertex_it,
-          }};
-    }
-  }
-  else if (left_node)
-  {
-    if (!left_node->lower_opp_edge.is_valid())
-    {
-      return BoundaryEdgeRanges{EdgeRange::invalid(), EdgeRange::invalid()};
-    }
-
-    if (vd_type == VerticalDecompositionType::interior_decomposition)
-    {
-      // The full edge range starts at the lower edge and ends at the upper edge.
-      EdgeRange full_edge_range{
-          left_node_branch_index == 2 ? left_node->vertex_it : left_node->lower_opp_edge.start_vertex_it,
-          left_node_branch_index == 1 ? left_node->vertex_it : left_node->upper_opp_edge.end_vertex_it};
-      VertexIt reflex_vertex_it =
-          leaf_reflex_vertex_with_direction<HorizontalDirection::right>(vertices, full_edge_range);
-      return BoundaryEdgeRanges{{full_edge_range.start_vertex_it, reflex_vertex_it},
-                                {reflex_vertex_it, full_edge_range.end_vertex_it}};
-    }
-    else
-    {
-      // The edge range starts at the upper edge and ends at the lower edge.
-      EdgeRange full_edge_range{
-          left_node_branch_index == 1 ? left_node->vertex_it : left_node->upper_opp_edge.start_vertex_it,
-          left_node_branch_index == 2 ? left_node->vertex_it : left_node->lower_opp_edge.end_vertex_it};
-      VertexIt reflex_vertex_it =
-          leaf_reflex_vertex_with_direction<HorizontalDirection::right>(vertices, full_edge_range);
-      return BoundaryEdgeRanges{{reflex_vertex_it, full_edge_range.end_vertex_it},
-                                {full_edge_range.start_vertex_it, reflex_vertex_it}};
-    }
+    // In an interior decomposition, lower boundaries go towards the right.
+    return EdgeRange{
+        left_node_branch_index == 2 ? left_node->vertex_it : left_node->lower_opp_edge.start_vertex_it,
+        right_node_branch_index == 2 ? right_node->vertex_it : right_node->lower_opp_edge.end_vertex_it,
+    };
   }
   else
   {
-    if (!right_node->lower_opp_edge.is_valid())
-    {
-      return BoundaryEdgeRanges{EdgeRange::invalid(), EdgeRange::invalid()};
-    }
+    // In an exterior decomposition, lower boundaries go towards the left.
+    return EdgeRange{
+        right_node_branch_index == 2 ? right_node->vertex_it : right_node->lower_opp_edge.start_vertex_it,
+        left_node_branch_index == 2 ? left_node->vertex_it : left_node->lower_opp_edge.end_vertex_it,
+    };
+  }
+}
 
-    if (vd_type == VerticalDecompositionType::interior_decomposition)
-    {
-      // The edge range starts at the upper edge and ends at the lower edge.
-      EdgeRange full_edge_range{
-          right_node_branch_index == 1 ? right_node->vertex_it : right_node->upper_opp_edge.start_vertex_it,
-          right_node_branch_index == 2 ? right_node->vertex_it : right_node->lower_opp_edge.end_vertex_it};
-      VertexIt reflex_vertex_it =
-          leaf_reflex_vertex_with_direction<HorizontalDirection::left>(vertices, full_edge_range);
-      return BoundaryEdgeRanges{{reflex_vertex_it, full_edge_range.end_vertex_it},
-                                {full_edge_range.start_vertex_it, reflex_vertex_it}};
-    }
-    else
-    {
-      // The edge range starts at the lower edge and ends at the upper edge.
-      EdgeRange full_edge_range{
-          right_node_branch_index == 2 ? right_node->vertex_it : right_node->lower_opp_edge.start_vertex_it,
-          right_node_branch_index == 1 ? right_node->vertex_it : right_node->upper_opp_edge.end_vertex_it};
-      VertexIt reflex_vertex_it =
-          leaf_reflex_vertex_with_direction<HorizontalDirection::left>(vertices, full_edge_range);
-      return BoundaryEdgeRanges{{full_edge_range.start_vertex_it, reflex_vertex_it},
-                                {reflex_vertex_it, full_edge_range.end_vertex_it}};
-    }
+EdgeRange Region::upper_boundary(VerticalDecompositionType vd_type) const
+{
+  DIDA_DEBUG_ASSERT(left_node && right_node);
+
+  if (vd_type == VerticalDecompositionType::interior_decomposition)
+  {
+    // In an interior decomposition, upper boundaries go towards the left.
+    return EdgeRange{
+        right_node_branch_index == 1 ? right_node->vertex_it : right_node->upper_opp_edge.start_vertex_it,
+        left_node_branch_index == 1 ? left_node->vertex_it : left_node->upper_opp_edge.end_vertex_it,
+    };
+  }
+  else
+  {
+    // In an exterior decomposition, upper boundaries go towards the right.
+    return EdgeRange{
+        left_node_branch_index == 1 ? left_node->vertex_it : left_node->upper_opp_edge.start_vertex_it,
+        right_node_branch_index == 1 ? right_node->vertex_it : right_node->upper_opp_edge.end_vertex_it,
+    };
   }
 }
 
@@ -250,17 +160,28 @@ RegionIterator::RegionIterator(const Node* first_node)
 {
   first_node_ = first_node;
 
-  cur_node_ = first_node;
-  cur_node_branch_index_ = first_node->direction == HorizontalDirection::left ? 1 : 2;
-
-  next_node_ = first_node->neighbors[cur_node_branch_index_];
-  if (next_node_)
+  if (first_node->is_leaf)
   {
+    cur_node_ = first_node_;
+    cur_node_branch_index_ = 0;
+
+    next_node_ = first_node_->neighbors[0];
     next_node_branch_index_ =
         next_node_->neighbors[0] == cur_node_ ? 0 : (next_node_->neighbors[1] == cur_node_ ? 1 : 2);
+    direction_ =
+        first_node_->direction == HorizontalDirection::left ? HorizontalDirection::right : HorizontalDirection::left;
   }
+  else
+  {
+    cur_node_ = first_node;
+    cur_node_branch_index_ = first_node->direction == HorizontalDirection::left ? 1 : 2;
 
-  direction_ = first_node->direction;
+    next_node_ = first_node->neighbors[cur_node_branch_index_];
+    next_node_branch_index_ =
+        next_node_->neighbors[0] == cur_node_ ? 0 : (next_node_->neighbors[1] == cur_node_ ? 1 : 2);
+
+    direction_ = first_node->direction;
+  }
 
   if (should_skip_current_region())
   {
@@ -270,18 +191,20 @@ RegionIterator::RegionIterator(const Node* first_node)
 
 bool RegionIterator::move_next()
 {
-  if (!next_node_)
-  {
-    // We're at a leaf region.
-
-    next_node_ = cur_node_;
-    next_node_branch_index_ = cur_node_branch_index_;
-    direction_ = direction_ == HorizontalDirection::left ? HorizontalDirection::right : HorizontalDirection::left;
-  }
-
   do
   {
-    if (next_node_->direction == direction_)
+    if (next_node_->is_leaf)
+    {
+      if (next_node_ == first_node_)
+      {
+        return false;
+      }
+
+      std::swap(next_node_, cur_node_);
+      std::swap(next_node_branch_index_, cur_node_branch_index_);
+      direction_ = direction_ == HorizontalDirection::left ? HorizontalDirection::right : HorizontalDirection::left;
+    }
+    else if (next_node_->direction == direction_)
     {
       // The direction of 'next_node_' is equal to the current direction.
 
@@ -289,6 +212,8 @@ bool RegionIterator::move_next()
 
       cur_node_branch_index_ = direction_ == HorizontalDirection::right ? 1 : 2;
       next_node_ = cur_node_->neighbors[cur_node_branch_index_];
+      next_node_branch_index_ =
+          next_node_->neighbors[0] == cur_node_ ? 0 : (next_node_->neighbors[1] == cur_node_ ? 1 : 2);
     }
     else
     {
@@ -317,14 +242,10 @@ bool RegionIterator::move_next()
         next_node_ = cur_node_->neighbors[0];
         cur_node_branch_index_ = 0;
       }
-    }
 
-    if (next_node_)
-    {
       next_node_branch_index_ =
           next_node_->neighbors[0] == cur_node_ ? 0 : (next_node_->neighbors[1] == cur_node_ ? 1 : 2);
     }
-
   } while (should_skip_current_region());
 
   return true;
@@ -348,12 +269,6 @@ bool RegionIterator::should_skip_current_region() const
 
   // If we're going towards the right, then we're on the lower boundary of the current region, so we should not skip it.
   if (direction_ == HorizontalDirection::right)
-  {
-    return false;
-  }
-
-  // If there's no next node, then we're in a leaf region, so we shouldn't skip it.
-  if (!next_node_)
   {
     return false;
   }

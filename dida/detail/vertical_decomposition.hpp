@@ -90,13 +90,18 @@ struct Edge
 /// A node in the vertical decomposition graph.
 struct Node
 {
-  /// The direction of this node. This indicate the direction into which the vertical decomposition splits into two,
-  /// that is
+  /// The direction of this node.
+  ///
+  /// For non-leaf nodes, This indicate the direction into which the vertical decomposition splits into two, that is
   ///
   ///  - If this is @c HorizontalDirection::left then it has one region on its left and 2 regions on its right.
   ///  - If this is @c HorizontalDirection::right then it has one region on its right and 2 regions on its left.
   ///
+  /// For leaf nodes, this indicates the incoming direction at the convex reflex vertex corresponding to this node.
   HorizontalDirection direction;
+
+  /// Whether this is a leaf node.
+  bool is_leaf;
 
   /// An iterator pointing to the vertex from which the vertical extensions corresponding to this node extend.
   VertexIt vertex_it;
@@ -139,12 +144,6 @@ struct EdgeRange
   bool inline is_valid() const;
 };
 
-struct EdgeRangePair
-{
-  EdgeRange lower_edge_range;
-  EdgeRange upper_edge_range;
-};
-
 /// Returns the edge in the given monotone edge range for which <tt>edge_range.start_vertex <= point <
 /// edge_range.end_vertex</tt>, where the ordering used is the lexicographical ordering if <tt>direction ==
 /// HorizontalDirection::right</tt> and the reverse lexicographical ordering if <tt>direction ==
@@ -178,56 +177,45 @@ struct VerticalDecomposition
   std::vector<Node> nodes;
 };
 
-/// A struct with information about the current region.
-///
-/// One of @c left_node, @c right_node can be @c nullptr (but not both), which indicates that the current region is
-/// a "leaf" region.
+/// A region in a vertical decomposition. A region is bounded on the left and the right by the vertical extensions
+/// corresponding to two nodes, and bounded above and below by two x-monotone edge ranges of the input polygon.
 struct Region
 {
-  /// The vertical decomposition node on the left side of this region, or @c nullptr if there's no left node.
+  /// The vertical decomposition node on the left side of this region.
   const Node* left_node;
 
-  /// The vertical decomposition node on the right side of this region, or @c nullptr if there's no right node.
+  /// The vertical decomposition node on the right side of this region.
   const Node* right_node;
 
-  /// The index of the branch of @c left_node which connects to this region. If there's no left node, then this value
-  /// is undefined.
+  /// The index of the branch of @c left_node which connects to this region.
   uint8_t left_node_branch_index;
 
-  /// The index of the branch of @c right_node which connects to this region. If there's no right node, then this
-  /// value is undefined.
+  /// The index of the branch of @c right_node which connects to this region.
   uint8_t right_node_branch_index;
 
-  /// Compares two @c Region instances for equality. Note that the @c leaf_region_branch_index fields are only
-  /// compared when one of @c left_node, @c right_node is @c nullptr.
+  /// Compares two @c Region instances for equality.
   ///
   /// @param b The second operand of the comparison.
   /// @return True iff the two regions are equal.
   inline bool operator==(const Region& b) const;
 
-  /// Returns whether this region is a leaf region. A leaf region is a region which is adjacent to only one @c Node.
+  /// Returns the @c EdgeRange of the lower boundary of this region, or @c EdgeRange::invalid if there's no lower
+  /// boundary.
   ///
-  /// @return True iff this is a leaf region.
-  inline bool is_leaf() const;
-
-  /// A struct holding the @c EdgeRanges of the lower and upper boundary of a region.
-  struct BoundaryEdgeRanges
-  {
-    /// The @c EdgeRange containing the edges which form the region's upper boundary, or @c EdgeRange::invalid() if it's
-    /// an unbounded region.
-    EdgeRange lower;
-
-    /// The @c EdgeRange containg the edges which form the region's lower boundary, or @c EdgeRange::invalid() if it's
-    /// an unbounded region.
-    EdgeRange upper;
-  };
-
-  /// Returns a @c BoundaryEdgesRanges containing the two edge ranges which form the lower and upper boundary of this
-  /// region.
+  /// The resulting @c EdgeRange includes all edges which are fully or partially adjacent to the region from below.
   ///
-  /// @param vertices The vertices.
   /// @param vd_type The type of the vertical decomposition this region belongs to.
-  inline BoundaryEdgeRanges boundary_edge_ranges(VerticesView vertices, VerticalDecompositionType vd_type) const;
+  /// @return The edge range.
+  inline EdgeRange lower_boundary(VerticalDecompositionType vd_type) const;
+
+  /// Returns the @c EdgeRange of the upper boundary of this region, or @c EdgeRange::invalid if there's no upper
+  /// boundary.
+  ///
+  /// The resulting @c EdgeRange includes all edges which are fully or partially adjacent to the region from above.
+  ///
+  /// @param vd_type The type of the vertical decomposition this region belongs to.
+  /// @return The edge range.
+  inline EdgeRange upper_boundary(VerticalDecompositionType vd_type) const;
 };
 
 /// An iterator which iterates over the regions of a vertical decomposition.
@@ -239,16 +227,16 @@ struct Region
 /// all regions of the vertical decomposition in some order, the only problem is that most regions are encountered
 /// twice, once while traversing their lower boundary and once while're traversing their upper boundary. The exceptions
 /// are the infinite regions of an external decomposition and leaf regions. Since we only want to include each region
-/// once, we'll only include these regions when traversing their lower boundary while skipping them when traversing
-/// their upper boundary.
+/// once, we only include the finite regions when traversing the region's lower boundary, while skipping it when
+/// traversing their upper boundary.
 ///
 /// We refer to the point which traverses the boundary as the "traversal point". The traversal point is used throughout
 /// the documentation of this class, but is never actually computed during runtime.
 class RegionIterator
 {
 public:
-  /// Constructs a @c RegionIterator for a traversal starting with traversal point @c
-  /// first_node->vertex_it.
+  /// Constructs a @c RegionIterator for a traversal starting with traversal point @c first_node->vertex_it. The first
+  /// node should not be a node at infinity of an external decomposition.
   ///
   /// The first region will be available immediately after construction. Use @c move_next to move to subsequent regions.
   ///
