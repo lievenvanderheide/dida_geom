@@ -7,3 +7,6 @@ target_link_libraries(side_vertices_benchmark PRIVATE dida Catch2::Catch2)
 
 add_executable(convex_polygons_intersection_area_benchmark convex_polygons_intersection_area_benchmark.cpp)
 target_link_libraries(convex_polygons_intersection_area_benchmark PRIVATE dida Catch2::Catch2)
+
+add_executable(polygons_intersect_shootout polygons_intersect_shootout.cpp)
+target_link_libraries(polygons_intersect_shootout PRIVATE dida Catch2::Catch2 geos_c)
