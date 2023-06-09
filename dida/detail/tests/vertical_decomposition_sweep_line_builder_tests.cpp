@@ -53,6 +53,9 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[3].neighbors[0] == &nodes[2]);
     CHECK(nodes[3].neighbors[1] == nullptr);
     CHECK(nodes[3].neighbors[2] == nullptr);
+
+    CHECK(vertical_decomposition.leftmost_node == &nodes.front());
+    CHECK(vertical_decomposition.rightmost_node == &nodes.back());
   }
 
   SECTION("Interior, single right branch")
@@ -101,6 +104,9 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[3].neighbors[0] == &nodes[1]);
     CHECK(nodes[3].neighbors[1] == nullptr);
     CHECK(nodes[3].neighbors[2] == nullptr);
+
+    CHECK(vertical_decomposition.leftmost_node == &nodes.front());
+    CHECK(vertical_decomposition.rightmost_node == &nodes.back());
   }
 
   SECTION("Internal, many nodes")
@@ -242,6 +248,9 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[13].neighbors[0] == &nodes[9]);
     CHECK(nodes[13].neighbors[1] == nullptr);
     CHECK(nodes[13].neighbors[2] == nullptr);
+
+    CHECK(vertical_decomposition.leftmost_node == &nodes.front());
+    CHECK(vertical_decomposition.rightmost_node == &nodes.back());
   }
 
   SECTION("Exterior, few nodes")
@@ -309,6 +318,9 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[5].neighbors[0] == nullptr);
     CHECK(nodes[5].neighbors[1] == &nodes[1]);
     CHECK(nodes[5].neighbors[2] == &nodes[4]);
+
+    CHECK(vertical_decomposition.leftmost_node == &nodes.front());
+    CHECK(vertical_decomposition.rightmost_node == &nodes.back());
   }
 
   SECTION("Vertices on same vertical line")
@@ -412,6 +424,9 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[9].neighbors[0] == &nodes[6]);
     CHECK(nodes[9].neighbors[1] == nullptr);
     CHECK(nodes[9].neighbors[2] == nullptr);
+
+    CHECK(vertical_decomposition.leftmost_node == &nodes.front());
+    CHECK(vertical_decomposition.rightmost_node == &nodes.back());
   }
 }
 

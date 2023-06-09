@@ -33,7 +33,7 @@ public:
   /// Moves the resulting nodes of the algorithms out of this @c SweepState.
   ///
   /// @return A vector containing the nodes.
-  std::vector<Node> move_out_nodes();
+  std::vector<Node>&& move_out_nodes();
 
 private:
   /// A sweep line event.
@@ -205,7 +205,7 @@ void SweepState::run_sweep()
   }
 }
 
-std::vector<Node> SweepState::move_out_nodes()
+std::vector<Node>&& SweepState::move_out_nodes()
 {
   return std::move(nodes_);
 }
@@ -452,7 +452,12 @@ VerticalDecomposition vertical_decomposition_with_sweep_line_builder(ArrayView<c
   SweepState sweep_state(vertices, decomposition_type);
   sweep_state.init_sweep();
   sweep_state.run_sweep();
-  return VerticalDecomposition{sweep_state.move_out_nodes()};
+
+  VerticalDecomposition result;
+  result.nodes = sweep_state.move_out_nodes();
+  result.leftmost_node = &result.nodes.front();
+  result.rightmost_node = &result.nodes.back();
+  return result;
 }
 
 } // namespace dida::detail::vertical_decomposition

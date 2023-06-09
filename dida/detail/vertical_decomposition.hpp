@@ -175,6 +175,12 @@ struct VerticalDecomposition
 {
   /// The vertical decomposition nodes.
   std::vector<Node> nodes;
+
+  /// The leftmost node of this vertical decomposition. This is the node with the lexicographically least vertex.
+  Node* leftmost_node;
+
+  /// The rightmost node of this vertical decomposition. This is the node with the lexicographically greatest vertex.
+  Node* rightmost_node;
 };
 
 /// A region in a vertical decomposition. A region is bounded on the left and the right by the vertical extensions
