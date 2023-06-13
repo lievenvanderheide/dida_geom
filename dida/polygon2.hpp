@@ -145,7 +145,12 @@ private:
 
 /// Validate whether the the vertices in @c vertices form a valid polygon.
 ///
-/// TODO: Document conditions.
+/// It's considered a valid polygon if it satisfies the following conditions:
+///
+///  1. There are at least 3 vertices.
+///  2. All vertices are distinct.
+///  3. The polygon has counter-clockwise winding.
+///  4. There are no self-intersections.
 ///
 /// @param vertices The vertices to validate.
 /// @return True iff @c vertices for a valid polygon.

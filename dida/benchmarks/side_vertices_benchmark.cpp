@@ -25,16 +25,6 @@ ConvexPolygon2 circle_polygon(Point2 center, double radius, size_t num_vertices,
 TEST_CASE("leftmost_vertex benchmark")
 {
   {
-    ConvexPolygon2 polygon = circle_polygon(Point2(2, 6), 10, 20, .3 * M_PI);
-    leftmost_vertex(polygon);
-  }
-
-  {
-    ConvexPolygon2 polygon = circle_polygon(Point2(2, 6), 10, 100, .3 * M_PI);
-    leftmost_vertex(polygon);
-  }
-
-  {
     ConvexPolygon2 polygon = circle_polygon(Point2(2, 6), 10, 3, .3 * M_PI);
     BENCHMARK("3 vertices")
     {
