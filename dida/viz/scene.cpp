@@ -4,6 +4,7 @@
 
 #include "dida/convex_polygon2.hpp"
 #include "dida/parser.hpp"
+#include "dida/polygon2.hpp"
 
 namespace dida::viz
 {
@@ -19,8 +20,8 @@ void VizPolygon::add_vertex(Point2 vertex)
 
 void VizPolygon::update_is_polygon_valid()
 {
-  DIDA_ASSERT(should_be_convex_);
-  is_polygon_valid_ = validate_convex_polygon_vertices(vertices_);
+  is_polygon_valid_ =
+      should_be_convex_ ? validate_convex_polygon_vertices(vertices_) : validate_polygon_vertices(vertices_);
 }
 
 std::shared_ptr<VizPolygon> parse_viz_polygon(Parser& parser)
@@ -78,7 +79,7 @@ std::ostream& operator<<(std::ostream& s, const VizPolygon& polygon)
   s << "ConvexPolygon2 " << polygon.name() << "{";
 
   const std::vector<Point2>& vertices = polygon.vertices();
-  for(size_t i = 0; i < vertices.size(); i++)
+  for (size_t i = 0; i < vertices.size(); i++)
   {
     s << vertices[i] << (i != vertices.size() - 1 ? ", " : "};");
   }

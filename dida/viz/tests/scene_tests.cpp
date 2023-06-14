@@ -42,6 +42,22 @@ TEST_CASE("VizPolygon::is_polygon_valid()")
     VizPolygon polygon("Not actually a convex polygon", vertices, true);
     CHECK_FALSE(polygon.is_polygon_valid());
   }
+
+  SECTION("Valid non-convex polygon")
+  {
+    std::vector<Point2> vertices{
+        {-8.08, 2.56}, {-2.52, 4.78}, {-1.62, 0.80}, {3.74, 3.82}, {0.14, 5.02}, {-5.66, 8.92}, {-4.38, 6.72},
+    };
+    VizPolygon polygon("Valid polygon", vertices, false);
+    CHECK(polygon.is_polygon_valid());
+  }
+
+  SECTION("Invalid non-convex polygon")
+  {
+    std::vector<Point2> vertices{{-3.28, 1.58}, {1.20, 5.26}, {2.86, 1.52}, {5.12, 5.70}, {5.66, 3.60}, {-4.76, 4.08}};
+    VizPolygon polygon("Self intersecting polygon", vertices, false);
+    CHECK_FALSE(polygon.is_polygon_valid());
+  }
 }
 
 TEST_CASE("add_vertex")
@@ -53,34 +69,34 @@ TEST_CASE("add_vertex")
   size_t data_changed_num_calls = 0;
 
   QObject::connect(&polygon, &VizPolygon::will_add_vertex,
-    [&will_add_vertex_num_calls, &polygon](size_t index)
-    {
-      CHECK(polygon.vertices().size() == index);
-      CHECK(index == will_add_vertex_num_calls);
+                   [&will_add_vertex_num_calls, &polygon](size_t index)
+                   {
+                     CHECK(polygon.vertices().size() == index);
+                     CHECK(index == will_add_vertex_num_calls);
 
-      will_add_vertex_num_calls++;
-    });
+                     will_add_vertex_num_calls++;
+                   });
 
   QObject::connect(&polygon, &VizPolygon::vertex_added,
-    [&vertex_added_num_calls, &polygon](size_t index)
-    {
-      CHECK(polygon.vertices().size() == index + 1);
-      CHECK(index == vertex_added_num_calls);
+                   [&vertex_added_num_calls, &polygon](size_t index)
+                   {
+                     CHECK(polygon.vertices().size() == index + 1);
+                     CHECK(index == vertex_added_num_calls);
 
-      vertex_added_num_calls++;
-    });
+                     vertex_added_num_calls++;
+                   });
 
   QObject::connect(&polygon, &VizPolygon::data_changed,
-    [&data_changed_num_calls, &polygon]()
-    {
-      data_changed_num_calls++;
-      
-      CHECK(polygon.vertices().size() == data_changed_num_calls);
-    });
+                   [&data_changed_num_calls, &polygon]()
+                   {
+                     data_changed_num_calls++;
+
+                     CHECK(polygon.vertices().size() == data_changed_num_calls);
+                   });
 
   Point2 vertices[]{{1.30, 0.82}, {5.58, 1.48}, {3.42, 2.76}};
 
-  for(size_t i = 0; i < 3; i++)
+  for (size_t i = 0; i < 3; i++)
   {
     polygon.add_vertex(vertices[i]);
   }
