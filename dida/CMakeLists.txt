@@ -45,6 +45,8 @@ add_library(dida
     polygon2.cpp
     polygon2.hpp
     polygon2.inl
+    predicates.cpp
+    predicates.hpp
     scalar.cpp
     scalar.hpp
     scalar.inl
