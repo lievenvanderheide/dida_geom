@@ -5,7 +5,7 @@
 #include <catch2/catch.hpp>
 #include <cmath>
 
-namespace dida
+namespace dida::benchmarks
 {
 
 ConvexPolygon2 circle_polygon(Point2 center, double radius, size_t num_vertices, double angle_offset)

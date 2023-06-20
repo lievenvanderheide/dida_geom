@@ -5,7 +5,7 @@
 #include <catch2/catch.hpp>
 #include <cmath>
 
-namespace dida
+namespace dida::benchmarks
 {
 
 TEST_CASE("intersection_area benchmark")

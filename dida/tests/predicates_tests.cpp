@@ -107,7 +107,7 @@ TEST_CASE("is_within_with_perturbation(PolygonView2, Point2)")
     CHECK_FALSE(is_within_with_perturbation<PerturbationVector2::right_up>(polygon, Point2(-1, 7)));
   }
 
-  SECTION("Unperturbed point on vertex")
+  SECTION("Point on vertex")
   {
     CHECK(is_within(polygon, Point2(-6, 5)));
     CHECK_FALSE(is_within_with_perturbation<PerturbationVector2::left_down>(polygon, Point2(-6, 5)));

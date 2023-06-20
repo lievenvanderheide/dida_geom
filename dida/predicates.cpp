@@ -1,5 +1,7 @@
 #include "dida/predicates.hpp"
 
+#include <iostream>
+
 #include "dida/utils.hpp"
 
 namespace dida
@@ -42,43 +44,82 @@ bool is_within(PolygonView2 polygon, Point2 point)
   bool result = false;
 
   Point2 v0 = polygon[polygon.size() - 1];
-  for (Point2 v1 : polygon)
+  PolygonView2::const_iterator v1_it = polygon.begin();
+
+  while (true)
   {
-    bool v0_below_ray = y_less_than_with_perturbation<PerturbationVector2::right_up>(v0.y(), point.y());
-    bool v1_below_ray = y_less_than_with_perturbation<PerturbationVector2::right_up>(v1.y(), point.y());
-
-    if (v0_below_ray && !v1_below_ray)
+    if (v0.y() <= point.y())
     {
-      if (on_right_side_of_edge<PerturbationVector2::left_down>(v0, v1, point))
-      {
-        result = !result;
-      }
-    }
-    else if (v1_below_ray && !v0_below_ray)
-    {
-      if (on_right_side_of_edge<PerturbationVector2::right_up>(v1, v0, point))
-      {
-        result = !result;
-      }
-    }
-
-    if(v0 == point)
-    {
-      return true;
-    }
-
-    if(v0.y() == point.y() && v1.y() == point.y())
-    {
-      if(point.x() <= v0.x() && point.x() >= v1.x())
+      if (v0 == point)
       {
         return true;
       }
+
+      while (v1_it->y() <= point.y())
+      {
+        if (v0.y() == point.y() && v1_it->y() == point.y())
+        {
+          if(point.x() <= v0.x() && point.x() >= v1_it->x())
+          {
+            return true;
+          }
+        }
+
+        if (*v1_it == point)
+        {
+          return true;
+        }
+
+        do
+        {
+          v0 = *v1_it;
+          v1_it++;
+
+          if (v1_it == polygon.end())
+          {
+            return result;
+          }
+        } while (v1_it->y() < point.y());
+      }
+
+      if (on_right_side_of_edge<PerturbationVector2::left_down>(v0, *v1_it, point))
+      {
+        result = !result;
+      }
+
+      v0 = *v1_it;
+      v1_it++;
+      if (v1_it == polygon.end())
+      {
+        return result;
+      }
     }
+    else
+    {
+      while (v1_it->y() > point.y())
+      {
+        v0 = *v1_it;
+        v1_it++;
 
-    v0 = v1;
+        if (v1_it == polygon.end())
+        {
+          return result;
+        }
+      }
+
+      if (on_right_side_of_edge<PerturbationVector2::right_up>(*v1_it, v0, point))
+      {
+        result = !result;
+      }
+
+      v0 = *v1_it;
+      v1_it++;
+      if (v1_it == polygon.end())
+      {
+        return result;
+      }
+    }
   }
-
-  return result;
 }
 
 template <PerturbationVector2 point_perturbation_vector>
@@ -87,30 +128,61 @@ bool is_within_with_perturbation(PolygonView2 polygon, Point2 point)
   bool result = false;
 
   Point2 v0 = polygon[polygon.size() - 1];
-  for (Point2 v1 : polygon)
+  PolygonView2::const_iterator v1_it = polygon.begin();
+
+  while (true)
   {
-    bool v0_below_ray = y_less_than_with_perturbation<point_perturbation_vector>(v0.y(), point.y());
-    bool v1_below_ray = y_less_than_with_perturbation<point_perturbation_vector>(v1.y(), point.y());
-
-    if (v0_below_ray && !v1_below_ray)
+    if (y_less_than_with_perturbation<point_perturbation_vector>(v0.y(), point.y()))
     {
-      if (on_right_side_of_edge<point_perturbation_vector>(v0, v1, point))
+      while (y_less_than_with_perturbation<point_perturbation_vector>(v1_it->y(), point.y()))
+      {
+        v0 = *v1_it;
+        v1_it++;
+
+        if (v1_it == polygon.end())
+        {
+          return result;
+        }
+      }
+
+      if (on_right_side_of_edge<point_perturbation_vector>(v0, *v1_it, point))
       {
         result = !result;
       }
+
+      v0 = *v1_it;
+      v1_it++;
+      if (v1_it == polygon.end())
+      {
+        return result;
+      }
     }
-    else if (v1_below_ray && !v0_below_ray)
+    else
     {
-      if (on_right_side_of_edge<point_perturbation_vector>(v1, v0, point))
+      while (!y_less_than_with_perturbation<point_perturbation_vector>(v1_it->y(), point.y()))
+      {
+        v0 = *v1_it;
+        v1_it++;
+
+        if (v1_it == polygon.end())
+        {
+          return result;
+        }
+      }
+
+      if (on_right_side_of_edge<point_perturbation_vector>(*v1_it, v0, point))
       {
         result = !result;
       }
-    }
 
-    v0 = v1;
+      v0 = *v1_it;
+      v1_it++;
+      if (v1_it == polygon.end())
+      {
+        return result;
+      }
+    }
   }
-
-  return result;
 }
 
 template bool is_within_with_perturbation<PerturbationVector2::left_down>(PolygonView2, Point2);
