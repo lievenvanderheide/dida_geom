@@ -1,7 +1,7 @@
 #include "dida/polygon2.hpp"
 
 #include <catch2/catch.hpp>
-#include <iostream>
+#include <sstream>
 
 namespace dida
 {
@@ -91,7 +91,7 @@ TEST_CASE("PolygonView2(ArrayView<const Point2>) and access")
   PolygonView2 view(vertices);
 
   REQUIRE(view.size() == vertices.size());
-  for(size_t i = 0; i < view.size(); i++)
+  for (size_t i = 0; i < view.size(); i++)
   {
     CHECK(view[i] == vertices[i]);
   }
@@ -105,7 +105,7 @@ TEST_CASE("PolygonView2::unsafe_from_vertices and access")
   PolygonView2 view = PolygonView2::unsafe_from_vertices(vertices);
 
   REQUIRE(view.size() == vertices.size());
-  for(size_t i = 0; i < view.size(); i++)
+  for (size_t i = 0; i < view.size(); i++)
   {
     CHECK(view[i] == vertices[i]);
   }
@@ -233,6 +233,15 @@ TEST_CASE("validate_polygon_vertices")
     std::vector<Point2> vertices{{5, 2}, {12, 2}, {7, 7}, {4, 4}, {9, 5}};
     CHECK(!validate_polygon_vertices(vertices));
   }
+}
+
+TEST_CASE("PolygonView2 printing")
+{
+  Polygon2 polygon{{-3, 1}, {0, 1}, {0, 4}, {3, 7}, {-3, 8}};
+
+  std::stringstream s;
+  s << polygon;
+  CHECK(s.str() == "{{-3, 1}, {0, 1}, {0, 4}, {3, 7}, {-3, 8}}");
 }
 
 } // namespace dida

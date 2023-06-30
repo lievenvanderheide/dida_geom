@@ -156,6 +156,13 @@ private:
 /// @return True iff @c vertices for a valid polygon.
 bool validate_polygon_vertices(ArrayView<const Point2> vertices);
 
+/// Writes @c polygon to the output stream @c s.
+///
+/// @param s The output stream.
+/// @param v The @c Polygon2 to write to the output stream @c s.
+/// @return A reference to the output stream.
+std::ostream& operator<<(std::ostream& s, PolygonView2 polygon);
+
 } // namespace dida
 
 #include "dida/polygon2.inl"
