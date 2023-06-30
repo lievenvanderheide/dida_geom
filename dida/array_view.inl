@@ -18,6 +18,11 @@ inline ArrayView<T>::ArrayView(const std::vector<SrcT>& v) : begin_(v.data()), s
 }
 
 template <class T>
+inline ArrayView<T>::ArrayView(T* begin, size_t size) : begin_(begin), size_(size)
+{
+}
+
+template <class T>
 inline size_t ArrayView<T>::size() const
 {
   return size_;

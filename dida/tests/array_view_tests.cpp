@@ -21,7 +21,7 @@ TEST_CASE("ArrayView<int> from std::vector<int>& and access")
   ArrayView<int> view(vector);
   const ArrayView<int> view_const_ref = view;
 
-  CHECK(view.size() == vector.size());
+  REQUIRE(view.size() == vector.size());
   CHECK(std::equal(view.begin(), view.end(), vector.begin(), vector.end()));
   CHECK(std::equal(view_const_ref.begin(), view_const_ref.end(), vector.begin(), vector.end()));
 
@@ -38,7 +38,7 @@ TEST_CASE("ArrayView<const int> from const std::vector<int>& and access")
   ArrayView<const int> view(vector);
   const ArrayView<const int> view_const_ref = view;
 
-  CHECK(view.size() == vector.size());
+  REQUIRE(view.size() == vector.size());
   CHECK(std::equal(view.begin(), view.end(), vector.begin(), vector.end()));
   CHECK(std::equal(view_const_ref.begin(), view_const_ref.end(), vector.begin(), vector.end()));
 
@@ -46,6 +46,21 @@ TEST_CASE("ArrayView<const int> from const std::vector<int>& and access")
   {
     CHECK(view[i] == vector[i]);
     CHECK(view_const_ref[i] == vector[i]);
+  }
+}
+
+TEST_CASE("ArrayView<int> with pointer and size")
+{
+  int data[]{650, -199, 651, 869, -391, -31, 750, 550, 63, 126, -4, 817};
+  size_t size = sizeof(data) / sizeof(int);
+  ArrayView<int> view(data, size);
+
+  REQUIRE(view.size() == size);
+  CHECK(std::equal(view.begin(), view.end(), data, data + size));
+
+  for (size_t i = 0; i < view.size(); i++)
+  {
+    CHECK(view[i] == data[i]);
   }
 }
 

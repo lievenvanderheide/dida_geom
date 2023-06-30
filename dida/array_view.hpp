@@ -1,8 +1,8 @@
 #pragma once
 
+#include <cstddef>
 #include <type_traits>
 #include <vector>
-#include <cstddef>
 
 #include "dida/assert.hpp"
 
@@ -34,6 +34,12 @@ public:
                                std::is_const_v<T> && std::is_same_v<std::remove_const_t<T>, std::remove_const_t<SrcT>>>>
   inline ArrayView(const std::vector<SrcT>& v);
   ///@}
+
+  /// Constructs an @c ArrayView using a pointer and size.
+  ///
+  /// @param begin A pointer to the beginning of the memory block.
+  /// @param size The number of elements in the memory block.
+  inline ArrayView(T* begin, size_t size);
 
   /// Returns the number of elements in this @c ArrayView.
   ///
