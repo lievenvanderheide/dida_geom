@@ -5,10 +5,10 @@
 namespace dida::detail::vertical_decomposition
 {
 
-VertexIt ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_origin)
+Edge ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_origin)
 {
   YOnEdge result_y = YOnEdge::infinity();
-  VertexIt result = nullptr;
+  Edge result = Edge::invalid();
 
   VertexIt edge_start_it = vertices.begin() + range.first_edge_index;
   for (size_t i = 0; i < range.num_edges; i++)
@@ -25,7 +25,7 @@ VertexIt ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ra
       YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
       if (cur_y > ray_origin.y() && cur_y < result_y)
       {
-        result = edge_end_on_left ? edge_start_it : nullptr;
+        result = edge_end_on_left ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
         result_y = cur_y;
       }
     }
@@ -36,10 +36,10 @@ VertexIt ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ra
   return result;
 }
 
-VertexIt ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_origin)
+Edge ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_origin)
 {
   YOnEdge result_y = YOnEdge::negative_infinity();
-  VertexIt result = nullptr;
+  Edge result = Edge::invalid();
 
   VertexIt edge_start_it = vertices.begin() + range.first_edge_index;
   for (size_t i = 0; i < range.num_edges; i++)
@@ -56,7 +56,7 @@ VertexIt ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 
       YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
       if (cur_y < ray_origin.y() && cur_y > result_y)
       {
-        result = edge_start_on_left ? edge_start_it : nullptr;
+        result = edge_start_on_left ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
         result_y = cur_y;
       }
     }
