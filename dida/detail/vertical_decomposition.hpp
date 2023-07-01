@@ -46,6 +46,19 @@ constexpr HorizontalDirection other_direction(HorizontalDirection direction);
 template <HorizontalDirection direction>
 bool lex_less_than_with_direction(Point2 a, Point2 b);
 
+template <HorizontalDirection direction>
+bool x_less_than_with_direction(ScalarDeg1 a_x, ScalarDeg1 b_x)
+{
+  if constexpr (direction == HorizontalDirection::left)
+  {
+    return a_x > b_x;
+  }
+  else
+  {
+    return a_x < b_x;
+  }
+}
+
 /// An edge of the input polygon.
 struct Edge
 {
@@ -145,9 +158,7 @@ struct EdgeRange
 };
 
 /// Returns the edge in the given monotone edge range for which <tt>edge_range.start_vertex <= point <
-/// edge_range.end_vertex</tt>, where the ordering used is the lexicographical ordering if <tt>direction ==
-/// HorizontalDirection::right</tt> and the reverse lexicographical ordering if <tt>direction ==
-/// HorizontalDirection::left</tt>.
+/// edge_range.end_vertex</tt>, where the ordering used is @c lex_less_than_with_direction<direction>.
 ///
 /// The edge range must be a monotone edge range, which means that all edges in it should satisfy
 /// <tt>edge_range.start_vertex < edge_range.end_vertex</tt>.

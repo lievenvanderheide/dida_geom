@@ -39,6 +39,11 @@ public:
   /// @return the end point.
   inline Point2 end() const;
 
+  /// Returns the direction vector of this @c Segment2.
+  ///
+  /// @return The direction vector.
+  inline Vector2 direction() const;
+
   /// Compares two segments for equality.
   ///
   /// @param b The second operand.

@@ -45,7 +45,7 @@ struct Events
   /// It's assumed that there are at least 3 vertices, and that all consecutive vertices are distinct. It's not a
   /// violation if the polygon has self-intersections (though in that case, care should be taken during the sweep,
   /// because certain assumptions the algorithm might make may not hold).
-  Events(VerticesView vertices);
+  inline Events(VerticesView vertices);
 };
 
 /// An edge which currently intersects the sweep line.

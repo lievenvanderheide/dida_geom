@@ -20,6 +20,12 @@ TEST_CASE("Segment2::unsafe_from_endpoints and access")
   CHECK(segment.end() == Point2(-2.78, 7.38));
 }
 
+TEST_CASE("Segment2::direction")
+{
+  Segment2 segment({-4, 2}, {2, 4});
+  CHECK(segment.direction() == Vector2(-6, -2));
+}
+
 TEST_CASE("Segment2::operator==/operator!=")
 {
   SECTION("Equal")
