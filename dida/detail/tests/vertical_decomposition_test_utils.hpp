@@ -28,8 +28,8 @@ struct PolygonRange
 };
 
 /// Casts a ray upwards from @c ray_origin, until it hits an edge in the given polygon range. If it hits an edge from
-/// the interior side, then an iterator pointing to the start vertex of that edge is returned, if it hits an edge from
-/// the exterior side, or if no edge is hit, then @c nullptr is returned.
+/// the interior side, then that edge is returned, if it hits an edge from the exterior side, or if no edge is hit, then
+/// @c Edge::invalid() is returned.
 ///
 /// The special case where the ray hits the boundary on a vertex is resolved by shifting that vertex an infinitisemal
 /// offset to the right.
@@ -37,12 +37,12 @@ struct PolygonRange
 /// @param vertices The vertices of the polygon.
 /// @param range The range.
 /// @param ray_origin The point the ray originates from.
-/// @return An iterator pointing to the start vertex of the edge.
-VertexIt ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_origin);
+/// @return The edge.
+Edge ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_origin);
 
 /// Casts a ray downwards from @c ray_origin, until it hits an edge in the given polygon range. If it hits an edge from
-/// the interior side, then an iterator pointing to the start vertex of that edge is returned, if it hits an edge from
-/// the exterior side, or if no edge is hit, then @c nullptr is returned.
+/// the interior side, then that edge is returned, if it hits an edge from the exterior side, or if no edge is hit, then
+/// @c Edge::invalid() is returned.
 ///
 /// The special case where the ray hits the boundary on a vertex is resolved by shifting that vertex an infinitisemal
 /// offset to the left.
@@ -50,7 +50,7 @@ VertexIt ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ra
 /// @param vertices The vertices of the polygon.
 /// @param range The range.
 /// @param ray_origin The point the ray originates from.
-/// @return An iterator pointing to the start vertex of the edge.
-VertexIt ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_origin);
+/// @return The edge.
+Edge ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_origin);
 
 } // namespace dida::detail::vertical_decomposition

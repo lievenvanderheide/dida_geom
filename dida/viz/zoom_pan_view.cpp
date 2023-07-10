@@ -2,7 +2,6 @@
 
 #include <QtGui/QMouseEvent>
 #include <QtGui/QPainter>
-#include <iostream>
 
 #include "dida/box2.hpp"
 #include "dida/point2.hpp"

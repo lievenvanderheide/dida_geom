@@ -1,7 +1,6 @@
 #include "dida/detail/polygon_sweep.hpp"
 
 #include <catch2/catch.hpp>
-#include <iostream>
 
 #include "dida/math/fraction.hpp"
 
