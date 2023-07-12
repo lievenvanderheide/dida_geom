@@ -67,4 +67,78 @@ Edge ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_
   return result;
 }
 
+namespace
+{
+
+void gather_nodes_rec(const Node* node, const Node* parent_node, std::vector<const Node*>& nodes)
+{
+  nodes.push_back(node);
+
+  if (node->is_leaf)
+  {
+    return;
+  }
+
+  for (const Node* neighbor : node->neighbors)
+  {
+    if (neighbor && neighbor != parent_node)
+    {
+      gather_nodes_rec(neighbor, node, nodes);
+    }
+  }
+}
+
+std::vector<const Node*> gather_nodes(const Node* root)
+{
+  std::vector<const Node*> result;
+  gather_nodes_rec(root, nullptr, result);
+  return result;
+}
+
+bool validate_node_opp_edges(VerticesView vertices, const PolygonRange& range, const Node* node)
+{
+  if (node->is_leaf)
+  {
+    Edge incoming_edge{prev_cyclic(vertices, node->vertex_it), node->vertex_it};
+    Edge outgoing_edge{node->vertex_it, next_cyclic(vertices, node->vertex_it)};
+    if (node->direction == HorizontalDirection::right)
+    {
+      return node->lower_opp_edge == incoming_edge && node->upper_opp_edge == outgoing_edge;
+    }
+    else
+    {
+      return node->lower_opp_edge == outgoing_edge && node->upper_opp_edge == incoming_edge;
+    }
+  }
+  else
+  {
+    return node->lower_opp_edge == ray_cast_down(vertices, range, *node->vertex_it) &&
+           node->upper_opp_edge == ray_cast_up(vertices, range, *node->vertex_it);
+  }
+}
+
+} // namespace
+
+bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition)
+{
+  PolygonRange range{
+      static_cast<size_t>(chain_decomposition.first_node->vertex_it - vertices.begin()),
+      distance_cyclic(vertices, chain_decomposition.first_node->vertex_it, chain_decomposition.last_node->vertex_it),
+      chain_decomposition.first_node->vertex_it->x(),
+      chain_decomposition.last_node->vertex_it->x(),
+  };
+
+  std::vector<const Node*> nodes = gather_nodes(chain_decomposition.first_node);
+
+  for (const Node* node : nodes)
+  {
+    if (!validate_node_opp_edges(vertices, range, node))
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 } // namespace dida::detail::vertical_decomposition

@@ -5,6 +5,7 @@ find_package(Catch2 2 REQUIRED)
 add_executable(dida_detail_tests
     convex_polygons_intersection_tests.cpp
     polygon_sweep_tests.cpp
+    vertical_decomposition_zigzag_phase_tests.cpp
     vertical_decomposition_sweep_line_builder_tests.cpp
     vertical_decomposition_test_utils_tests.cpp
     vertical_decomposition_test_utils.cpp

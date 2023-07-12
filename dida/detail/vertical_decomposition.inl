@@ -72,6 +72,11 @@ bool Edge::operator==(const Edge b) const
   return start_vertex_it == b.start_vertex_it && end_vertex_it == b.end_vertex_it;
 }
 
+bool Edge::operator!=(const Edge b) const
+{
+  return start_vertex_it != b.start_vertex_it || end_vertex_it != b.end_vertex_it;
+}
+
 EdgeRange EdgeRange::invalid()
 {
   return EdgeRange{nullptr, nullptr};

@@ -85,6 +85,12 @@ struct Edge
   /// @param b The second operand.
   /// @return True iff this edge and @c b are equal.
   inline bool operator==(const Edge b) const;
+
+  /// Compares two edges for inequality.
+  ///
+  /// @param b The second operand.
+  /// @return True iff this edge and @c b are distinct.
+  inline bool operator!=(const Edge b) const;
 };
 
 /// A node in the vertical decomposition graph.
@@ -145,9 +151,7 @@ struct EdgeRange
 };
 
 /// Returns the edge in the given monotone edge range for which <tt>edge_range.start_vertex <= point <
-/// edge_range.end_vertex</tt>, where the ordering used is the lexicographical ordering if <tt>direction ==
-/// HorizontalDirection::right</tt> and the reverse lexicographical ordering if <tt>direction ==
-/// HorizontalDirection::left</tt>.
+/// edge_range.end_vertex</tt>, where the ordering used is @c lex_less_than_with_direction<direction>.
 ///
 /// The edge range must be a monotone edge range, which means that all edges in it should satisfy
 /// <tt>edge_range.start_vertex < edge_range.end_vertex</tt>.
@@ -181,6 +185,12 @@ struct VerticalDecomposition
 
   /// The rightmost node of this vertical decomposition. This is the node with the lexicographically greatest vertex.
   Node* rightmost_node;
+};
+
+struct ChainDecomposition
+{
+  Node* first_node;
+  Node* last_node;
 };
 
 /// A region in a vertical decomposition. A region is bounded on the left and the right by the vertical extensions
