@@ -4,8 +4,6 @@
 
 #include "dida/utils.hpp"
 
-#include <iostream>
-
 namespace dida::detail::vertical_decomposition
 {
 
@@ -239,7 +237,7 @@ void SweepState::handle_appear_event(const Event& event)
     new_node.neighbors[1] = nullptr;
     new_node.neighbors[2] = nullptr;
 
-    if(lower_opp_edge.region_left_node)
+    if (lower_opp_edge.region_left_node)
     {
       lower_opp_edge.region_left_node->neighbors[lower_opp_edge.region_left_node_branch_index] = &new_node;
     }

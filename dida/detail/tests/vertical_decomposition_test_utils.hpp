@@ -53,4 +53,6 @@ Edge ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_or
 /// @return The edge.
 Edge ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_origin);
 
+bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition);
+
 } // namespace dida::detail::vertical_decomposition
