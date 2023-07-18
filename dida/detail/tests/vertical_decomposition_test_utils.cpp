@@ -70,30 +70,32 @@ Edge ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_
 namespace
 {
 
-void gather_nodes_rec(const Node* node, const Node* parent_node, std::vector<const Node*>& nodes)
+void gather_nodes_rec(const Node* node, std::set<const Node*>& result)
 {
-  nodes.push_back(node);
-
-  if (node->is_leaf)
+  if (result.insert(node).second)
   {
-    return;
-  }
-
-  for (const Node* neighbor : node->neighbors)
-  {
-    if (neighbor && neighbor != parent_node)
+    uint8_t num_neighbors = node->is_leaf ? 1 : 3;
+    for (uint8_t i = 0; i < num_neighbors; i++)
     {
-      gather_nodes_rec(neighbor, node, nodes);
+      if (node->neighbors[i])
+      {
+        gather_nodes_rec(node->neighbors[i], result);
+      }
     }
   }
 }
 
-std::vector<const Node*> gather_nodes(const Node* root)
+} // namespace
+
+std::set<const Node*> gather_nodes(const Node* node)
 {
-  std::vector<const Node*> result;
-  gather_nodes_rec(root, nullptr, result);
+  std::set<const Node*> result;
+  gather_nodes_rec(node, result);
   return result;
 }
+
+namespace
+{
 
 bool validate_node_opp_edges(VerticesView vertices, const PolygonRange& range, const Node* node)
 {
@@ -128,7 +130,7 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
       chain_decomposition.last_node->vertex_it->x(),
   };
 
-  std::vector<const Node*> nodes = gather_nodes(chain_decomposition.first_node);
+  std::set<const Node*> nodes = gather_nodes(chain_decomposition.first_node);
 
   for (const Node* node : nodes)
   {

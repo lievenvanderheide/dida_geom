@@ -49,11 +49,17 @@ TEST_CASE("ConvexPolygon2T::unsafe_from_vertices and access")
 
 TEST_CASE("ConvexPolygon2T::operator ConvexPolygonView2")
 {
-  std::vector<Point2> vertices{{-2.72, 0.42}, {-5.2, -2.58}, {1.3, -3.76}, {3.78, 2.12}, {2.76, 2.92}};
+  ConvexPolygon2 polygon{{-2.72, 0.42}, {-5.2, -2.58}, {1.3, -3.76}, {3.78, 2.12}, {2.76, 2.92}};
 
-  ConvexPolygon2 polygon(vertices);
   ConvexPolygonView2 view = polygon;
+  CHECK(std::equal(view.begin(), view.end(), polygon.begin(), polygon.end()));
+}
 
+TEST_CASE("ConvexPolygon2T::operator ArrayView<const Point2>")
+{
+  ConvexPolygon2 polygon{{1.90, 6.14}, {-1.66, 7.20}, {-3.94, 5.12}, {-1.70, 2.36}, {-0.02, 3.00}};
+
+  ArrayView<const Point2> view = polygon;
   CHECK(std::equal(view.begin(), view.end(), polygon.begin(), polygon.end()));
 }
 
@@ -90,7 +96,7 @@ TEST_CASE("ConvexPolygonView2(ArrayView<const Point2>) and access")
   ConvexPolygonView2 view(vertices);
 
   REQUIRE(view.size() == vertices.size());
-  for(size_t i = 0; i < view.size(); i++)
+  for (size_t i = 0; i < view.size(); i++)
   {
     CHECK(view[i] == vertices[i]);
   }
@@ -104,7 +110,7 @@ TEST_CASE("ConvexPolygonView2::unsafe_from_vertices and access")
   ConvexPolygonView2 view = ConvexPolygonView2::unsafe_from_vertices(vertices);
 
   REQUIRE(view.size() == vertices.size());
-  for(size_t i = 0; i < view.size(); i++)
+  for (size_t i = 0; i < view.size(); i++)
   {
     CHECK(view[i] == vertices[i]);
   }

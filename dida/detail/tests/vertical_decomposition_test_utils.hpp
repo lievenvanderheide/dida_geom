@@ -2,6 +2,8 @@
 
 #include "dida/detail/vertical_decomposition.hpp"
 
+#include <set>
+
 namespace dida::detail::vertical_decomposition
 {
 
@@ -52,6 +54,12 @@ Edge ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_or
 /// @param ray_origin The point the ray originates from.
 /// @return The edge.
 Edge ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_origin);
+
+/// Gathers all nodes which are reachable from @c node through @c neighbors connections (this includes @c node itself).
+///
+/// @param node The node.
+/// @return The set of all nodes reachable from @c node.
+std::set<const Node*> gather_nodes(const Node* node);
 
 bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition);
 

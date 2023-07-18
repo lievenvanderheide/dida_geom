@@ -32,6 +32,12 @@ Polygon2T<Storage>::operator PolygonView2() const
 }
 
 template <class Storage>
+Polygon2T<Storage>::operator ArrayView<const Point2>() const
+{
+  return ArrayView<const Point2>(vertices_);
+}
+
+template <class Storage>
 size_t Polygon2T<Storage>::size() const
 {
   return vertices_.size();
