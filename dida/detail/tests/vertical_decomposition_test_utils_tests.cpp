@@ -392,6 +392,126 @@ TEST_CASE("gather_nodes")
   }
 }
 
+TEST_CASE("validate_node_opp_edges")
+{
+  Polygon2 polygon{
+      {-5.14, 3.94}, {-3.98, 1.78}, {-2.54, 0.90}, {-3.10, 2.32}, {-1.54, 1.22}, {0.36, 1.44},
+      {1.52, 0.62},  {3.66, 2.08},  {3.14, 0.90},  {4.82, 2.00},  {6.08, 4.30},  {4.22, 5.10},
+      {1.76, 2.84},  {0.28, 3.38},  {-1.14, 2.70}, {-2.88, 3.86},
+  };
+  VerticesView vertices(polygon);
+
+  PolygonRange full_range{0, polygon.size(), polygon[0].x(), polygon[0].x()};
+
+  SECTION("Non-leaf node")
+  {
+    Node node;
+    node.direction == HorizontalDirection::right;
+    node.is_leaf = false;
+    node.vertex_it = vertices.begin() + 3;
+    node.lower_opp_edge = Edge::edge_from_index(vertices, 1);
+    node.upper_opp_edge = Edge::edge_from_index(vertices, 15);
+    node.neighbors[0] = nullptr;
+    node.neighbors[1] = nullptr;
+    node.neighbors[2] = nullptr;
+
+    PolygonRange no_lower_opp_edge_range{5, 12, ScalarDeg1(1.1), ScalarDeg1(-4.5)};
+    PolygonRange no_upper_opp_edge_range{1, 8, ScalarDeg1(-3.72), ScalarDeg1(4.36)};
+
+    SECTION("Valid")
+    {
+      CHECK(validate_node_opp_edges(vertices, full_range, &node));
+    }
+
+    SECTION("lower_opp_edge invalid")
+    {
+      node.lower_opp_edge = Edge::edge_from_index(vertices, 2);
+      CHECK_FALSE(validate_node_opp_edges(vertices, full_range, &node));
+    }
+
+    SECTION("upper_opp_edge invalid")
+    {
+      node.upper_opp_edge = Edge::edge_from_index(vertices, 14);
+      CHECK_FALSE(validate_node_opp_edges(vertices, full_range, &node));
+    }
+
+    SECTION("Valid, no lower_opp_edge")
+    {
+      node.lower_opp_edge = Edge::invalid();
+      CHECK(validate_node_opp_edges(vertices, no_lower_opp_edge_range, &node));
+    }
+
+    SECTION("Valid no upper_opp_edge")
+    {
+      node.upper_opp_edge = Edge::invalid();
+      CHECK(validate_node_opp_edges(vertices, no_upper_opp_edge_range, &node));
+    }
+  }
+
+  SECTION("Leaf node")
+  {
+    SECTION("Left leaf")
+    {
+      Node node;
+      node.direction = HorizontalDirection::left;
+      node.is_leaf = true;
+      node.vertex_it = vertices.begin();
+      node.lower_opp_edge = Edge::edge_from_index(vertices, 0);
+      node.upper_opp_edge = Edge::edge_from_index(vertices, 15);
+      node.neighbors[0] = nullptr;
+      node.neighbors[1] = nullptr;
+      node.neighbors[2] = nullptr;
+
+      SECTION("Valid")
+      {
+        CHECK(validate_node_opp_edges(vertices, full_range, &node));
+      }
+
+      SECTION("lower_opp_edge different")
+      {
+        node.lower_opp_edge = Edge::edge_from_index(vertices, 1);
+        CHECK_FALSE(validate_node_opp_edges(vertices, full_range, &node));
+      }
+
+      SECTION("upper_opp_edge different")
+      {
+        node.upper_opp_edge = Edge::edge_from_index(vertices, 1);
+        CHECK_FALSE(validate_node_opp_edges(vertices, full_range, &node));
+      }
+    }
+
+    SECTION("Right leaf")
+    {
+      Node node;
+      node.direction = HorizontalDirection::right;
+      node.is_leaf = true;
+      node.vertex_it = vertices.begin() + 10;
+      node.lower_opp_edge = Edge::edge_from_index(vertices, 9);
+      node.upper_opp_edge = Edge::edge_from_index(vertices, 10);
+      node.neighbors[0] = nullptr;
+      node.neighbors[1] = nullptr;
+      node.neighbors[2] = nullptr;
+
+      SECTION("Valid")
+      {
+        CHECK(validate_node_opp_edges(vertices, full_range, &node));
+      }
+
+      SECTION("lower_opp_edge different")
+      {
+        node.lower_opp_edge = Edge::edge_from_index(vertices, 11);
+        CHECK_FALSE(validate_node_opp_edges(vertices, full_range, &node));
+      }
+
+      SECTION("upper_opp_edge different")
+      {
+        node.upper_opp_edge = Edge::edge_from_index(vertices, 11);
+        CHECK_FALSE(validate_node_opp_edges(vertices, full_range, &node));
+      }
+    }
+  }
+}
+
 TEST_CASE("validate_neighboring_nodes")
 {
   SECTION("Branch 0 to branch 1")

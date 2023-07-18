@@ -94,6 +94,28 @@ std::set<const Node*> gather_nodes(const Node* node)
   return result;
 }
 
+bool validate_node_opp_edges(VerticesView vertices, const PolygonRange& range, const Node* node)
+{
+  if (node->is_leaf)
+  {
+    Edge incoming_edge{prev_cyclic(vertices, node->vertex_it), node->vertex_it};
+    Edge outgoing_edge{node->vertex_it, next_cyclic(vertices, node->vertex_it)};
+    if (node->direction == HorizontalDirection::right)
+    {
+      return node->lower_opp_edge == incoming_edge && node->upper_opp_edge == outgoing_edge;
+    }
+    else
+    {
+      return node->lower_opp_edge == outgoing_edge && node->upper_opp_edge == incoming_edge;
+    }
+  }
+  else
+  {
+    return node->lower_opp_edge == ray_cast_down(vertices, range, *node->vertex_it) &&
+           node->upper_opp_edge == ray_cast_up(vertices, range, *node->vertex_it);
+  }
+}
+
 namespace
 {
 
@@ -192,33 +214,6 @@ bool validate_neighboring_nodes(VerticesView vertices, const Node* left_node, ui
 
   return true;
 }
-
-namespace
-{
-
-bool validate_node_opp_edges(VerticesView vertices, const PolygonRange& range, const Node* node)
-{
-  if (node->is_leaf)
-  {
-    Edge incoming_edge{prev_cyclic(vertices, node->vertex_it), node->vertex_it};
-    Edge outgoing_edge{node->vertex_it, next_cyclic(vertices, node->vertex_it)};
-    if (node->direction == HorizontalDirection::right)
-    {
-      return node->lower_opp_edge == incoming_edge && node->upper_opp_edge == outgoing_edge;
-    }
-    else
-    {
-      return node->lower_opp_edge == outgoing_edge && node->upper_opp_edge == incoming_edge;
-    }
-  }
-  else
-  {
-    return node->lower_opp_edge == ray_cast_down(vertices, range, *node->vertex_it) &&
-           node->upper_opp_edge == ray_cast_up(vertices, range, *node->vertex_it);
-  }
-}
-
-} // namespace
 
 bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition)
 {

@@ -61,6 +61,18 @@ Edge ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_
 /// @return The set of all nodes reachable from @c node.
 std::set<const Node*> gather_nodes(const Node* node);
 
+/// Validates the @c lower_opp_edge and @c upper_opp_edge members of @c node.
+///
+/// If @c node is a non-leaf node, then it's checked whether the edges match the result of a ray cast from @c
+/// *node->vertex_it in the downward and upward direction respectively. If @c node is a leaf node, then it's checked if
+/// the edges are the two edges adjacent to @c *node->vertex_it.
+///
+/// @param vertices The vertices of the polygon.
+/// @param range The polygon range of the part of the polygon's boundary we should ray cast against.
+/// @param node The node to validate.
+/// @return True iff validation succeeded.
+bool validate_node_opp_edges(VerticesView vertices, const PolygonRange& range, const Node* node);
+
 /// Validates whether two nodes which are neighbors according to their @c neighbors pointers should be neighbors
 /// according to the geometry of the polygon formed by @c vertices.
 ///
