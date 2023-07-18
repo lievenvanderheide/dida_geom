@@ -97,6 +97,105 @@ std::set<const Node*> gather_nodes(const Node* node)
 namespace
 {
 
+/// Validates whether the edge range between @c start_vertex_it and @c end_vertex_it is monotone in the given direction.
+///
+/// @tparam direction The direction.
+/// @param vertices The vertices of the polygon the edge range belongs to.
+/// @param start_vertex_it The first vertex in the edge range.
+/// @param end_vertex_it The last vertex in the edge range.
+/// @return True iff the edge range is monotone in the given direction.
+template <HorizontalDirection direction>
+bool validate_boundary_is_monotone(VerticesView vertices, VertexIt start_vertex_it, VertexIt end_vertex_it)
+{
+  VertexIt it = start_vertex_it;
+  while (it != end_vertex_it)
+  {
+    VertexIt next_it = next_cyclic(vertices, it);
+    if (!lex_less_than_with_direction<direction>(*it, *next_it))
+    {
+      return false;
+    }
+
+    it = next_cyclic(vertices, it);
+  }
+
+  return true;
+}
+
+} // namespace
+
+bool validate_neighboring_nodes(VerticesView vertices, const Node* left_node, uint8_t left_node_branch_index,
+                                const Node* right_node, uint8_t right_node_branch_index)
+{
+  DIDA_ASSERT(lex_less_than(*left_node->vertex_it, *right_node->vertex_it));
+  DIDA_ASSERT(left_node->neighbors[left_node_branch_index] == right_node);
+  DIDA_ASSERT(right_node->neighbors[right_node_branch_index] == left_node);
+
+  // Verify that the outgoing direction of the branch of 'left_node' is 'right' and the outgoing direction of the branch
+  // of 'right_node' is 'left'.
+  //
+  // Note that if a branch index is 0, then the outgoing direction is opposite to direction of the node, if a branch
+  // index is 1 or 2, then the outgoing direction is equal to the direction of the node.
+  if ((left_node_branch_index == 0) != (left_node->direction == HorizontalDirection::left) ||
+      (right_node_branch_index == 0) != (right_node->direction == HorizontalDirection::right))
+  {
+    return false;
+  }
+
+  VertexIt lower_boundary_left_vertex_it =
+      left_node_branch_index == 2 ? left_node->vertex_it : left_node->lower_opp_edge.start_vertex_it;
+  VertexIt upper_boundary_left_vertex_it =
+      left_node_branch_index == 1 ? left_node->vertex_it : left_node->upper_opp_edge.end_vertex_it;
+
+  VertexIt lower_boundary_right_vertex_it =
+      right_node_branch_index == 2 ? right_node->vertex_it : right_node->lower_opp_edge.end_vertex_it;
+  VertexIt upper_boundary_right_vertex_it =
+      right_node_branch_index == 1 ? right_node->vertex_it : right_node->upper_opp_edge.start_vertex_it;
+
+  // Verify that at least one of the lower and upper boundaries exists.
+  if (!lower_boundary_left_vertex_it && !upper_boundary_left_vertex_it)
+  {
+    return false;
+  }
+
+  // If the left node has an lower boundary then should should the right node, and vice versa.
+  if ((lower_boundary_left_vertex_it != nullptr) != (lower_boundary_right_vertex_it != nullptr))
+  {
+    return false;
+  }
+
+  // If there's a lower boundary, then validate that it's monotone.
+  if (lower_boundary_left_vertex_it)
+  {
+    if (!validate_boundary_is_monotone<HorizontalDirection::right>(vertices, lower_boundary_left_vertex_it,
+                                                                   lower_boundary_right_vertex_it))
+    {
+      return false;
+    }
+  }
+
+  // If the left node has an upper boundary then should should the right node, and vice versa.
+  if ((upper_boundary_left_vertex_it != nullptr) != (upper_boundary_right_vertex_it != nullptr))
+  {
+    return false;
+  }
+
+  // If there's an upper boundary, then validate that it's monotone.
+  if (upper_boundary_left_vertex_it)
+  {
+    if (!validate_boundary_is_monotone<HorizontalDirection::left>(vertices, upper_boundary_right_vertex_it,
+                                                                  upper_boundary_left_vertex_it))
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+namespace
+{
+
 bool validate_node_opp_edges(VerticesView vertices, const PolygonRange& range, const Node* node)
 {
   if (node->is_leaf)

@@ -61,6 +61,20 @@ Edge ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_
 /// @return The set of all nodes reachable from @c node.
 std::set<const Node*> gather_nodes(const Node* node);
 
+/// Validates whether two nodes which are neighbors according to their @c neighbors pointers should be neighbors
+/// according to the geometry of the polygon formed by @c vertices.
+///
+/// The nodes must be ordered such that <tt>lex_less_than(*left_node->vertex_it, *right_node->vertex_it)</tt>.
+///
+/// @param vertices The vertices of the polygon.
+/// @param left_node The left node of the node pair.
+/// @param left_node_branch_index The index of the branch in @c left_node which connects to @c right_node.
+/// @param right_node The right node of the node pair.
+/// @param right_node_branch_index The index of the branch in @c right_node which connects to @c left_node.
+/// @return True iff validation succeeded.
+bool validate_neighboring_nodes(VerticesView vertices, const Node* left_node, uint8_t left_node_branch_index,
+                                const Node* right_node, uint8_t right_node_branch_index);
+
 bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition);
 
 } // namespace dida::detail::vertical_decomposition
