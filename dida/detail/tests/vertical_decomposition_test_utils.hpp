@@ -87,6 +87,17 @@ bool validate_node_opp_edges(VerticesView vertices, const PolygonRange& range, c
 bool validate_neighboring_nodes(VerticesView vertices, const Node* left_node, uint8_t left_node_branch_index,
                                 const Node* right_node, uint8_t right_node_branch_index);
 
+/// Returns whether @c node should have a neighbor with the given branch index (that is, whether @c
+/// node->neighbors[branch_index] should be non-null).
+///
+/// @param node The node.
+/// @param branch_index The branch index.
+/// @param is_chain_first_node Whether @c node is the first node of the @c ChainDecomposition it belongs to.
+/// @param is_chain_last_node Whether @c node is the last node of the @c ChainDecomposition it belongs to.
+bool node_should_have_neighbor(const Node* node, uint8_t branch_index, bool is_chain_first_node,
+                               bool is_chain_last_node);
+
+/// Validates a
 bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition);
 
 } // namespace dida::detail::vertical_decomposition

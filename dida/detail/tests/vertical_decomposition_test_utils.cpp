@@ -215,6 +215,42 @@ bool validate_neighboring_nodes(VerticesView vertices, const Node* left_node, ui
   return true;
 }
 
+bool node_should_have_neighbor(const Node* node, uint8_t branch_index, bool is_chain_first_node,
+                               bool is_chain_last_node)
+{
+  if (node->is_leaf)
+  {
+    DIDA_ASSERT(branch_index == 0);
+    return true;
+  }
+
+  switch (branch_index)
+  {
+  case 0:
+    return node->lower_opp_edge.is_valid() || node->upper_opp_edge.is_valid();
+
+  case 1:
+    if (node->lower_opp_edge.is_valid())
+    {
+      return true;
+    }
+
+    return node->direction == HorizontalDirection::right ? !is_chain_first_node : !is_chain_last_node;
+
+  case 2:
+    if (node->upper_opp_edge.is_valid())
+    {
+      return true;
+    }
+
+    return node->direction == HorizontalDirection::left ? !is_chain_first_node : !is_chain_last_node;
+
+  default:
+    DIDA_ASSERT(!"Invalid branch index");
+    return false;
+  }
+}
+
 bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition)
 {
   PolygonRange range{

@@ -790,4 +790,169 @@ TEST_CASE("validate_neighboring_nodes")
   }
 }
 
+TEST_CASE("node_should_have_neighbor")
+{
+  Polygon2 polygon{
+      {-0.88, 1.84}, {-2.22, 3.02}, {0.28, 4.60}, {2.80, 3.52}, {1.78, 1.96}, {4.44, 3.20}, {0.26, 6.48}, {-3.84, 3.08},
+  };
+  VerticesView vertices(polygon);
+
+  SECTION("Node with direction = left")
+  {
+    Node node;
+    node.direction = HorizontalDirection::left;
+    node.is_leaf = false;
+    node.vertex_it = vertices.begin() + 3;
+    node.lower_opp_edge = Edge::edge_from_index(vertices, 4);
+    node.upper_opp_edge = Edge::edge_from_index(vertices, 5);
+    node.neighbors[0] = nullptr;
+    node.neighbors[1] = nullptr;
+    node.neighbors[2] = nullptr;
+
+    SECTION("With both opposites")
+    {
+      CHECK(node_should_have_neighbor(&node, 0, false, false));
+      CHECK(node_should_have_neighbor(&node, 1, false, false));
+      CHECK(node_should_have_neighbor(&node, 2, false, false));
+
+      CHECK(node_should_have_neighbor(&node, 0, true, false));
+      CHECK(node_should_have_neighbor(&node, 1, true, false));
+      CHECK(node_should_have_neighbor(&node, 2, true, false));
+
+      CHECK(node_should_have_neighbor(&node, 0, false, true));
+      CHECK(node_should_have_neighbor(&node, 1, false, true));
+      CHECK(node_should_have_neighbor(&node, 2, false, true));
+    }
+
+    SECTION("With no lower_opp_edge")
+    {
+      node.lower_opp_edge = Edge::invalid();
+
+      CHECK(node_should_have_neighbor(&node, 0, false, false));
+      CHECK(node_should_have_neighbor(&node, 1, false, false));
+      CHECK(node_should_have_neighbor(&node, 2, false, false));
+
+      CHECK(node_should_have_neighbor(&node, 0, false, true));
+      CHECK_FALSE(node_should_have_neighbor(&node, 1, false, true));
+      CHECK(node_should_have_neighbor(&node, 2, false, true));
+    }
+
+    SECTION("With no upper_opp_edge")
+    {
+      node.upper_opp_edge = Edge::invalid();
+
+      CHECK(node_should_have_neighbor(&node, 0, false, false));
+      CHECK(node_should_have_neighbor(&node, 1, false, false));
+      CHECK(node_should_have_neighbor(&node, 2, false, false));
+
+      CHECK(node_should_have_neighbor(&node, 0, true, false));
+      CHECK(node_should_have_neighbor(&node, 1, true, false));
+      CHECK_FALSE(node_should_have_neighbor(&node, 2, true, false));
+    }
+
+    SECTION("With no opposites")
+    {
+      node.lower_opp_edge = Edge::invalid();
+      node.upper_opp_edge = Edge::invalid();
+
+      CHECK_FALSE(node_should_have_neighbor(&node, 0, false, false));
+      CHECK(node_should_have_neighbor(&node, 1, false, false));
+      CHECK(node_should_have_neighbor(&node, 2, false, false));
+
+      CHECK_FALSE(node_should_have_neighbor(&node, 0, true, false));
+      CHECK(node_should_have_neighbor(&node, 1, true, false));
+      CHECK_FALSE(node_should_have_neighbor(&node, 2, true, false));
+
+      CHECK_FALSE(node_should_have_neighbor(&node, 0, false, true));
+      CHECK_FALSE(node_should_have_neighbor(&node, 1, false, true));
+      CHECK(node_should_have_neighbor(&node, 2, false, true));
+    }
+  }
+
+  SECTION("Node with direction = right")
+  {
+    Node node;
+    node.direction = HorizontalDirection::right;
+    node.is_leaf = false;
+    node.vertex_it = vertices.begin() + 1;
+    node.lower_opp_edge = Edge::edge_from_index(vertices, 7);
+    node.upper_opp_edge = Edge::edge_from_index(vertices, 6);
+    node.neighbors[0] = nullptr;
+    node.neighbors[1] = nullptr;
+    node.neighbors[2] = nullptr;
+
+    SECTION("With both opposites")
+    {
+      CHECK(node_should_have_neighbor(&node, 0, false, false));
+      CHECK(node_should_have_neighbor(&node, 1, false, false));
+      CHECK(node_should_have_neighbor(&node, 2, false, false));
+
+      CHECK(node_should_have_neighbor(&node, 0, true, false));
+      CHECK(node_should_have_neighbor(&node, 1, true, false));
+      CHECK(node_should_have_neighbor(&node, 2, true, false));
+
+      CHECK(node_should_have_neighbor(&node, 0, false, true));
+      CHECK(node_should_have_neighbor(&node, 1, false, true));
+      CHECK(node_should_have_neighbor(&node, 2, false, true));
+    }
+
+    SECTION("With no lower_opp_edge")
+    {
+      node.lower_opp_edge = Edge::invalid();
+
+      CHECK(node_should_have_neighbor(&node, 0, false, false));
+      CHECK(node_should_have_neighbor(&node, 1, false, false));
+      CHECK(node_should_have_neighbor(&node, 2, false, false));
+
+      CHECK(node_should_have_neighbor(&node, 0, true, false));
+      CHECK_FALSE(node_should_have_neighbor(&node, 1, true, false));
+      CHECK(node_should_have_neighbor(&node, 2, true, false));
+    }
+
+    SECTION("With no upper_opp_edge")
+    {
+      node.upper_opp_edge = Edge::invalid();
+
+      CHECK(node_should_have_neighbor(&node, 0, false, false));
+      CHECK(node_should_have_neighbor(&node, 1, false, false));
+      CHECK(node_should_have_neighbor(&node, 2, false, false));
+
+      CHECK(node_should_have_neighbor(&node, 0, false, true));
+      CHECK(node_should_have_neighbor(&node, 1, false, true));
+      CHECK_FALSE(node_should_have_neighbor(&node, 2, false, true));
+    }
+
+    SECTION("With no opposites")
+    {
+      node.lower_opp_edge = Edge::invalid();
+      node.upper_opp_edge = Edge::invalid();
+
+      CHECK_FALSE(node_should_have_neighbor(&node, 0, false, false));
+      CHECK(node_should_have_neighbor(&node, 1, false, false));
+      CHECK(node_should_have_neighbor(&node, 2, false, false));
+
+      CHECK_FALSE(node_should_have_neighbor(&node, 0, true, false));
+      CHECK_FALSE(node_should_have_neighbor(&node, 1, true, false));
+      CHECK(node_should_have_neighbor(&node, 2, true, false));
+
+      CHECK_FALSE(node_should_have_neighbor(&node, 0, false, true));
+      CHECK(node_should_have_neighbor(&node, 1, false, true));
+      CHECK_FALSE(node_should_have_neighbor(&node, 2, false, true));
+    }
+  }
+
+  SECTION("Leaf node")
+  {
+    Node node;
+    node.direction = HorizontalDirection::left;
+    node.is_leaf = true;
+    node.vertex_it = vertices.begin() + 7;
+    node.lower_opp_edge = Edge::edge_from_index(vertices, 7);
+    node.upper_opp_edge = Edge::edge_from_index(vertices, 6);
+    node.neighbors[0] = nullptr;
+
+    CHECK(node_should_have_neighbor(&node, 0, false, false));
+  }
+}
+
 } // namespace dida::detail::vertical_decomposition
