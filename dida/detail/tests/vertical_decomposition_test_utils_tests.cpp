@@ -512,7 +512,7 @@ TEST_CASE("validate_node_opp_edges")
   }
 }
 
-TEST_CASE("validate_neighboring_nodes")
+TEST_CASE("validate_neighboring_nodes_pair")
 {
   SECTION("Branch 0 to branch 1")
   {
@@ -544,58 +544,58 @@ TEST_CASE("validate_neighboring_nodes")
 
     SECTION("Valid")
     {
-      CHECK(validate_neighboring_nodes(vertices, &left_node, 0, &right_node, 1));
+      CHECK(validate_neighboring_nodes_pair(vertices, &left_node, 0, &right_node, 1));
     }
 
     SECTION("Left node wrong direction")
     {
       left_node.direction = HorizontalDirection::right;
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 0, &right_node, 1));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 0, &right_node, 1));
     }
 
     SECTION("Right node wrong direction")
     {
       right_node.direction = HorizontalDirection::right;
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 0, &right_node, 1));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 0, &right_node, 1));
     }
 
     SECTION("Lower boundary not monotone")
     {
       std::vector<Point2>& vertices_mut = polygon.unsafe_mutable_vertices();
       std::swap(vertices_mut[4], vertices_mut[5]);
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 0, &right_node, 1));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 0, &right_node, 1));
     }
 
     SECTION("Upper boundary not monotone")
     {
       std::vector<Point2>& vertices_mut = polygon.unsafe_mutable_vertices();
       std::swap(vertices_mut[10], vertices_mut[11]);
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 0, &right_node, 1));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 0, &right_node, 1));
     }
 
     SECTION("No lower boundary")
     {
       left_node.lower_opp_edge = Edge::invalid();
       right_node.lower_opp_edge = Edge::invalid();
-      CHECK(validate_neighboring_nodes(vertices, &left_node, 0, &right_node, 1));
+      CHECK(validate_neighboring_nodes_pair(vertices, &left_node, 0, &right_node, 1));
     }
 
     SECTION("No left_node.lower_opp_edge")
     {
       left_node.lower_opp_edge = Edge::invalid();
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 0, &right_node, 1));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 0, &right_node, 1));
     }
 
     SECTION("No left_node.upper_opp_edge")
     {
       left_node.upper_opp_edge = Edge::invalid();
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 0, &right_node, 1));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 0, &right_node, 1));
     }
 
     SECTION("No right_node.lower_opp_edge")
     {
       right_node.lower_opp_edge = Edge::invalid();
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 0, &right_node, 1));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 0, &right_node, 1));
     }
   }
 
@@ -630,45 +630,45 @@ TEST_CASE("validate_neighboring_nodes")
 
     SECTION("Valid")
     {
-      CHECK(validate_neighboring_nodes(vertices, &left_node, 1, &right_node, 2));
+      CHECK(validate_neighboring_nodes_pair(vertices, &left_node, 1, &right_node, 2));
     }
 
     SECTION("Left node wrong direction")
     {
       left_node.direction = HorizontalDirection::left;
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 1, &right_node, 2));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 1, &right_node, 2));
     }
 
     SECTION("Right node wrong direction")
     {
       right_node.direction = HorizontalDirection::right;
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 1, &right_node, 2));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 1, &right_node, 2));
     }
 
     SECTION("Lower boundary not monotone")
     {
       std::vector<Point2>& vertices_mut = polygon.unsafe_mutable_vertices();
       std::swap(vertices_mut[2], vertices_mut[3]);
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 1, &right_node, 2));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 1, &right_node, 2));
     }
 
     SECTION("Upper boundary not monotone")
     {
       std::vector<Point2>& vertices_mut = polygon.unsafe_mutable_vertices();
       std::swap(vertices_mut[11], vertices_mut[12]);
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 1, &right_node, 2));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 1, &right_node, 2));
     }
 
     SECTION("No left_node.lower_opp_edge")
     {
       left_node.lower_opp_edge = Edge::invalid();
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 1, &right_node, 2));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 1, &right_node, 2));
     }
 
     SECTION("No right_node.upper_opp_edge")
     {
       right_node.upper_opp_edge = Edge::invalid();
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 1, &right_node, 2));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 1, &right_node, 2));
     }
   }
 
@@ -703,58 +703,58 @@ TEST_CASE("validate_neighboring_nodes")
 
     SECTION("Valid")
     {
-      CHECK(validate_neighboring_nodes(vertices, &left_node, 2, &right_node, 0));
+      CHECK(validate_neighboring_nodes_pair(vertices, &left_node, 2, &right_node, 0));
     }
 
     SECTION("Left node wrong direction")
     {
       left_node.direction = HorizontalDirection::left;
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 2, &right_node, 0));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 2, &right_node, 0));
     }
 
     SECTION("Right node wrong direction")
     {
       right_node.direction = HorizontalDirection::left;
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 2, &right_node, 0));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 2, &right_node, 0));
     }
 
     SECTION("Lower boundary not monotone")
     {
       std::vector<Point2>& vertices_mut = polygon.unsafe_mutable_vertices();
       std::swap(vertices_mut[5], vertices_mut[6]);
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 2, &right_node, 0));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 2, &right_node, 0));
     }
 
     SECTION("Upper boundary not monotone")
     {
       std::vector<Point2>& vertices_mut = polygon.unsafe_mutable_vertices();
       std::swap(vertices_mut[14], vertices_mut[15]);
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 2, &right_node, 0));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 2, &right_node, 0));
     }
 
     SECTION("No upper boundary")
     {
       left_node.upper_opp_edge = Edge::invalid();
       right_node.upper_opp_edge = Edge::invalid();
-      CHECK(validate_neighboring_nodes(vertices, &left_node, 2, &right_node, 0));
+      CHECK(validate_neighboring_nodes_pair(vertices, &left_node, 2, &right_node, 0));
     }
 
     SECTION("No left_node.upper_opp_edge")
     {
       left_node.upper_opp_edge = Edge::invalid();
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 2, &right_node, 0));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 2, &right_node, 0));
     }
 
     SECTION("No right_node.lower_opp_edge")
     {
       right_node.lower_opp_edge = Edge::invalid();
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 2, &right_node, 0));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 2, &right_node, 0));
     }
 
     SECTION("No right_node.upper_opp_edge")
     {
       right_node.upper_opp_edge = Edge::invalid();
-      CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 2, &right_node, 0));
+      CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 2, &right_node, 0));
     }
   }
 
@@ -786,7 +786,7 @@ TEST_CASE("validate_neighboring_nodes")
     right_node.neighbors[1] = nullptr;
     right_node.neighbors[2] = nullptr;
 
-    CHECK_FALSE(validate_neighboring_nodes(vertices, &left_node, 0, &right_node, 0));
+    CHECK_FALSE(validate_neighboring_nodes_pair(vertices, &left_node, 0, &right_node, 0));
   }
 }
 
@@ -952,6 +952,82 @@ TEST_CASE("node_should_have_neighbor")
     node.neighbors[0] = nullptr;
 
     CHECK(node_should_have_neighbor(&node, 0, false, false));
+  }
+}
+
+TEST_CASE("validate_node_neighbors")
+{
+  Polygon2 polygon{
+      {-4.36, 1.16}, {-3.40, 1.52}, {-0.16, 0.82}, {2.06, 2.14},  {0.00, 3.62},  {-1.44, 3.26},
+      {-0.34, 4.56}, {1.48, 3.78},  {-0.38, 5.90}, {-2.30, 3.16}, {-3.26, 4.02},
+  };
+
+  VerticesView vertices(polygon);
+
+  std::vector<Node> nodes(4);
+  nodes[0].direction = HorizontalDirection::left;
+  nodes[0].is_leaf = true;
+  nodes[0].vertex_it = vertices.begin() + 0;
+  nodes[0].lower_opp_edge = Edge::edge_from_index(vertices, 0);
+  nodes[0].upper_opp_edge = Edge::edge_from_index(vertices, 10);
+  nodes[0].neighbors[0] = &nodes[1];
+
+  nodes[1].direction = HorizontalDirection::right;
+  nodes[1].is_leaf = false;
+  nodes[1].vertex_it = vertices.begin() + 5;
+  nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+  nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 8);
+  nodes[1].neighbors[0] = &nodes[0];
+  nodes[1].neighbors[1] = &nodes[3];
+  nodes[1].neighbors[2] = &nodes[2];
+
+  nodes[2].direction = HorizontalDirection::right;
+  nodes[2].is_leaf = true;
+  nodes[2].vertex_it = vertices.begin() + 7;
+  nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 6);
+  nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 7);
+  nodes[2].neighbors[0] = &nodes[1];
+
+  nodes[3].direction = HorizontalDirection::right;
+  nodes[3].is_leaf = true;
+  nodes[3].vertex_it = vertices.begin() + 3;
+  nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 2);
+  nodes[3].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+  nodes[3].neighbors[0] = &nodes[1];
+
+  SECTION("Valid")
+  {
+    CHECK(validate_node_neighbors(vertices, &nodes[1], false, false));
+  }
+
+  SECTION("Valid leaf node")
+  {
+    CHECK(validate_node_neighbors(vertices, &nodes[0], false, false));
+  }
+
+  SECTION("No neighbor where there should be one")
+  {
+    nodes[1].neighbors[0] = nullptr;
+    CHECK_FALSE(validate_node_neighbors(vertices, &nodes[1], false, false));
+  }
+
+  SECTION("Neighbor where there shouldn't be one")
+  {
+    nodes[1].lower_opp_edge = Edge::invalid();
+    CHECK_FALSE(validate_node_neighbors(vertices, &nodes[1], true, false));
+  }
+
+  SECTION("Neighbor doesn't link back")
+  {
+    nodes[2].neighbors[0] = nullptr;
+    CHECK_FALSE(validate_node_neighbors(vertices, &nodes[1], false, false));
+  }
+
+  SECTION("Neighboring pair not neighboring according to geometry")
+  {
+    std::vector<Point2>& vertices_mut = polygon.unsafe_mutable_vertices();
+    std::swap(vertices_mut[10], vertices_mut[11]);
+    CHECK_FALSE(validate_node_neighbors(vertices, &nodes[0], false, false));
   }
 }
 

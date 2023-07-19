@@ -1,5 +1,7 @@
 #include "dida/detail/tests/vertical_decomposition_test_utils.hpp"
 
+#include <iostream>
+
 #include "dida/utils.hpp"
 
 namespace dida::detail::vertical_decomposition
@@ -146,8 +148,8 @@ bool validate_boundary_is_monotone(VerticesView vertices, VertexIt start_vertex_
 
 } // namespace
 
-bool validate_neighboring_nodes(VerticesView vertices, const Node* left_node, uint8_t left_node_branch_index,
-                                const Node* right_node, uint8_t right_node_branch_index)
+bool validate_neighboring_nodes_pair(VerticesView vertices, const Node* left_node, uint8_t left_node_branch_index,
+                                     const Node* right_node, uint8_t right_node_branch_index)
 {
   DIDA_ASSERT(lex_less_than(*left_node->vertex_it, *right_node->vertex_it));
   DIDA_ASSERT(left_node->neighbors[left_node_branch_index] == right_node);
@@ -251,6 +253,52 @@ bool node_should_have_neighbor(const Node* node, uint8_t branch_index, bool is_c
   }
 }
 
+bool validate_node_neighbors(VerticesView vertices, const Node* node, bool is_chain_first_node, bool is_chain_last_node)
+{
+  uint8_t num_branches = node->is_leaf ? 1 : 3;
+  for (uint8_t i = 0; i < num_branches; i++)
+  {
+    if (node_should_have_neighbor(node, i, is_chain_first_node, is_chain_last_node))
+    {
+      Node* neighbor = node->neighbors[i];
+      if (!neighbor)
+      {
+        return false;
+      }
+
+      uint8_t neighbor_num_branches = neighbor->is_leaf ? 1 : 3;
+      uint8_t neighbor_to_node_branch_index = 0;
+      for (; neighbor_to_node_branch_index < neighbor_num_branches; neighbor_to_node_branch_index++)
+      {
+        if (neighbor->neighbors[neighbor_to_node_branch_index] == node)
+        {
+          break;
+        }
+      }
+
+      if (neighbor_to_node_branch_index == neighbor_num_branches)
+      {
+        return false;
+      }
+
+      if (lex_less_than(*node->vertex_it, *neighbor->vertex_it) &&
+          !validate_neighboring_nodes_pair(vertices, node, i, neighbor, neighbor_to_node_branch_index))
+      {
+        return false;
+      }
+    }
+    else
+    {
+      if (node->neighbors[i])
+      {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition)
 {
   PolygonRange range{
@@ -270,7 +318,69 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
     }
   }
 
+  for (const Node* node : nodes)
+  {
+    if (!validate_node_neighbors(vertices, node, node == chain_decomposition.first_node,
+                                 node == chain_decomposition.last_node))
+    {
+      return false;
+    }
+  }
+
   return true;
+}
+
+void print_nodes(VerticesView vertices, ArrayView<const Node> nodes)
+{
+  std::cout << "std::vector<Node> nodes(" << nodes.size() << ");" << std::endl;
+  for (size_t i = 0; i < nodes.size(); i++)
+  {
+    std::cout << "nodes[" << i << "].direction = "
+              << (nodes[i].direction == HorizontalDirection::left ? "HorizontalDirection::left;"
+                                                                  : "HorizontalDirection::right;")
+              << std::endl;
+    std::cout << "nodes[" << i << "].is_leaf = " << (nodes[i].is_leaf ? "true;" : "false;") << std::endl;
+    std::cout << "nodes[" << i << "].vertex_it = vertices.begin() + " << (nodes[i].vertex_it - vertices.begin()) << ";"
+              << std::endl;
+
+    std::cout << "nodes[" << i << "].lower_opp_edge = ";
+    if (nodes[i].lower_opp_edge.is_valid())
+    {
+      std::cout << "Edge::edge_from_index(vertices, " << nodes[i].lower_opp_edge.start_vertex_it - vertices.begin()
+                << ");" << std::endl;
+    }
+    else
+    {
+      std::cout << "Edge::invalid();" << std::endl;
+    }
+
+    std::cout << "nodes[" << i << "].upper_opp_edge = ";
+    if (nodes[i].upper_opp_edge.is_valid())
+    {
+      std::cout << "Edge::edge_from_index(vertices, " << nodes[i].upper_opp_edge.start_vertex_it - vertices.begin()
+                << ");" << std::endl;
+    }
+    else
+    {
+      std::cout << "Edge::invalid();" << std::endl;
+    }
+
+    size_t num_neighbors = nodes[i].is_leaf ? 1 : 3;
+    for (size_t j = 0; j < num_neighbors; j++)
+    {
+      std::cout << "nodes[" << i << "].neighbors[" << j << "] = ";
+      if (nodes[i].neighbors[j])
+      {
+        std::cout << "&nodes[" << nodes[i].neighbors[j] - nodes.begin() << "];" << std::endl;
+      }
+      else
+      {
+        std::cout << "nullptr;" << std::endl;
+      }
+    }
+
+    std::cout << std::endl;
+  }
 }
 
 } // namespace dida::detail::vertical_decomposition
