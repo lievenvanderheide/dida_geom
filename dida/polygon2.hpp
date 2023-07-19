@@ -53,6 +53,14 @@ public:
   /// @return The @c PolygonView2.
   operator PolygonView2() const;
 
+  /// Returns an @c ArrayView of the vertices of this @c Polygon2T.
+  ///
+  /// Since the @c ArrayView doesn't own the data it refers to, it's the responsibility of the user to make sure that
+  /// this @c Polygon2T outlives the @c ArrayView.
+  ///
+  /// @return The view of the vertices.
+  operator ArrayView<const Point2>() const;
+
   /// Returns the number of vertices of this polygon.
   ///
   /// @return The number of vertices.

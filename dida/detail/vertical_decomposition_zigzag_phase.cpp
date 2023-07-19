@@ -372,7 +372,8 @@ void zigzag_concave_corner(ZigzagState& state)
     node->neighbors[1] = nullptr;
     node->neighbors[2] = state.prev_node;
 
-    state.prev_node->neighbors[0] = node;
+    uint8_t prev_node_branch_index = state.forward ? (state.direction == HorizontalDirection::right ? 2 : 1) : 0;
+    state.prev_node->neighbors[prev_node_branch_index] = node;
     if (state.next_node)
     {
       state.next_node->neighbors[1] = node;
@@ -397,7 +398,9 @@ void zigzag_concave_corner(ZigzagState& state)
     node->neighbors[1] = state.prev_node;
     node->neighbors[2] = nullptr;
 
-    state.prev_node->neighbors[0] = node;
+    
+    uint8_t prev_node_branch_index = state.forward ? (state.direction == HorizontalDirection::right ? 2 : 1) : 0;
+    state.prev_node->neighbors[prev_node_branch_index] = node;
     if (state.next_node)
     {
       state.next_node->neighbors[2] = node;

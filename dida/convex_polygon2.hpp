@@ -53,6 +53,14 @@ public:
   /// @return The @c ConvexPolygonView2.
   operator ConvexPolygonView2() const;
 
+  /// Returns an @c ArrayView of the vertices of this @c ConvexPolygon2T.
+  ///
+  /// Since the @c ArrayView doesn't own the data it refers to, it's the responsibility of the user to make sure that
+  /// this @c ConvexPolygon2T outlives the @c ArrayView.
+  ///
+  /// @return The view of the vertices.
+  operator ArrayView<const Point2>() const;
+
   /// Returns the number of vertices of this polygon.
   ///
   /// @return The number of vertices.

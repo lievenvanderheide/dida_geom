@@ -16,7 +16,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
         {-2.76, 5.04}, {-4.98, 3.88}, {-1.24, 3.48}, {1.74, 2.22}, {-0.98, 0.92}, {-2.96, 0.96},
         {0.68, -0.70}, {6.42, 2.46},  {3.06, 4.12},  {5.92, 5.56}, {0.24, 7.14},
     };
-    ArrayView<const Point2> vertices(&*polygon.begin(), polygon.size());
+    ArrayView<const Point2> vertices(polygon);
 
     std::deque<Node> node_pool;
     std::vector<ChainDecomposition> chain_decompositions = vertical_decomposition_zigzag_phase(vertices, node_pool);
@@ -45,7 +45,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
         {4.58, 5.64},   {5.44, 5.54},  {6.86, 6.50},   {5.12, 7.46},   {3.88, 8.22},   {2.86, 7.44},   {1.56, 7.86},
         {0.16, 6.52},   {-2.58, 7.28}, {-3.88, 5.54},
     };
-    ArrayView<const Point2> vertices(&*polygon.begin(), polygon.size());
+    ArrayView<const Point2> vertices(polygon);
 
     std::deque<Node> node_pool;
     std::vector<ChainDecomposition> chain_decompositions = vertical_decomposition_zigzag_phase(vertices, node_pool);
@@ -70,7 +70,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
         {7.00, 4.04},  {7.74, 2.42},  {5.12, 1.02},  {8.32, 2.54},  {7.44, 4.94},  {2.64, 4.50},
     };
 
-    ArrayView<const Point2> vertices(&*polygon.begin(), polygon.size());
+    ArrayView<const Point2> vertices(polygon);
 
     std::deque<Node> node_pool;
     std::vector<ChainDecomposition> chain_decompositions = vertical_decomposition_zigzag_phase(vertices, node_pool);
@@ -101,7 +101,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
         {5.30, 2.64},  {0.40, 5.50},  {4.24, 6.98}, {0.86, 8.10},  {1.60, 6.82},   {-1.52, 6.70},
     };
 
-    ArrayView<const Point2> vertices(&*polygon.begin(), polygon.size());
+    ArrayView<const Point2> vertices(polygon);
 
     std::deque<Node> node_pool;
     std::vector<ChainDecomposition> chain_decompositions = vertical_decomposition_zigzag_phase(vertices, node_pool);
@@ -129,7 +129,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
         {-0.14, 1.30},  {-2.50, 3.82}, {-0.02, 7.80}, {5.84, 3.02},
     };
 
-    ArrayView<const Point2> vertices(&*polygon.begin(), polygon.size());
+    ArrayView<const Point2> vertices(polygon);
 
     std::deque<Node> node_pool;
     std::vector<ChainDecomposition> chain_decompositions = vertical_decomposition_zigzag_phase(vertices, node_pool);

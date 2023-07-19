@@ -50,11 +50,20 @@ TEST_CASE("Polygon2T::unsafe_from_vertices and access")
 
 TEST_CASE("Polygon2T::operator PolygonView2")
 {
-  std::vector<Point2> vertices{{-2.72, 0.42}, {-5.2, -2.58}, {1.3, -3.76}, {3.78, 2.12}, {2.76, 2.92}};
+  Polygon2 polygon{{-2.72, 0.42}, {-5.2, -2.58}, {1.3, -3.76}, {3.78, 2.12}, {2.76, 2.92}};
 
-  Polygon2 polygon(vertices);
   PolygonView2 view = polygon;
+  CHECK(std::equal(view.begin(), view.end(), polygon.begin(), polygon.end()));
+}
 
+TEST_CASE("Polygon2::operator ArrayView<const Point2>")
+{
+  Polygon2 polygon{
+      {-5.16, 0.44}, {-3.24, 2.74}, {-1.72, 1.26}, {-3.08, 0.00}, {-0.06, 0.26},
+      {-0.26, 2.54}, {-1.78, 2.32}, {1.44, 4.14},  {-5.28, 4.32}, {-4.16, 3.14},
+  };
+
+  ArrayView<const Point2> view = polygon;
   CHECK(std::equal(view.begin(), view.end(), polygon.begin(), polygon.end()));
 }
 
