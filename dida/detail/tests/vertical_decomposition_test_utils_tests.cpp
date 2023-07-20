@@ -1026,7 +1026,7 @@ TEST_CASE("validate_node_neighbors")
   SECTION("Neighboring pair not neighboring according to geometry")
   {
     std::vector<Point2>& vertices_mut = polygon.unsafe_mutable_vertices();
-    std::swap(vertices_mut[10], vertices_mut[11]);
+    std::swap(vertices_mut[9], vertices_mut[10]);
     CHECK_FALSE(validate_node_neighbors(vertices, &nodes[0], false, false));
   }
 }

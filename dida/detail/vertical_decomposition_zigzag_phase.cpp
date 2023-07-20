@@ -290,7 +290,7 @@ bool zigzag_reverse_convex_corner(ZigzagState& state)
     }
     else
     {
-      old_chain_last_node->lower_opp_edge = Edge::invalid();
+      old_chain_last_node->upper_opp_edge = Edge::invalid();
     }
   }
   else
@@ -307,7 +307,7 @@ bool zigzag_reverse_convex_corner(ZigzagState& state)
     }
     else
     {
-      old_chain_last_node->upper_opp_edge = Edge::invalid();
+      old_chain_last_node->lower_opp_edge = Edge::invalid();
     }
   }
 
