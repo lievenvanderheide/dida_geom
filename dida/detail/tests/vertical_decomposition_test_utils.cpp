@@ -383,4 +383,93 @@ void print_nodes(VerticesView vertices, ArrayView<const Node> nodes)
   }
 }
 
+std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertices, std::deque<Node>& node_pool)
+{
+  // Find the first convex reflex vertex.
+  VertexIt it = vertices.begin();
+  for (; it != vertices.end(); ++it)
+  {
+    VertexIt prev_it = prev_cyclic(vertices, it);
+    VertexIt next_it = next_cyclic(vertices, it);
+    if (lex_less_than(*prev_it, *it) != lex_less_than(*it, *next_it) && cross(*it - *prev_it, *next_it - *it) > 0)
+    {
+      break;
+    }
+  }
+
+  DIDA_ASSERT(it != vertices.end());
+
+  std::vector<ChainDecomposition> result;
+  Node* prev_node = nullptr;
+
+  for (size_t i = 0; i <= vertices.size(); i++)
+  {
+    VertexIt prev_it = prev_cyclic(vertices, it);
+    VertexIt next_it = next_cyclic(vertices, it);
+    bool incoming_towards_right = lex_less_than(*prev_it, *it);
+    bool outgoing_towards_right = lex_less_than(*it, *next_it);
+    if (incoming_towards_right != outgoing_towards_right)
+    {
+      bool is_convex_corner = cross(*it - *prev_it, *next_it - *it) > 0;
+
+      if (i != 0)
+      {
+        // Add a node to the current chain.
+
+        Node* node = &node_pool.emplace_back();
+        node->direction = incoming_towards_right ? HorizontalDirection::left : HorizontalDirection::right;
+        node->is_leaf = false;
+        node->vertex_it = it;
+        node->lower_opp_edge = Edge::invalid();
+        node->upper_opp_edge = Edge::invalid();
+        node->neighbors[0] = nullptr;
+        node->neighbors[1] = nullptr;
+        node->neighbors[2] = nullptr;
+
+        if (incoming_towards_right)
+        {
+          node->neighbors[2] = prev_node;
+          prev_node->neighbors[2] = node;
+        }
+        else
+        {
+          node->neighbors[1] = prev_node;
+          prev_node->neighbors[1] = node;
+        }
+
+        prev_node = node;
+
+        if (is_convex_corner)
+        {
+          // If it's a convex corner, then the node we just added is the last node of the chain.
+          result.back().last_node = node;
+        }
+      }
+
+      if (is_convex_corner && i != vertices.size())
+      {
+        // Start a new chain.
+
+        Node* node = &node_pool.emplace_back();
+        node->direction = outgoing_towards_right ? HorizontalDirection::right : HorizontalDirection::left;
+        node->is_leaf = false;
+        node->vertex_it = it;
+        node->lower_opp_edge = Edge::invalid();
+        node->upper_opp_edge = Edge::invalid();
+        node->neighbors[0] = nullptr;
+        node->neighbors[1] = nullptr;
+        node->neighbors[2] = nullptr;
+
+        result.push_back(ChainDecomposition{node, nullptr});
+
+        prev_node = node;
+      }
+    }
+
+    it = next_it;
+  }
+
+  return result;
+}
+
 } // namespace dida::detail::vertical_decomposition
