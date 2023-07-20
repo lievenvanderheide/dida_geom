@@ -115,6 +115,38 @@ TEST_CASE("Edge::segment")
   CHECK(edge.segment() == Segment2(vertices[0], vertices[1]));
 }
 
+TEST_CASE("Edge::on_interior_side")
+{
+  std::vector<Point2> vertices_storage{{2, 2}, {8, 5}, {-2, 3}};
+  VerticesView vertices(vertices_storage);
+
+  Edge edge_0 = Edge::edge_from_index(vertices, 0);
+  CHECK_FALSE(edge_0.on_interior_side({5, 2}));
+  CHECK_FALSE(edge_0.on_interior_side({4, 3}));
+  CHECK(edge_0.on_interior_side({2, 3}));
+
+  Edge edge_1 = Edge::edge_from_index(vertices, 1);
+  CHECK_FALSE(edge_1.on_interior_side({5, 6}));
+  CHECK_FALSE(edge_1.on_interior_side({3, 4}));
+  CHECK(edge_1.on_interior_side({2, 3}));
+}
+
+TEST_CASE("Edge::on_exterior_side")
+{
+  std::vector<Point2> vertices_storage{{2, 2}, {8, 5}, {-2, 3}};
+  VerticesView vertices(vertices_storage);
+
+  Edge edge_0 = Edge::edge_from_index(vertices, 0);
+  CHECK(edge_0.on_exterior_side({5, 2}));
+  CHECK_FALSE(edge_0.on_exterior_side({4, 3}));
+  CHECK_FALSE(edge_0.on_exterior_side({2, 3}));
+
+  Edge edge_1 = Edge::edge_from_index(vertices, 1);
+  CHECK(edge_1.on_exterior_side({5, 6}));
+  CHECK_FALSE(edge_1.on_exterior_side({3, 4}));
+  CHECK_FALSE(edge_1.on_exterior_side({2, 3}));
+}
+
 TEST_CASE("Edge::operator==/!=")
 {
   std::vector<Point2> vertices_storage{{1.64, 2.04}, {4.52, 1.74}, {5.92, 4.52}, {0.50, 6.34}};
