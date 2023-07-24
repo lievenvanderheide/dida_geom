@@ -1,5 +1,6 @@
 #include "dida/detail/tests/vertical_decomposition_test_utils.hpp"
 
+#include <catch2/catch.hpp>
 #include <iostream>
 
 #include "dida/utils.hpp"
@@ -118,6 +119,70 @@ bool validate_node_opp_edges(VerticesView vertices, const PolygonRange& range, c
   }
 }
 
+NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecomposition& chain_decomposition,
+                                                         const Node* node, uint8_t branch_index)
+{
+  NodeBranchBoundaryVertices result;
+
+  if (node->is_leaf)
+  {
+    DIDA_ASSERT(branch_index == 0);
+    return NodeBranchBoundaryVertices{node->vertex_it, node->vertex_it};
+  }
+  else
+  {
+    switch (branch_index)
+    {
+    case 0:
+      return node->direction == HorizontalDirection::right
+                 ? NodeBranchBoundaryVertices{node->lower_opp_edge.end_vertex_it, node->upper_opp_edge.start_vertex_it}
+                 : NodeBranchBoundaryVertices{node->lower_opp_edge.start_vertex_it, node->upper_opp_edge.end_vertex_it};
+
+    case 1:
+    {
+      bool has_upper_boundary = true;
+      if (node == chain_decomposition.first_node && node->direction == HorizontalDirection::right)
+      {
+        has_upper_boundary = false;
+      }
+      else if (node == chain_decomposition.last_node && node->direction == HorizontalDirection::left)
+      {
+        has_upper_boundary = false;
+      }
+
+      return NodeBranchBoundaryVertices{
+          node->direction == HorizontalDirection::right ? node->lower_opp_edge.start_vertex_it
+                                                        : node->lower_opp_edge.end_vertex_it,
+          has_upper_boundary ? node->vertex_it : nullptr,
+      };
+    }
+
+    case 2:
+    {
+      bool has_lower_boundary = true;
+      if (node == chain_decomposition.first_node && node->direction == HorizontalDirection::left)
+      {
+        has_lower_boundary = false;
+      }
+      else if (node == chain_decomposition.last_node && node->direction == HorizontalDirection::right)
+      {
+        has_lower_boundary = false;
+      }
+
+      return NodeBranchBoundaryVertices{
+          has_lower_boundary ? node->vertex_it : nullptr,
+          node->direction == HorizontalDirection::right ? node->upper_opp_edge.end_vertex_it
+                                                        : node->upper_opp_edge.start_vertex_it,
+      };
+    }
+
+    default:
+      DIDA_ASSERT(!"Invalid branch_index");
+      return {};
+    }
+  }
+}
+
 namespace
 {
 
@@ -146,10 +211,10 @@ bool validate_boundary_is_monotone(VerticesView vertices, VertexIt start_vertex_
   return true;
 }
 
-} // namespace
-
 bool validate_neighboring_nodes_pair(VerticesView vertices, const Node* left_node, uint8_t left_node_branch_index,
-                                     const Node* right_node, uint8_t right_node_branch_index)
+                                     const NodeBranchBoundaryVertices left_node_boundary_vertices,
+                                     const Node* right_node, uint8_t right_node_branch_index,
+                                     NodeBranchBoundaryVertices right_node_boundary_vertices)
 {
   DIDA_ASSERT(lex_less_than(*left_node->vertex_it, *right_node->vertex_it));
   DIDA_ASSERT(left_node->neighbors[left_node_branch_index] == right_node);
@@ -160,56 +225,70 @@ bool validate_neighboring_nodes_pair(VerticesView vertices, const Node* left_nod
   //
   // Note that if a branch index is 0, then the outgoing direction is opposite to direction of the node, if a branch
   // index is 1 or 2, then the outgoing direction is equal to the direction of the node.
-  if ((left_node_branch_index == 0) != (left_node->direction == HorizontalDirection::left) ||
-      (right_node_branch_index == 0) != (right_node->direction == HorizontalDirection::right))
+  if ((left_node_branch_index == 0) != (left_node->direction == HorizontalDirection::left))
   {
+    UNSCOPED_INFO("The outgoing direction of branch " << static_cast<int>(left_node_branch_index)
+                                                      << " of Node{vertex: " << *left_node->vertex_it
+                                                      << "} is to the left, but the node it links to is to its right.");
     return false;
   }
 
-  VertexIt lower_boundary_left_vertex_it =
-      left_node_branch_index == 2 ? left_node->vertex_it : left_node->lower_opp_edge.start_vertex_it;
-  VertexIt upper_boundary_left_vertex_it =
-      left_node_branch_index == 1 ? left_node->vertex_it : left_node->upper_opp_edge.end_vertex_it;
-
-  VertexIt lower_boundary_right_vertex_it =
-      right_node_branch_index == 2 ? right_node->vertex_it : right_node->lower_opp_edge.end_vertex_it;
-  VertexIt upper_boundary_right_vertex_it =
-      right_node_branch_index == 1 ? right_node->vertex_it : right_node->upper_opp_edge.start_vertex_it;
-
-  // Verify that at least one of the lower and upper boundaries exists.
-  if (!lower_boundary_left_vertex_it && !upper_boundary_left_vertex_it)
+  if ((right_node_branch_index == 0) != (right_node->direction == HorizontalDirection::right))
   {
+    UNSCOPED_INFO("The outgoing direction of branch " << static_cast<int>(right_node_branch_index)
+                                                      << " of Node{vertex: " << *right_node->vertex_it
+                                                      << "} is to the right, but the node it links to is to its left.");
     return false;
   }
 
-  // If the left node has an lower boundary then should should the right node, and vice versa.
-  if ((lower_boundary_left_vertex_it != nullptr) != (lower_boundary_right_vertex_it != nullptr))
+  // If the left node has a lower boundary then so should should the right node, and vice versa.
+  if ((left_node_boundary_vertices.lower_boundary_vertex_it != nullptr) !=
+      (right_node_boundary_vertices.lower_boundary_vertex_it != nullptr))
   {
+    bool has_boundary_at_left_node = left_node_boundary_vertices.lower_boundary_vertex_it != nullptr;
+    UNSCOPED_INFO("The region between left_node{vertex: "
+                  << *left_node->vertex_it << "} and right_node{vertex: " << *right_node->vertex_it
+                  << "} has a lower boundary according to its " << (has_boundary_at_left_node ? "left" : "right")
+                  << " node but not according to its " << (has_boundary_at_left_node ? "right" : "left") << " node.");
     return false;
   }
 
   // If there's a lower boundary, then validate that it's monotone.
-  if (lower_boundary_left_vertex_it)
+  if (left_node_boundary_vertices.lower_boundary_vertex_it)
   {
-    if (!validate_boundary_is_monotone<HorizontalDirection::right>(vertices, lower_boundary_left_vertex_it,
-                                                                   lower_boundary_right_vertex_it))
+    if (!validate_boundary_is_monotone<HorizontalDirection::right>(
+            vertices, left_node_boundary_vertices.lower_boundary_vertex_it,
+            right_node_boundary_vertices.lower_boundary_vertex_it))
     {
+      UNSCOPED_INFO("The lower boundary between left_node{vertex: "
+                    << *left_node->vertex_it << "} and right_node{vertex: " << *right_node->vertex_it
+                    << "} is not monotone.");
       return false;
     }
   }
 
-  // If the left node has an upper boundary then should should the right node, and vice versa.
-  if ((upper_boundary_left_vertex_it != nullptr) != (upper_boundary_right_vertex_it != nullptr))
+  // If the left node has an upper boundary then so should should the right node, and vice versa.
+  if ((left_node_boundary_vertices.upper_boundary_vertex_it != nullptr) !=
+      (right_node_boundary_vertices.upper_boundary_vertex_it != nullptr))
   {
+    bool has_boundary_at_left_node = left_node_boundary_vertices.upper_boundary_vertex_it != nullptr;
+    UNSCOPED_INFO("The region between left_node{vertex: "
+                  << *left_node->vertex_it << "} and right_node{vertex: " << *right_node->vertex_it
+                  << "} has an upper boundary according to its " << (has_boundary_at_left_node ? "left" : "right")
+                  << " node but not according to its " << (has_boundary_at_left_node ? "right" : "left") << " node.");
     return false;
   }
 
   // If there's an upper boundary, then validate that it's monotone.
-  if (upper_boundary_left_vertex_it)
+  if (left_node_boundary_vertices.upper_boundary_vertex_it)
   {
-    if (!validate_boundary_is_monotone<HorizontalDirection::left>(vertices, upper_boundary_right_vertex_it,
-                                                                  upper_boundary_left_vertex_it))
+    if (!validate_boundary_is_monotone<HorizontalDirection::left>(vertices,
+                                                                  right_node_boundary_vertices.upper_boundary_vertex_it,
+                                                                  left_node_boundary_vertices.upper_boundary_vertex_it))
     {
+      UNSCOPED_INFO("The upper boundary between left_node{vertex: "
+                    << *left_node->vertex_it << "} and right_node{vertex: " << *right_node->vertex_it
+                    << "} is not monotone.");
       return false;
     }
   }
@@ -217,55 +296,27 @@ bool validate_neighboring_nodes_pair(VerticesView vertices, const Node* left_nod
   return true;
 }
 
-bool node_should_have_neighbor(const Node* node, uint8_t branch_index, bool is_chain_first_node,
-                               bool is_chain_last_node)
-{
-  if (node->is_leaf)
-  {
-    DIDA_ASSERT(branch_index == 0);
-    return true;
-  }
+} // namespace
 
-  switch (branch_index)
-  {
-  case 0:
-    return node->lower_opp_edge.is_valid() || node->upper_opp_edge.is_valid();
-
-  case 1:
-    if (node->lower_opp_edge.is_valid())
-    {
-      return true;
-    }
-
-    return node->direction == HorizontalDirection::right ? !is_chain_first_node : !is_chain_last_node;
-
-  case 2:
-    if (node->upper_opp_edge.is_valid())
-    {
-      return true;
-    }
-
-    return node->direction == HorizontalDirection::left ? !is_chain_first_node : !is_chain_last_node;
-
-  default:
-    DIDA_ASSERT(!"Invalid branch index");
-    return false;
-  }
-}
-
-bool validate_node_neighbors(VerticesView vertices, const Node* node, bool is_chain_first_node, bool is_chain_last_node)
+bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& chain_decomposition, const Node* node)
 {
   uint8_t num_branches = node->is_leaf ? 1 : 3;
   for (uint8_t i = 0; i < num_branches; i++)
   {
-    if (node_should_have_neighbor(node, i, is_chain_first_node, is_chain_last_node))
+    NodeBranchBoundaryVertices boundary_vertices = node_branch_boundary_vertices(chain_decomposition, node, i);
+    if (boundary_vertices.lower_boundary_vertex_it || boundary_vertices.upper_boundary_vertex_it)
     {
-      Node* neighbor = node->neighbors[i];
+      // The current branch has at least one of the two boundaries, so there should be a neighbor.
+
+      const Node* neighbor = node->neighbors[i];
       if (!neighbor)
       {
+        UNSCOPED_INFO("Node{vertex: " << *node->vertex_it << "}.neighbors[" << static_cast<int>(i)
+                                      << "] should be set but isn't.");
         return false;
       }
 
+      // Find the index in 'neighbor' which links it back to 'node'.
       uint8_t neighbor_num_branches = neighbor->is_leaf ? 1 : 3;
       uint8_t neighbor_to_node_branch_index = 0;
       for (; neighbor_to_node_branch_index < neighbor_num_branches; neighbor_to_node_branch_index++)
@@ -278,19 +329,32 @@ bool validate_node_neighbors(VerticesView vertices, const Node* node, bool is_ch
 
       if (neighbor_to_node_branch_index == neighbor_num_branches)
       {
+        UNSCOPED_INFO("a_node{vertex: " << *node->vertex_it << "}.neighbors[" << static_cast<int>(i)
+                                        << "] links to b_node{vertex: " << *neighbor->vertex_it
+                                        << "}, but b_node doesn't link back to a_node.");
         return false;
       }
 
-      if (lex_less_than(*node->vertex_it, *neighbor->vertex_it) &&
-          !validate_neighboring_nodes_pair(vertices, node, i, neighbor, neighbor_to_node_branch_index))
+      // To avoid calling 'validate_neighboring_nodes_pair' twice. we only call it when 'node' is the left node and
+      // 'neighbor' the right node. If it's the other way around, then 'validate_neighboring_nodes_pair' will be called
+      // when the current function is called with 'neighbor'.
+      if (lex_less_than(*node->vertex_it, *neighbor->vertex_it))
       {
-        return false;
+        NodeBranchBoundaryVertices neighbor_boundary_vertices =
+            node_branch_boundary_vertices(chain_decomposition, neighbor, neighbor_to_node_branch_index);
+        if (!validate_neighboring_nodes_pair(vertices, node, i, boundary_vertices, neighbor,
+                                             neighbor_to_node_branch_index, neighbor_boundary_vertices))
+        {
+          return false;
+        }
       }
     }
     else
     {
       if (node->neighbors[i])
       {
+        UNSCOPED_INFO("Node{vertex: " << *node->vertex_it << "}.neighbors[" << static_cast<int>(i)
+                                      << "] should be nullptr, but isn't.");
         return false;
       }
     }
@@ -320,8 +384,7 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
 
   for (const Node* node : nodes)
   {
-    if (!validate_node_neighbors(vertices, node, node == chain_decomposition.first_node,
-                                 node == chain_decomposition.last_node))
+    if (!validate_node_neighbors(vertices, chain_decomposition, node))
     {
       return false;
     }

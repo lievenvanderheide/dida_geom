@@ -2,8 +2,8 @@
 
 #include "dida/detail/vertical_decomposition.hpp"
 
-#include <set>
 #include <deque>
+#include <set>
 
 namespace dida::detail::vertical_decomposition
 {
@@ -74,30 +74,14 @@ std::set<const Node*> gather_nodes(const Node* node);
 /// @return True iff validation succeeded.
 bool validate_node_opp_edges(VerticesView vertices, const PolygonRange& range, const Node* node);
 
-/// Validates whether two nodes which are neighbors according to their @c neighbors pointers should be neighbors
-/// according to the geometry of the polygon formed by @c vertices.
-///
-/// The nodes must be ordered such that <tt>lex_less_than(*left_node->vertex_it, *right_node->vertex_it)</tt>.
-///
-/// @param vertices The vertices of the polygon.
-/// @param left_node The left node of the node pair.
-/// @param left_node_branch_index The index of the branch in @c left_node which connects to @c right_node.
-/// @param right_node The right node of the node pair.
-/// @param right_node_branch_index The index of the branch in @c right_node which connects to @c left_node.
-/// @return True iff validation succeeded.
-bool validate_neighboring_nodes_pair(VerticesView vertices, const Node* left_node, uint8_t left_node_branch_index,
-                                     const Node* right_node, uint8_t right_node_branch_index);
+struct NodeBranchBoundaryVertices
+{
+  VertexIt lower_boundary_vertex_it;
+  VertexIt upper_boundary_vertex_it;
+};
 
-/// Returns whether @c node should have a neighbor with the given branch index (that is, whether @c
-/// node->neighbors[branch_index] should be non-null).
-///
-/// @param node The node.
-/// @param branch_index The branch index.
-/// @param is_chain_first_node Whether @c node is the first node of the @c ChainDecomposition it belongs to.
-/// @param is_chain_last_node Whether @c node is the last node of the @c ChainDecomposition it belongs to.
-/// @return Ture iff the given branch of @c node should have a neighbor.
-bool node_should_have_neighbor(const Node* node, uint8_t branch_index, bool is_chain_first_node,
-                               bool is_chain_last_node);
+NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecomposition& chain_decomposition,
+                                                         const Node* node, uint8_t branch_index);
 
 /// Validates the neighbors of @c node. This function validates whether
 ///
@@ -108,12 +92,10 @@ bool node_should_have_neighbor(const Node* node, uint8_t branch_index, bool is_c
 ///    to call @c validate_neighboring_nodes_pair for this pair.
 ///
 /// @param vertices The vertices of the polygon.
+/// @param chain_decomposition The chain decomposition @c node belongs to.
 /// @param node The node.
-/// @param is_chain_first_node Whether @c node is the first node of the @c ChainDecomposition it belongs to.
-/// @param is_chain_last_node Whether @c node is the last node of the @c ChainDecomposition it belongs to.
 /// @return True iff validation succeeded.
-bool validate_node_neighbors(VerticesView vertices, const Node* node, bool is_chain_first_node,
-                             bool is_chain_last_node);
+bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& chain_decomposition, const Node* node);
 
 bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition);
 
@@ -123,8 +105,8 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
 /// @param nodes The nodes to print.
 void print_nodes(VerticesView vertices, ArrayView<const Node> nodes);
 
-/// Decomposes the polygon formed by @c vertices into a set of chain decompositions, by starting a new chain decomposition
-/// at each convex reflex vertex.
+/// Decomposes the polygon formed by @c vertices into a set of chain decompositions, by starting a new chain
+/// decomposition at each convex reflex vertex.
 ///
 /// @param vertices The vertices of the polygon.
 /// @param node_pool The pool used to allocate the nodes in the resulting chain decompositions.
