@@ -19,7 +19,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     REQUIRE(nodes.size() == 4);
 
     CHECK(nodes[0].direction == HorizontalDirection::left);
-    CHECK(nodes[0].is_leaf);
+    CHECK(nodes[0].type == NodeType::leaf);
     CHECK(nodes[0].vertex_it == vertices.begin() + 0);
     CHECK(nodes[0].lower_opp_edge == Edge::edge_from_index(vertices, 0));
     CHECK(nodes[0].upper_opp_edge == Edge::edge_from_index(vertices, 3));
@@ -28,7 +28,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[0].neighbors[2] == nullptr);
 
     CHECK(nodes[1].direction == HorizontalDirection::left);
-    CHECK(nodes[1].is_leaf);
+    CHECK(nodes[1].type == NodeType::leaf);
     CHECK(nodes[1].vertex_it == vertices.begin() + 2);
     CHECK(nodes[1].lower_opp_edge == Edge::edge_from_index(vertices, 2));
     CHECK(nodes[1].upper_opp_edge == Edge::edge_from_index(vertices, 1));
@@ -37,7 +37,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[1].neighbors[2] == nullptr);
 
     CHECK(nodes[2].direction == HorizontalDirection::left);
-    CHECK(!nodes[2].is_leaf);
+    CHECK(nodes[2].type == NodeType::branch);
     CHECK(nodes[2].vertex_it == vertices.begin() + 3);
     CHECK(nodes[2].lower_opp_edge == Edge::edge_from_index(vertices, 0));
     CHECK(nodes[2].upper_opp_edge == Edge::edge_from_index(vertices, 1));
@@ -46,7 +46,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[2].neighbors[2] == &nodes[1]);
 
     CHECK(nodes[3].direction == HorizontalDirection::right);
-    CHECK(nodes[3].is_leaf);
+    CHECK(nodes[3].type == NodeType::leaf);
     CHECK(nodes[3].vertex_it == vertices.begin() + 1);
     CHECK(nodes[3].lower_opp_edge == Edge::edge_from_index(vertices, 0));
     CHECK(nodes[3].upper_opp_edge == Edge::edge_from_index(vertices, 1));
@@ -70,7 +70,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     REQUIRE(nodes.size() == 4);
 
     CHECK(nodes[0].direction == HorizontalDirection::left);
-    CHECK(nodes[0].is_leaf);
+    CHECK(nodes[0].type == NodeType::leaf);
     CHECK(nodes[0].vertex_it == vertices.begin() + 1);
     CHECK(nodes[0].lower_opp_edge == Edge::edge_from_index(vertices, 1));
     CHECK(nodes[0].upper_opp_edge == Edge::edge_from_index(vertices, 0));
@@ -79,7 +79,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[0].neighbors[2] == nullptr);
 
     CHECK(nodes[1].direction == HorizontalDirection::right);
-    CHECK(!nodes[1].is_leaf);
+    CHECK(nodes[1].type == NodeType::branch);
     CHECK(nodes[1].vertex_it == vertices.begin() + 3);
     CHECK(nodes[1].lower_opp_edge == Edge::edge_from_index(vertices, 1));
     CHECK(nodes[1].upper_opp_edge == Edge::edge_from_index(vertices, 0));
@@ -88,7 +88,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[1].neighbors[2] == &nodes[2]);
 
     CHECK(nodes[2].direction == HorizontalDirection::right);
-    CHECK(nodes[2].is_leaf);
+    CHECK(nodes[2].type == NodeType::leaf);
     CHECK(nodes[2].vertex_it == vertices.begin());
     CHECK(nodes[2].lower_opp_edge == Edge::edge_from_index(vertices, 3));
     CHECK(nodes[2].upper_opp_edge == Edge::edge_from_index(vertices, 0));
@@ -97,7 +97,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[2].neighbors[2] == nullptr);
 
     CHECK(nodes[3].direction == HorizontalDirection::right);
-    CHECK(nodes[3].is_leaf);
+    CHECK(nodes[3].type == NodeType::leaf);
     CHECK(nodes[3].vertex_it == vertices.begin() + 2);
     CHECK(nodes[3].lower_opp_edge == Edge::edge_from_index(vertices, 1));
     CHECK(nodes[3].upper_opp_edge == Edge::edge_from_index(vertices, 2));
@@ -124,7 +124,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     REQUIRE(nodes.size() == 14);
 
     CHECK(nodes[0].direction == HorizontalDirection::left);
-    CHECK(nodes[0].is_leaf);
+    CHECK(nodes[0].type == NodeType::leaf);
     CHECK(nodes[0].vertex_it == vertices.begin() + 11);
     CHECK(nodes[0].lower_opp_edge == Edge::edge_from_index(vertices, 11));
     CHECK(nodes[0].upper_opp_edge == Edge::edge_from_index(vertices, 10));
@@ -133,7 +133,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[0].neighbors[2] == nullptr);
 
     CHECK(nodes[1].direction == HorizontalDirection::left);
-    CHECK(nodes[1].is_leaf);
+    CHECK(nodes[1].type == NodeType::leaf);
     CHECK(nodes[1].vertex_it == vertices.begin() + 9);
     CHECK(nodes[1].lower_opp_edge == Edge::edge_from_index(vertices, 9));
     CHECK(nodes[1].upper_opp_edge == Edge::edge_from_index(vertices, 8));
@@ -142,7 +142,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[1].neighbors[2] == nullptr);
 
     CHECK(nodes[2].direction == HorizontalDirection::left);
-    CHECK(nodes[2].is_leaf);
+    CHECK(nodes[2].type == NodeType::leaf);
     CHECK(nodes[2].vertex_it == vertices.begin() + 15);
     CHECK(nodes[2].lower_opp_edge == Edge::edge_from_index(vertices, 15));
     CHECK(nodes[2].upper_opp_edge == Edge::edge_from_index(vertices, 14));
@@ -151,7 +151,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[2].neighbors[2] == nullptr);
 
     CHECK(nodes[3].direction == HorizontalDirection::left);
-    CHECK(nodes[3].is_leaf);
+    CHECK(nodes[3].type == NodeType::leaf);
     CHECK(nodes[3].vertex_it == vertices.begin() + 13);
     CHECK(nodes[3].lower_opp_edge == Edge::edge_from_index(vertices, 13));
     CHECK(nodes[3].upper_opp_edge == Edge::edge_from_index(vertices, 12));
@@ -160,7 +160,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[3].neighbors[2] == nullptr);
 
     CHECK(nodes[4].direction == HorizontalDirection::left);
-    CHECK(!nodes[4].is_leaf);
+    CHECK(nodes[4].type == NodeType::branch);
     CHECK(nodes[4].vertex_it == vertices.begin() + 10);
     CHECK(nodes[4].lower_opp_edge == Edge::edge_from_index(vertices, 11));
     CHECK(nodes[4].upper_opp_edge == Edge::edge_from_index(vertices, 8));
@@ -169,7 +169,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[4].neighbors[2] == &nodes[1]);
 
     CHECK(nodes[5].direction == HorizontalDirection::left);
-    CHECK(!nodes[5].is_leaf);
+    CHECK(nodes[5].type == NodeType::branch);
     CHECK(nodes[5].vertex_it == vertices.begin() + 14);
     CHECK(nodes[5].lower_opp_edge == Edge::edge_from_index(vertices, 15));
     CHECK(nodes[5].upper_opp_edge == Edge::edge_from_index(vertices, 12));
@@ -178,7 +178,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[5].neighbors[2] == &nodes[3]);
 
     CHECK(nodes[6].direction == HorizontalDirection::left);
-    CHECK(!nodes[6].is_leaf);
+    CHECK(nodes[6].type == NodeType::branch);
     CHECK(nodes[6].vertex_it == vertices.begin() + 12);
     CHECK(nodes[6].lower_opp_edge == Edge::edge_from_index(vertices, 16));
     CHECK(nodes[6].upper_opp_edge == Edge::edge_from_index(vertices, 8));
@@ -187,7 +187,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[6].neighbors[2] == &nodes[4]);
 
     CHECK(nodes[7].direction == HorizontalDirection::right);
-    CHECK(!nodes[7].is_leaf);
+    CHECK(nodes[7].type == NodeType::branch);
     CHECK(nodes[7].vertex_it == vertices.begin() + 4);
     CHECK(nodes[7].lower_opp_edge == Edge::edge_from_index(vertices, 0));
     CHECK(nodes[7].upper_opp_edge == Edge::edge_from_index(vertices, 7));
@@ -196,7 +196,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[7].neighbors[2] == &nodes[8]);
 
     CHECK(nodes[8].direction == HorizontalDirection::right);
-    CHECK(!nodes[8].is_leaf);
+    CHECK(nodes[8].type == NodeType::branch);
     CHECK(nodes[8].vertex_it == vertices.begin() + 6);
     CHECK(nodes[8].lower_opp_edge == Edge::edge_from_index(vertices, 4));
     CHECK(nodes[8].upper_opp_edge == Edge::edge_from_index(vertices, 7));
@@ -205,7 +205,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[8].neighbors[2] == &nodes[11]);
 
     CHECK(nodes[9].direction == HorizontalDirection::right);
-    CHECK(!nodes[9].is_leaf);
+    CHECK(nodes[9].type == NodeType::branch);
     CHECK(nodes[9].vertex_it == vertices.begin() + 2);
     CHECK(nodes[9].lower_opp_edge == Edge::edge_from_index(vertices, 0));
     CHECK(nodes[9].upper_opp_edge == Edge::edge_from_index(vertices, 3));
@@ -214,7 +214,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[9].neighbors[2] == &nodes[12]);
 
     CHECK(nodes[10].direction == HorizontalDirection::right);
-    CHECK(nodes[10].is_leaf);
+    CHECK(nodes[10].type == NodeType::leaf);
     CHECK(nodes[10].vertex_it == vertices.begin() + 5);
     CHECK(nodes[10].lower_opp_edge == Edge::edge_from_index(vertices, 4));
     CHECK(nodes[10].upper_opp_edge == Edge::edge_from_index(vertices, 5));
@@ -223,7 +223,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[10].neighbors[2] == nullptr);
 
     CHECK(nodes[11].direction == HorizontalDirection::right);
-    CHECK(nodes[11].is_leaf);
+    CHECK(nodes[11].type == NodeType::leaf);
     CHECK(nodes[11].vertex_it == vertices.begin() + 7);
     CHECK(nodes[11].lower_opp_edge == Edge::edge_from_index(vertices, 6));
     CHECK(nodes[11].upper_opp_edge == Edge::edge_from_index(vertices, 7));
@@ -232,7 +232,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[11].neighbors[2] == nullptr);
 
     CHECK(nodes[12].direction == HorizontalDirection::right);
-    CHECK(nodes[12].is_leaf);
+    CHECK(nodes[12].type == NodeType::leaf);
     CHECK(nodes[12].vertex_it == vertices.begin() + 3);
     CHECK(nodes[12].lower_opp_edge == Edge::edge_from_index(vertices, 2));
     CHECK(nodes[12].upper_opp_edge == Edge::edge_from_index(vertices, 3));
@@ -241,7 +241,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[12].neighbors[2] == nullptr);
 
     CHECK(nodes[13].direction == HorizontalDirection::right);
-    CHECK(nodes[13].is_leaf);
+    CHECK(nodes[13].type == NodeType::leaf);
     CHECK(nodes[13].vertex_it == vertices.begin() + 1);
     CHECK(nodes[13].lower_opp_edge == Edge::edge_from_index(vertices, 0));
     CHECK(nodes[13].upper_opp_edge == Edge::edge_from_index(vertices, 1));
@@ -266,7 +266,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     REQUIRE(nodes.size() == 6);
 
     CHECK(nodes[0].direction == HorizontalDirection::right);
-    CHECK(!nodes[0].is_leaf);
+    CHECK(nodes[0].type == NodeType::branch);
     CHECK(nodes[0].vertex_it == vertices.begin() + 8);
     CHECK(nodes[0].lower_opp_edge == Edge::invalid());
     CHECK(nodes[0].upper_opp_edge == Edge::invalid());
@@ -275,7 +275,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[0].neighbors[2] == &nodes[4]);
 
     CHECK(nodes[1].direction == HorizontalDirection::right);
-    CHECK(!nodes[1].is_leaf);
+    CHECK(nodes[1].type == NodeType::branch);
     CHECK(nodes[1].vertex_it == vertices.begin() + 2);
     CHECK(nodes[1].lower_opp_edge == Edge::invalid());
     CHECK(nodes[1].upper_opp_edge == Edge::edge_from_index(vertices, 0));
@@ -284,7 +284,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[1].neighbors[2] == &nodes[2]);
 
     CHECK(nodes[2].direction == HorizontalDirection::right);
-    CHECK(nodes[2].is_leaf);
+    CHECK(nodes[2].type == NodeType::leaf);
     CHECK(nodes[2].vertex_it == vertices.begin() + 1);
     CHECK(nodes[2].lower_opp_edge == Edge::edge_from_index(vertices, 1));
     CHECK(nodes[2].upper_opp_edge == Edge::edge_from_index(vertices, 0));
@@ -293,7 +293,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[2].neighbors[2] == nullptr);
 
     CHECK(nodes[3].direction == HorizontalDirection::left);
-    CHECK(nodes[3].is_leaf);
+    CHECK(nodes[3].type == NodeType::leaf);
     CHECK(nodes[3].vertex_it == vertices.begin() + 5);
     CHECK(nodes[3].lower_opp_edge == Edge::edge_from_index(vertices, 4));
     CHECK(nodes[3].upper_opp_edge == Edge::edge_from_index(vertices, 5));
@@ -302,7 +302,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[3].neighbors[2] == nullptr);
 
     CHECK(nodes[4].direction == HorizontalDirection::left);
-    CHECK(!nodes[4].is_leaf);
+    CHECK(nodes[4].type == NodeType::branch);
     CHECK(nodes[4].vertex_it == vertices.begin() + 6);
     CHECK(nodes[4].lower_opp_edge == Edge::edge_from_index(vertices, 4));
     CHECK(nodes[4].upper_opp_edge == Edge::invalid());
@@ -311,7 +311,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[4].neighbors[2] == &nodes[0]);
 
     CHECK(nodes[5].direction == HorizontalDirection::left);
-    CHECK(!nodes[5].is_leaf);
+    CHECK(nodes[5].type == NodeType::branch);
     CHECK(nodes[5].vertex_it == vertices.begin() + 4);
     CHECK(nodes[5].lower_opp_edge == Edge::invalid());
     CHECK(nodes[5].upper_opp_edge == Edge::invalid());
@@ -336,7 +336,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     REQUIRE(nodes.size() == 10);
 
     CHECK(nodes[0].direction == HorizontalDirection::left);
-    CHECK(nodes[0].is_leaf);
+    CHECK(nodes[0].type == NodeType::leaf);
     CHECK(nodes[0].vertex_it == vertices.begin() + 6);
     CHECK(nodes[0].lower_opp_edge == Edge::edge_from_index(vertices, 6));
     CHECK(nodes[0].upper_opp_edge == Edge::edge_from_index(vertices, 5));
@@ -345,7 +345,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[0].neighbors[2] == nullptr);
 
     CHECK(nodes[1].direction == HorizontalDirection::left);
-    CHECK(nodes[1].is_leaf);
+    CHECK(nodes[1].type == NodeType::leaf);
     CHECK(nodes[1].vertex_it == vertices.begin() + 8);
     CHECK(nodes[1].lower_opp_edge == Edge::edge_from_index(vertices, 8));
     CHECK(nodes[1].upper_opp_edge == Edge::edge_from_index(vertices, 7));
@@ -354,7 +354,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[1].neighbors[2] == nullptr);
 
     CHECK(nodes[2].direction == HorizontalDirection::left);
-    CHECK(nodes[2].is_leaf);
+    CHECK(nodes[2].type == NodeType::leaf);
     CHECK(nodes[2].vertex_it == vertices.begin() + 0);
     CHECK(nodes[2].lower_opp_edge == Edge::edge_from_index(vertices, 0));
     CHECK(nodes[2].upper_opp_edge == Edge::edge_from_index(vertices, 9));
@@ -363,7 +363,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[2].neighbors[2] == nullptr);
 
     CHECK(nodes[3].direction == HorizontalDirection::left);
-    CHECK(!nodes[3].is_leaf);
+    CHECK(nodes[3].type == NodeType::branch);
     CHECK(nodes[3].vertex_it == vertices.begin() + 9);
     CHECK(nodes[3].lower_opp_edge == Edge::edge_from_index(vertices, 0));
     CHECK(nodes[3].upper_opp_edge == Edge::edge_from_index(vertices, 7));
@@ -372,7 +372,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[3].neighbors[2] == &nodes[1]);
 
     CHECK(nodes[4].direction == HorizontalDirection::right);
-    CHECK(!nodes[4].is_leaf);
+    CHECK(nodes[4].type == NodeType::branch);
     CHECK(nodes[4].vertex_it == vertices.begin() + 2);
     CHECK(nodes[4].lower_opp_edge == Edge::edge_from_index(vertices, 0));
     CHECK(nodes[4].upper_opp_edge == Edge::edge_from_index(vertices, 7));
@@ -381,7 +381,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[4].neighbors[2] == &nodes[5]);
 
     CHECK(nodes[5].direction == HorizontalDirection::left);
-    CHECK(!nodes[5].is_leaf);
+    CHECK(nodes[5].type == NodeType::branch);
     CHECK(nodes[5].vertex_it == vertices.begin() + 7);
     CHECK(nodes[5].lower_opp_edge == Edge::edge_from_index(vertices, 2));
     CHECK(nodes[5].upper_opp_edge == Edge::edge_from_index(vertices, 5));
@@ -390,7 +390,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[5].neighbors[2] == &nodes[0]);
 
     CHECK(nodes[6].direction == HorizontalDirection::right);
-    CHECK(!nodes[6].is_leaf);
+    CHECK(nodes[6].type == NodeType::branch);
     CHECK(nodes[6].vertex_it == vertices.begin() + 4);
     CHECK(nodes[6].lower_opp_edge == Edge::edge_from_index(vertices, 2));
     CHECK(nodes[6].upper_opp_edge == Edge::edge_from_index(vertices, 5));
@@ -399,7 +399,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[6].neighbors[2] == &nodes[7]);
 
     CHECK(nodes[7].direction == HorizontalDirection::right);
-    CHECK(nodes[7].is_leaf);
+    CHECK(nodes[7].type == NodeType::leaf);
     CHECK(nodes[7].vertex_it == vertices.begin() + 5);
     CHECK(nodes[7].lower_opp_edge == Edge::edge_from_index(vertices, 4));
     CHECK(nodes[7].upper_opp_edge == Edge::edge_from_index(vertices, 5));
@@ -408,7 +408,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[7].neighbors[2] == nullptr);
 
     CHECK(nodes[8].direction == HorizontalDirection::right);
-    CHECK(nodes[8].is_leaf);
+    CHECK(nodes[8].type == NodeType::leaf);
     CHECK(nodes[8].vertex_it == vertices.begin() + 1);
     CHECK(nodes[8].lower_opp_edge == Edge::edge_from_index(vertices, 0));
     CHECK(nodes[8].upper_opp_edge == Edge::edge_from_index(vertices, 1));
@@ -417,7 +417,7 @@ TEST_CASE("vertical_decomposition_with_sweep_line_builder")
     CHECK(nodes[8].neighbors[2] == nullptr);
 
     CHECK(nodes[9].direction == HorizontalDirection::right);
-    CHECK(nodes[9].is_leaf);
+    CHECK(nodes[9].type == NodeType::leaf);
     CHECK(nodes[9].vertex_it == vertices.begin() + 3);
     CHECK(nodes[9].lower_opp_edge == Edge::edge_from_index(vertices, 2));
     CHECK(nodes[9].upper_opp_edge == Edge::edge_from_index(vertices, 3));

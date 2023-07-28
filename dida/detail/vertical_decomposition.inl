@@ -175,7 +175,7 @@ RegionIterator::RegionIterator(const Node* first_node)
 {
   first_node_ = first_node;
 
-  if (first_node->is_leaf)
+  if (first_node->type == NodeType::leaf)
   {
     cur_node_ = first_node_;
     cur_node_branch_index_ = 0;
@@ -208,7 +208,7 @@ bool RegionIterator::move_next()
 {
   do
   {
-    if (next_node_->is_leaf)
+    if (next_node_->type == NodeType::leaf)
     {
       if (next_node_ == first_node_)
       {

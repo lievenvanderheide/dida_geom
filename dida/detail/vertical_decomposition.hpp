@@ -31,6 +31,22 @@ enum class HorizontalDirection : uint8_t
   right,
 };
 
+/// The type of a node.
+enum class NodeType : uint8_t
+{
+  /// A leaf node of the vertical decomposition. The region on the incoming direction ends in the vertex of this node.
+  leaf,
+
+  /// A node where the vertical decomposition branches into two. The vertical extension of this node has one region on
+  /// its incoming side and 2 regions on its outgoing side.
+  branch,
+
+  /// This type of node only occurs in an incomplete decomposition, and indicates the location where a region with both
+  /// an upper and lower boundary branches into two unbounded regions: The lower outgoing branch does not have an upper
+  /// boundary and the upper outgoing branch does not have a lower boundary.
+  outer_branch,
+};
+
 /// Returns the other direction of @c direction.
 ///
 /// @param direction The original direction.
@@ -118,8 +134,8 @@ struct Node
   /// For leaf nodes, this indicates the incoming direction at the convex reflex vertex corresponding to this node.
   HorizontalDirection direction;
 
-  /// Whether this is a leaf node.
-  bool is_leaf;
+  /// The type of this node.
+  NodeType type;
 
   /// An iterator pointing to the vertex from which the vertical extensions corresponding to this node extend.
   VertexIt vertex_it;

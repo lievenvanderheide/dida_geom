@@ -261,21 +261,21 @@ TEST_CASE("gather_nodes")
 
     std::vector<Node> nodes(6);
     nodes[0].direction = HorizontalDirection::left;
-    nodes[0].is_leaf = true;
+    nodes[0].type = NodeType::leaf;
     nodes[0].vertex_it = vertices.begin() + 0;
     nodes[0].lower_opp_edge = Edge::edge_from_index(vertices, 0);
     nodes[0].upper_opp_edge = Edge::edge_from_index(vertices, 5);
     nodes[0].neighbors[0] = &nodes[3];
 
     nodes[1].direction = HorizontalDirection::left;
-    nodes[1].is_leaf = true;
+    nodes[1].type = NodeType::leaf;
     nodes[1].vertex_it = vertices.begin() + 4;
     nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 4);
     nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 3);
     nodes[1].neighbors[0] = &nodes[2];
 
     nodes[2].direction = HorizontalDirection::right;
-    nodes[2].is_leaf = false;
+    nodes[2].type = NodeType::branch;
     nodes[2].vertex_it = vertices.begin() + 2;
     nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 4);
     nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 3);
@@ -284,7 +284,7 @@ TEST_CASE("gather_nodes")
     nodes[2].neighbors[2] = &nodes[5];
 
     nodes[3].direction = HorizontalDirection::left;
-    nodes[3].is_leaf = false;
+    nodes[3].type = NodeType::branch;
     nodes[3].vertex_it = vertices.begin() + 5;
     nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 0);
     nodes[3].upper_opp_edge = Edge::edge_from_index(vertices, 1);
@@ -293,14 +293,14 @@ TEST_CASE("gather_nodes")
     nodes[3].neighbors[2] = &nodes[2];
 
     nodes[4].direction = HorizontalDirection::right;
-    nodes[4].is_leaf = true;
+    nodes[4].type = NodeType::leaf;
     nodes[4].vertex_it = vertices.begin() + 1;
     nodes[4].lower_opp_edge = Edge::edge_from_index(vertices, 0);
     nodes[4].upper_opp_edge = Edge::edge_from_index(vertices, 1);
     nodes[4].neighbors[0] = &nodes[3];
 
     nodes[5].direction = HorizontalDirection::right;
-    nodes[5].is_leaf = true;
+    nodes[5].type = NodeType::leaf;
     nodes[5].vertex_it = vertices.begin() + 3;
     nodes[5].lower_opp_edge = Edge::edge_from_index(vertices, 2);
     nodes[5].upper_opp_edge = Edge::edge_from_index(vertices, 3);
@@ -328,7 +328,7 @@ TEST_CASE("gather_nodes")
 
     std::vector<Node> nodes(6);
     nodes[0].direction = HorizontalDirection::right;
-    nodes[0].is_leaf = false;
+    nodes[0].type = NodeType::branch;
     nodes[0].vertex_it = vertices.begin() + 4;
     nodes[0].lower_opp_edge = Edge::invalid();
     nodes[0].upper_opp_edge = Edge::invalid();
@@ -337,7 +337,7 @@ TEST_CASE("gather_nodes")
     nodes[0].neighbors[2] = &nodes[4];
 
     nodes[1].direction = HorizontalDirection::right;
-    nodes[1].is_leaf = false;
+    nodes[1].type = NodeType::branch;
     nodes[1].vertex_it = vertices.begin() + 6;
     nodes[1].lower_opp_edge = Edge::invalid();
     nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 4);
@@ -346,21 +346,21 @@ TEST_CASE("gather_nodes")
     nodes[1].neighbors[2] = &nodes[2];
 
     nodes[2].direction = HorizontalDirection::right;
-    nodes[2].is_leaf = true;
+    nodes[2].type = NodeType::leaf;
     nodes[2].vertex_it = vertices.begin() + 5;
     nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 5);
     nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 4);
     nodes[2].neighbors[0] = &nodes[1];
 
     nodes[3].direction = HorizontalDirection::left;
-    nodes[3].is_leaf = true;
+    nodes[3].type = NodeType::leaf;
     nodes[3].vertex_it = vertices.begin() + 2;
     nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 1);
     nodes[3].upper_opp_edge = Edge::edge_from_index(vertices, 2);
     nodes[3].neighbors[0] = &nodes[4];
 
     nodes[4].direction = HorizontalDirection::left;
-    nodes[4].is_leaf = false;
+    nodes[4].type = NodeType::branch;
     nodes[4].vertex_it = vertices.begin() + 3;
     nodes[4].lower_opp_edge = Edge::edge_from_index(vertices, 1);
     nodes[4].upper_opp_edge = Edge::invalid();
@@ -369,7 +369,7 @@ TEST_CASE("gather_nodes")
     nodes[4].neighbors[2] = &nodes[0];
 
     nodes[5].direction = HorizontalDirection::left;
-    nodes[5].is_leaf = false;
+    nodes[5].type = NodeType::branch;
     nodes[5].vertex_it = vertices.begin() + 1;
     nodes[5].lower_opp_edge = Edge::invalid();
     nodes[5].upper_opp_edge = Edge::invalid();
@@ -406,7 +406,7 @@ TEST_CASE("validate_node_opp_edges")
   {
     Node node;
     node.direction == HorizontalDirection::right;
-    node.is_leaf = false;
+    node.type = NodeType::branch;
     node.vertex_it = vertices.begin() + 3;
     node.lower_opp_edge = Edge::edge_from_index(vertices, 1);
     node.upper_opp_edge = Edge::edge_from_index(vertices, 15);
@@ -453,7 +453,7 @@ TEST_CASE("validate_node_opp_edges")
     {
       Node node;
       node.direction = HorizontalDirection::left;
-      node.is_leaf = true;
+      node.type = NodeType::leaf;
       node.vertex_it = vertices.begin();
       node.lower_opp_edge = Edge::edge_from_index(vertices, 0);
       node.upper_opp_edge = Edge::edge_from_index(vertices, 15);
@@ -483,7 +483,7 @@ TEST_CASE("validate_node_opp_edges")
     {
       Node node;
       node.direction = HorizontalDirection::right;
-      node.is_leaf = true;
+      node.type = NodeType::leaf;
       node.vertex_it = vertices.begin() + 10;
       node.lower_opp_edge = Edge::edge_from_index(vertices, 9);
       node.upper_opp_edge = Edge::edge_from_index(vertices, 10);
@@ -523,7 +523,7 @@ TEST_CASE("node_branch_boundary_vertices")
 
     Node node;
     node.direction = HorizontalDirection::left;
-    node.is_leaf = false;
+    node.type = NodeType::branch;
     node.vertex_it = vertices.begin() + 10;
     node.lower_opp_edge = Edge::edge_from_index(vertices, 2);
     node.upper_opp_edge = Edge::edge_from_index(vertices, 4);
@@ -591,7 +591,7 @@ TEST_CASE("node_branch_boundary_vertices")
 
     Node node;
     node.direction = HorizontalDirection::right;
-    node.is_leaf = false;
+    node.type = NodeType::branch;
     node.vertex_it = vertices.begin() + 5;
     node.lower_opp_edge = Edge::edge_from_index(vertices, 1);
     node.upper_opp_edge = Edge::edge_from_index(vertices, 9);
@@ -661,7 +661,7 @@ TEST_CASE("node_branch_boundary_vertices")
     {
       Node node;
       node.direction = HorizontalDirection::left;
-      node.is_leaf = true;
+      node.type = NodeType::leaf;
       node.vertex_it = vertices.begin();
       node.lower_opp_edge = Edge::edge_from_index(vertices, 0);
       node.upper_opp_edge = Edge::edge_from_index(vertices, 7);
@@ -678,7 +678,7 @@ TEST_CASE("node_branch_boundary_vertices")
     {
       Node node;
       node.direction = HorizontalDirection::right;
-      node.is_leaf = true;
+      node.type = NodeType::leaf;
       node.vertex_it = vertices.begin() + 4;
       node.lower_opp_edge = Edge::edge_from_index(vertices, 3);
       node.upper_opp_edge = Edge::edge_from_index(vertices, 5);
@@ -703,21 +703,21 @@ TEST_CASE("validate_node_neighbors")
 
   std::vector<Node> nodes(6);
   nodes[0].direction = HorizontalDirection::left;
-  nodes[0].is_leaf = true;
+  nodes[0].type = NodeType::leaf;
   nodes[0].vertex_it = vertices.begin() + 2;
   nodes[0].lower_opp_edge = Edge::edge_from_index(vertices, 2);
   nodes[0].upper_opp_edge = Edge::edge_from_index(vertices, 1);
   nodes[0].neighbors[0] = &nodes[2];
 
   nodes[1].direction = HorizontalDirection::left;
-  nodes[1].is_leaf = true;
+  nodes[1].type = NodeType::leaf;
   nodes[1].vertex_it = vertices.begin() + 0;
   nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 0);
   nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 11);
   nodes[1].neighbors[0] = &nodes[2];
 
   nodes[2].direction = HorizontalDirection::left;
-  nodes[2].is_leaf = false;
+  nodes[2].type = NodeType::branch;
   nodes[2].vertex_it = vertices.begin() + 1;
   nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 3);
   nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 11);
@@ -726,14 +726,14 @@ TEST_CASE("validate_node_neighbors")
   nodes[2].neighbors[2] = &nodes[1];
 
   nodes[3].direction = HorizontalDirection::left;
-  nodes[3].is_leaf = true;
+  nodes[3].type = NodeType::leaf;
   nodes[3].vertex_it = vertices.begin() + 8;
   nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 8);
   nodes[3].upper_opp_edge = Edge::edge_from_index(vertices, 7);
   nodes[3].neighbors[0] = &nodes[4];
 
   nodes[4].direction = HorizontalDirection::left;
-  nodes[4].is_leaf = false;
+  nodes[4].type = NodeType::branch;
   nodes[4].vertex_it = vertices.begin() + 9;
   nodes[4].lower_opp_edge = Edge::edge_from_index(vertices, 5);
   nodes[4].upper_opp_edge = Edge::edge_from_index(vertices, 7);
@@ -742,7 +742,7 @@ TEST_CASE("validate_node_neighbors")
   nodes[4].neighbors[2] = &nodes[3];
 
   nodes[5].direction = HorizontalDirection::right;
-  nodes[5].is_leaf = true;
+  nodes[5].type = NodeType::leaf;
   nodes[5].vertex_it = vertices.begin() + 7;
   nodes[5].lower_opp_edge = Edge::edge_from_index(vertices, 6);
   nodes[5].upper_opp_edge = Edge::edge_from_index(vertices, 7);
@@ -829,7 +829,7 @@ TEST_CASE("validate_node_neighbors")
 
     // Make node[5] a chain-end node.
     nodes[5].direction = HorizontalDirection::left;
-    nodes[5].is_leaf = false;
+    nodes[5].type = NodeType::branch;
     nodes[5].vertex_it = vertices.begin() + 7;
     nodes[5].lower_opp_edge = Edge::invalid();
     nodes[5].upper_opp_edge = Edge::invalid();
