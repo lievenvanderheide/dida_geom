@@ -13,9 +13,9 @@ add_executable(dida_tests
     point2_tests.cpp
     polygon2_tests.cpp
     predicates_tests.cpp
-    utils_tests.cpp
     scalar_tests.cpp
     segment2_tests.cpp
+    utils_tests.cpp
     vector2_tests.cpp)
 
 target_link_libraries(dida_tests PRIVATE dida Catch2::Catch2WithMain)

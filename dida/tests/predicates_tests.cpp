@@ -2,7 +2,7 @@
 
 #include "dida/predicates.hpp"
 
-namespace dida::tests
+namespace dida
 {
 
 TEST_CASE("is_within_with_perturbation(PolygonView2, Point2)")
@@ -135,4 +135,4 @@ TEST_CASE("is_within_with_perturbation(PolygonView2, Point2)")
   }
 }
 
-} // namespace dida::tests
+} // namespace dida

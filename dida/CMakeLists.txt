@@ -11,6 +11,8 @@ add_library(dida
     detail/convex_polygons_intersection.inl
     detail/polygon_sweep.hpp
     detail/polygon_sweep.inl
+    detail/tmp_object_pool.hpp
+    detail/tmp_object_pool.inl
     detail/vertical_decomposition_zigzag_phase.cpp
     detail/vertical_decomposition_sweep_line_builder.cpp
     detail/vertical_decomposition_sweep_line_builder.hpp
