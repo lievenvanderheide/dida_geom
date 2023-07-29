@@ -13,7 +13,7 @@ struct ZigzagState
   VerticesView vertices;
 
   /// The node pool, used to allocate new nodes.
-  std::deque<Node>* node_pool;
+  NodePool* node_pool;
 
   /// The current direction.
   HorizontalDirection direction;
@@ -114,7 +114,7 @@ void zigzag_init(ZigzagState& state)
       {
         HorizontalDirection direction = outgoing_towards_right ? HorizontalDirection::right : HorizontalDirection::left;
 
-        Node* node = &state.node_pool->emplace_back();
+        Node* node = state.node_pool->alloc();
         node->direction = direction;
         node->is_leaf = false;
         node->vertex_it = it;
@@ -218,7 +218,7 @@ bool zigzag_forward_convex_corner(ZigzagState& state, VerticesView::const_iterat
 {
   if (state.current_edge.start_vertex_it == state.first_vertex_it)
   {
-    Node* node = &state.node_pool->emplace_back();
+    Node* node = state.node_pool->alloc();
     node->direction = other_direction(direction);
     node->is_leaf = false;
     node->vertex_it = state.current_edge.start_vertex_it;
@@ -243,7 +243,7 @@ bool zigzag_forward_convex_corner(ZigzagState& state, VerticesView::const_iterat
     return false;
   }
 
-  Node* node = &state.node_pool->emplace_back();
+  Node* node = state.node_pool->alloc();
   node->direction = direction;
   node->is_leaf = true;
   node->vertex_it = state.current_edge.start_vertex_it;
@@ -270,7 +270,7 @@ bool zigzag_reverse_convex_corner(ZigzagState& state)
 {
   // The zigzag algorithm can't handle convex corners at the end of a reverse edge, so we have to start a new chain.
 
-  Node* old_chain_last_node = &state.node_pool->emplace_back();
+  Node* old_chain_last_node = state.node_pool->alloc();
   old_chain_last_node->direction = other_direction(direction);
   old_chain_last_node->is_leaf = false;
   old_chain_last_node->vertex_it = state.current_edge.start_vertex_it;
@@ -325,7 +325,7 @@ bool zigzag_reverse_convex_corner(ZigzagState& state)
     return false;
   }
 
-  Node* new_chain_first_node = &state.node_pool->emplace_back();
+  Node* new_chain_first_node = state.node_pool->alloc();
   new_chain_first_node->direction = other_direction(direction);
   new_chain_first_node->is_leaf = false;
   new_chain_first_node->vertex_it = state.current_edge.start_vertex_it;
@@ -348,7 +348,7 @@ bool zigzag_reverse_convex_corner(ZigzagState& state)
 template <HorizontalDirection direction>
 void zigzag_concave_corner(ZigzagState& state)
 {
-  Node* node = &state.node_pool->emplace_back();
+  Node* node = state.node_pool->alloc();
   node->direction = other_direction(direction);
   node->is_leaf = false;
   node->vertex_it = state.current_edge.start_vertex_it;
@@ -416,7 +416,7 @@ void zigzag_concave_corner(ZigzagState& state)
 
 } // namespace
 
-std::vector<ChainDecomposition> vertical_decomposition_zigzag_phase(VerticesView vertices, std::deque<Node>& node_pool)
+std::vector<ChainDecomposition> vertical_decomposition_zigzag_phase(VerticesView vertices, NodePool& node_pool)
 {
   // TODO: Handle monotone polygons.
 

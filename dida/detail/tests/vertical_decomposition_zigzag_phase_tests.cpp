@@ -18,7 +18,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
     };
     ArrayView<const Point2> vertices(polygon);
 
-    std::deque<Node> node_pool;
+    NodePool node_pool;
     std::vector<ChainDecomposition> chain_decompositions = vertical_decomposition_zigzag_phase(vertices, node_pool);
 
     REQUIRE(chain_decompositions.size() == 2);
@@ -47,7 +47,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
     };
     ArrayView<const Point2> vertices(polygon);
 
-    std::deque<Node> node_pool;
+    NodePool node_pool;
     std::vector<ChainDecomposition> chain_decompositions = vertical_decomposition_zigzag_phase(vertices, node_pool);
 
     REQUIRE(chain_decompositions.size() == 2);
@@ -72,7 +72,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
 
     ArrayView<const Point2> vertices(polygon);
 
-    std::deque<Node> node_pool;
+    NodePool node_pool;
     std::vector<ChainDecomposition> chain_decompositions = vertical_decomposition_zigzag_phase(vertices, node_pool);
 
     REQUIRE(chain_decompositions.size() == 4);
@@ -103,7 +103,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
 
     ArrayView<const Point2> vertices(polygon);
 
-    std::deque<Node> node_pool;
+    NodePool node_pool;
     std::vector<ChainDecomposition> chain_decompositions = vertical_decomposition_zigzag_phase(vertices, node_pool);
 
     REQUIRE(chain_decompositions.size() == 3);
@@ -131,7 +131,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
 
     ArrayView<const Point2> vertices(polygon);
 
-    std::deque<Node> node_pool;
+    NodePool node_pool;
     std::vector<ChainDecomposition> chain_decompositions = vertical_decomposition_zigzag_phase(vertices, node_pool);
 
     REQUIRE(chain_decompositions.size() == 3);

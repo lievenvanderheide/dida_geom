@@ -446,7 +446,7 @@ void print_nodes(VerticesView vertices, ArrayView<const Node> nodes)
   }
 }
 
-std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertices, std::deque<Node>& node_pool)
+std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertices, NodePool& node_pool)
 {
   // Find the first convex reflex vertex.
   VertexIt it = vertices.begin();
@@ -479,7 +479,7 @@ std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertic
       {
         // Add a node to the current chain.
 
-        Node* node = &node_pool.emplace_back();
+        Node* node = node_pool.alloc();
         node->direction = incoming_towards_right ? HorizontalDirection::left : HorizontalDirection::right;
         node->is_leaf = false;
         node->vertex_it = it;
@@ -513,7 +513,7 @@ std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertic
       {
         // Start a new chain.
 
-        Node* node = &node_pool.emplace_back();
+        Node* node = node_pool.alloc();
         node->direction = outgoing_towards_right ? HorizontalDirection::right : HorizontalDirection::left;
         node->is_leaf = false;
         node->vertex_it = it;

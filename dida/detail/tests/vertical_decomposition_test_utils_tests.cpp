@@ -910,7 +910,7 @@ TEST_CASE("initial_chain_decompositions")
 
   SECTION("First chain starts at vertices 0")
   {
-    std::deque<Node> node_pool;
+    NodePool node_pool;
     std::vector<ChainDecomposition> result = initial_chain_decompositions(vertices, node_pool);
 
     REQUIRE(result.size() == 4);
@@ -937,7 +937,7 @@ TEST_CASE("initial_chain_decompositions")
     std::vector<Point2>& vertices_mut = polygon.unsafe_mutable_vertices();
     std::rotate(vertices_mut.begin(), vertices_mut.begin() + 1, vertices_mut.end());
 
-    std::deque<Node> node_pool;
+    NodePool node_pool;
     std::vector<ChainDecomposition> result = initial_chain_decompositions(vertices, node_pool);
 
     REQUIRE(result.size() == 4);

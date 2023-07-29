@@ -1,6 +1,7 @@
 #pragma once
 
 #include "dida/array_view.hpp"
+#include "dida/detail/tmp_object_pool.hpp"
 #include "dida/math/fraction.hpp"
 #include "dida/point2.hpp"
 #include "dida/segment2.hpp"
@@ -141,6 +142,8 @@ struct Node
   /// Each neighbor pointer can be nullptr.
   Node* neighbors[3];
 };
+
+using NodePool = TmpObjectPool<Node, 64>;
 
 /// A range of edges of the input polygon.
 struct EdgeRange

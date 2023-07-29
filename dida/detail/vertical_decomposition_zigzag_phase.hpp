@@ -1,7 +1,5 @@
 #include "dida/detail/vertical_decomposition.hpp"
 
-#include <deque>
-
 namespace dida::detail::vertical_decomposition
 {
 
@@ -12,6 +10,6 @@ namespace dida::detail::vertical_decomposition
 /// @param vertices The vertices of the polygon.
 /// @param node_pool The pool used to allocate the nodes in the resulting chain decompositions.
 /// @return The chain decompositions.
-std::vector<ChainDecomposition> vertical_decomposition_zigzag_phase(VerticesView vertices, std::deque<Node>& node_pool);
+std::vector<ChainDecomposition> vertical_decomposition_zigzag_phase(VerticesView vertices, NodePool& node_pool);
 
 } // namespace dida::detail::vertical_decomposition

@@ -2,7 +2,6 @@
 
 #include "dida/detail/vertical_decomposition.hpp"
 
-#include <deque>
 #include <set>
 
 namespace dida::detail::vertical_decomposition
@@ -110,6 +109,6 @@ void print_nodes(VerticesView vertices, ArrayView<const Node> nodes);
 ///
 /// @param vertices The vertices of the polygon.
 /// @param node_pool The pool used to allocate the nodes in the resulting chain decompositions.
-std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertices, std::deque<Node>& node_pool);
+std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertices, NodePool& node_pool);
 
 } // namespace dida::detail::vertical_decomposition
