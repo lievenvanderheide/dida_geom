@@ -229,7 +229,7 @@ void SweepState::handle_appear_event(const Event& event)
 
     Node& new_node = *(nodes_it_++);
     new_node.direction = HorizontalDirection::right;
-    new_node.is_leaf = false;
+    new_node.type = NodeType::branch;
     new_node.vertex_it = event.vertex_it;
     new_node.lower_opp_edge = lower_opp_edge.edge();
     new_node.upper_opp_edge = upper_opp_edge.edge();
@@ -288,7 +288,7 @@ void SweepState::handle_appear_event(const Event& event)
 
     Node& new_node = *(nodes_it_++);
     new_node.direction = HorizontalDirection::left;
-    new_node.is_leaf = true;
+    new_node.type = NodeType::leaf;
     new_node.vertex_it = event.vertex_it;
     new_node.lower_opp_edge = lower_appearing_edge;
     new_node.upper_opp_edge = upper_appearing_edge;
@@ -326,7 +326,7 @@ void SweepState::handle_vanish_event(const Event& event)
 
     Node& node = *(nodes_it_++);
     node.direction = HorizontalDirection::left;
-    node.is_leaf = false;
+    node.type = NodeType::branch;
     node.vertex_it = event.vertex_it;
     node.lower_opp_edge = lower_opp_edge.edge();
     node.upper_opp_edge = upper_opp_edge.edge();
@@ -347,7 +347,7 @@ void SweepState::handle_vanish_event(const Event& event)
 
     Node& node = *(nodes_it_++);
     node.direction = HorizontalDirection::right;
-    node.is_leaf = true;
+    node.type = NodeType::leaf;
     node.vertex_it = event.vertex_it;
     node.lower_opp_edge = lower_vanishing_edge.edge();
     node.upper_opp_edge = upper_vanishing_edge.edge();
