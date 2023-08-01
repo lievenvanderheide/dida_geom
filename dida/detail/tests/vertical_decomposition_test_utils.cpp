@@ -409,10 +409,10 @@ void print_nodes(VerticesView vertices, ArrayView<const Node> nodes)
       std::cout << "NodeType::branch;" << std::endl;
       break;
     case NodeType::leaf:
-      std::cout << "NodeType::branch;" << std::endl;
+      std::cout << "NodeType::leaf;" << std::endl;
       break;
-    case NodeType::set_opposite:
-      std::cout << "NodeType::branch;" << std::endl;
+    case NodeType::outer_branch:
+      std::cout << "NodeType::outer_branch;" << std::endl;
       break;
     }
 
