@@ -77,7 +77,7 @@ void gather_nodes_rec(const Node* node, std::set<const Node*>& result)
 {
   if (result.insert(node).second)
   {
-    uint8_t num_neighbors = node->is_leaf ? 1 : 3;
+    uint8_t num_neighbors = node->type == NodeType::leaf ? 1 : 3;
     for (uint8_t i = 0; i < num_neighbors; i++)
     {
       if (node->neighbors[i])
@@ -99,32 +99,65 @@ std::set<const Node*> gather_nodes(const Node* node)
 
 bool validate_node_opp_edges(VerticesView vertices, const PolygonRange& range, const Node* node)
 {
-  if (node->is_leaf)
+  Edge expected_lower_opp_edge, expected_upper_opp_edge;
+
+  if (node->type == NodeType::leaf)
   {
     Edge incoming_edge{prev_cyclic(vertices, node->vertex_it), node->vertex_it};
     Edge outgoing_edge{node->vertex_it, next_cyclic(vertices, node->vertex_it)};
     if (node->direction == HorizontalDirection::right)
     {
-      return node->lower_opp_edge == incoming_edge && node->upper_opp_edge == outgoing_edge;
+      expected_lower_opp_edge = incoming_edge;
+      expected_upper_opp_edge = outgoing_edge;
     }
     else
     {
-      return node->lower_opp_edge == outgoing_edge && node->upper_opp_edge == incoming_edge;
+      expected_lower_opp_edge = outgoing_edge;
+      expected_upper_opp_edge = incoming_edge;
     }
   }
   else
   {
-    return node->lower_opp_edge == ray_cast_down(vertices, range, *node->vertex_it) &&
-           node->upper_opp_edge == ray_cast_up(vertices, range, *node->vertex_it);
+    expected_lower_opp_edge = ray_cast_down(vertices, range, *node->vertex_it);
+    expected_upper_opp_edge = ray_cast_up(vertices, range, *node->vertex_it);
   }
+
+  if (node->lower_opp_edge != expected_lower_opp_edge)
+  {
+    UNSCOPED_INFO("Node{vertex: " << *node->vertex_it << "}.lower_opp_edge should be " << expected_lower_opp_edge
+                                  << ", but is " << node->lower_opp_edge << ".");
+    return false;
+  }
+
+  if (node->upper_opp_edge != expected_upper_opp_edge)
+  {
+    UNSCOPED_INFO("Node{vertex: " << *node->vertex_it << "}.upper_opp_edge should be " << expected_upper_opp_edge
+                                  << ", but is " << node->upper_opp_edge << ".");
+    return false;
+  }
+
+  return true;
 }
 
-NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecomposition& chain_decomposition,
+namespace
+{
+
+bool is_concave_corner(VerticesView vertices, VertexIt vertex_it)
+{
+  Vector2 incoming_dir = *vertex_it - *prev_cyclic(vertices, vertex_it);
+  Vector2 outgoing_dir = *next_cyclic(vertices, vertex_it) - *vertex_it;
+  return cross(incoming_dir, outgoing_dir) < 0;
+}
+
+} // namespace
+
+NodeBranchBoundaryVertices node_branch_boundary_vertices(VerticesView vertices,
+                                                         const ChainDecomposition& chain_decomposition,
                                                          const Node* node, uint8_t branch_index)
 {
   NodeBranchBoundaryVertices result;
 
-  if (node->is_leaf)
+  if (node->type == NodeType::leaf)
   {
     DIDA_ASSERT(branch_index == 0);
     return NodeBranchBoundaryVertices{node->vertex_it, node->vertex_it};
@@ -140,14 +173,18 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
 
     case 1:
     {
-      bool has_upper_boundary = true;
-      if (node == chain_decomposition.first_node && node->direction == HorizontalDirection::right)
+      bool has_upper_boundary;
+      if (node == chain_decomposition.first_node)
       {
-        has_upper_boundary = false;
+        has_upper_boundary = node->direction != HorizontalDirection::right;
       }
-      else if (node == chain_decomposition.last_node && node->direction == HorizontalDirection::left)
+      else if (node == chain_decomposition.last_node)
       {
-        has_upper_boundary = false;
+        has_upper_boundary = node->direction != HorizontalDirection::left;
+      }
+      else
+      {
+        has_upper_boundary = is_concave_corner(vertices, node->vertex_it);
       }
 
       return NodeBranchBoundaryVertices{
@@ -159,14 +196,18 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
 
     case 2:
     {
-      bool has_lower_boundary = true;
-      if (node == chain_decomposition.first_node && node->direction == HorizontalDirection::left)
+      bool has_lower_boundary;
+      if (node == chain_decomposition.first_node)
       {
-        has_lower_boundary = false;
+        has_lower_boundary = node->direction != HorizontalDirection::left;
       }
-      else if (node == chain_decomposition.last_node && node->direction == HorizontalDirection::right)
+      else if (node == chain_decomposition.last_node)
       {
-        has_lower_boundary = false;
+        has_lower_boundary = node->direction != HorizontalDirection::right;
+      }
+      else
+      {
+        has_lower_boundary = is_concave_corner(vertices, node->vertex_it);
       }
 
       return NodeBranchBoundaryVertices{
@@ -300,10 +341,11 @@ bool validate_neighboring_nodes_pair(VerticesView vertices, const Node* left_nod
 
 bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& chain_decomposition, const Node* node)
 {
-  uint8_t num_branches = node->is_leaf ? 1 : 3;
+  uint8_t num_branches = node->type == NodeType::leaf ? 1 : 3;
   for (uint8_t i = 0; i < num_branches; i++)
   {
-    NodeBranchBoundaryVertices boundary_vertices = node_branch_boundary_vertices(chain_decomposition, node, i);
+    NodeBranchBoundaryVertices boundary_vertices =
+        node_branch_boundary_vertices(vertices, chain_decomposition, node, i);
     if (boundary_vertices.lower_boundary_vertex_it || boundary_vertices.upper_boundary_vertex_it)
     {
       // The current branch has at least one of the two boundaries, so there should be a neighbor.
@@ -317,7 +359,7 @@ bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& ch
       }
 
       // Find the index in 'neighbor' which links it back to 'node'.
-      uint8_t neighbor_num_branches = neighbor->is_leaf ? 1 : 3;
+      uint8_t neighbor_num_branches = neighbor->type == NodeType::leaf ? 1 : 3;
       uint8_t neighbor_to_node_branch_index = 0;
       for (; neighbor_to_node_branch_index < neighbor_num_branches; neighbor_to_node_branch_index++)
       {
@@ -341,7 +383,7 @@ bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& ch
       if (lex_less_than(*node->vertex_it, *neighbor->vertex_it))
       {
         NodeBranchBoundaryVertices neighbor_boundary_vertices =
-            node_branch_boundary_vertices(chain_decomposition, neighbor, neighbor_to_node_branch_index);
+            node_branch_boundary_vertices(vertices, chain_decomposition, neighbor, neighbor_to_node_branch_index);
         if (!validate_neighboring_nodes_pair(vertices, node, i, boundary_vertices, neighbor,
                                              neighbor_to_node_branch_index, neighbor_boundary_vertices))
         {
@@ -393,6 +435,31 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
   return true;
 }
 
+bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node)
+{
+  PolygonRange full_range{0, vertices.size(), vertices[0].x(), vertices[0].x()};
+
+  std::set<const Node*> nodes = gather_nodes(root_node);
+
+  for (const Node* node : nodes)
+  {
+    if (!validate_node_opp_edges(vertices, full_range, node))
+    {
+      return false;
+    }
+  }
+
+  for (const Node* node : nodes)
+  {
+    if (!validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, node))
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void print_nodes(VerticesView vertices, ArrayView<const Node> nodes)
 {
   std::cout << "std::vector<Node> nodes(" << nodes.size() << ");" << std::endl;
@@ -402,7 +469,21 @@ void print_nodes(VerticesView vertices, ArrayView<const Node> nodes)
               << (nodes[i].direction == HorizontalDirection::left ? "HorizontalDirection::left;"
                                                                   : "HorizontalDirection::right;")
               << std::endl;
-    std::cout << "nodes[" << i << "].is_leaf = " << (nodes[i].is_leaf ? "true;" : "false;") << std::endl;
+              
+    std::cout << "nodes[" << i << "].type = ";
+    switch (nodes[i].type)
+    {
+    case NodeType::branch:
+      std::cout << "NodeType::branch;" << std::endl;
+      break;
+    case NodeType::leaf:
+      std::cout << "NodeType::leaf;" << std::endl;
+      break;
+    case NodeType::outer_branch:
+      std::cout << "NodeType::outer_branch;" << std::endl;
+      break;
+    }
+
     std::cout << "nodes[" << i << "].vertex_it = vertices.begin() + " << (nodes[i].vertex_it - vertices.begin()) << ";"
               << std::endl;
 
@@ -428,7 +509,7 @@ void print_nodes(VerticesView vertices, ArrayView<const Node> nodes)
       std::cout << "Edge::invalid();" << std::endl;
     }
 
-    size_t num_neighbors = nodes[i].is_leaf ? 1 : 3;
+    size_t num_neighbors = nodes[i].type == NodeType::leaf ? 1 : 3;
     for (size_t j = 0; j < num_neighbors; j++)
     {
       std::cout << "nodes[" << i << "].neighbors[" << j << "] = ";
@@ -481,7 +562,7 @@ std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertic
 
         Node* node = node_pool.alloc();
         node->direction = incoming_towards_right ? HorizontalDirection::left : HorizontalDirection::right;
-        node->is_leaf = false;
+        node->type = NodeType::branch;
         node->vertex_it = it;
         node->lower_opp_edge = Edge::invalid();
         node->upper_opp_edge = Edge::invalid();
@@ -515,7 +596,7 @@ std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertic
 
         Node* node = node_pool.alloc();
         node->direction = outgoing_towards_right ? HorizontalDirection::right : HorizontalDirection::left;
-        node->is_leaf = false;
+        node->type = NodeType::branch;
         node->vertex_it = it;
         node->lower_opp_edge = Edge::invalid();
         node->upper_opp_edge = Edge::invalid();

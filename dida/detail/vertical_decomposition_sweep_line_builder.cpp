@@ -15,7 +15,7 @@ class SweepState
 {
 public:
   /// Constructs a sweep state for the given vertices and decomposition type.
-  SweepState(ArrayView<const Point2> vertices, VerticalDecompositionType decomposition_type);
+  SweepState(VerticesView vertices, VerticalDecompositionType decomposition_type);
 
   /// Initializes the sweep state to the state it should have right before the first event is processed.
   ///
@@ -103,7 +103,7 @@ private:
   ActiveEdgesIt insert_location(Point2 vertex);
 
   /// The vertices of the input polygon.
-  ArrayView<const Point2> vertices_;
+  VerticesView vertices_;
 
   /// The type of decomposition we're computing
   VerticalDecompositionType decomposition_type_;
@@ -229,7 +229,7 @@ void SweepState::handle_appear_event(const Event& event)
 
     Node& new_node = *(nodes_it_++);
     new_node.direction = HorizontalDirection::right;
-    new_node.is_leaf = false;
+    new_node.type = NodeType::branch;
     new_node.vertex_it = event.vertex_it;
     new_node.lower_opp_edge = lower_opp_edge.edge();
     new_node.upper_opp_edge = upper_opp_edge.edge();
@@ -288,7 +288,7 @@ void SweepState::handle_appear_event(const Event& event)
 
     Node& new_node = *(nodes_it_++);
     new_node.direction = HorizontalDirection::left;
-    new_node.is_leaf = true;
+    new_node.type = NodeType::leaf;
     new_node.vertex_it = event.vertex_it;
     new_node.lower_opp_edge = lower_appearing_edge;
     new_node.upper_opp_edge = upper_appearing_edge;
@@ -326,7 +326,7 @@ void SweepState::handle_vanish_event(const Event& event)
 
     Node& node = *(nodes_it_++);
     node.direction = HorizontalDirection::left;
-    node.is_leaf = false;
+    node.type = NodeType::branch;
     node.vertex_it = event.vertex_it;
     node.lower_opp_edge = lower_opp_edge.edge();
     node.upper_opp_edge = upper_opp_edge.edge();
@@ -347,7 +347,7 @@ void SweepState::handle_vanish_event(const Event& event)
 
     Node& node = *(nodes_it_++);
     node.direction = HorizontalDirection::right;
-    node.is_leaf = true;
+    node.type = NodeType::leaf;
     node.vertex_it = event.vertex_it;
     node.lower_opp_edge = lower_vanishing_edge.edge();
     node.upper_opp_edge = upper_vanishing_edge.edge();
@@ -444,7 +444,7 @@ Edge SweepState::ActiveEdge::edge() const
 
 } // namespace
 
-VerticalDecomposition vertical_decomposition_with_sweep_line_builder(ArrayView<const Point2> vertices,
+VerticalDecomposition vertical_decomposition_with_sweep_line_builder(VerticesView vertices,
                                                                      VerticalDecompositionType decomposition_type)
 {
   SweepState sweep_state(vertices, decomposition_type);

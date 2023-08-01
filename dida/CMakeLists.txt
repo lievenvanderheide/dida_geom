@@ -13,9 +13,14 @@ add_library(dida
     detail/polygon_sweep.inl
     detail/tmp_object_pool.hpp
     detail/tmp_object_pool.inl
-    detail/vertical_decomposition_zigzag_phase.cpp
+    detail/vertical_decomposition_dnc_builder.cpp
+    detail/vertical_decomposition_dnc_builder.hpp
+    detail/vertical_decomposition_merge.cpp
+    detail/vertical_decomposition_merge.hpp
     detail/vertical_decomposition_sweep_line_builder.cpp
     detail/vertical_decomposition_sweep_line_builder.hpp
+    detail/vertical_decomposition_zigzag_phase.cpp
+    detail/vertical_decomposition_zigzag_phase.hpp
     detail/vertical_decomposition.hpp
     detail/vertical_decomposition.inl
     math/big_int_utils.hpp

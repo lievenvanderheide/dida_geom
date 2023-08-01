@@ -79,7 +79,8 @@ struct NodeBranchBoundaryVertices
   VertexIt upper_boundary_vertex_it;
 };
 
-NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecomposition& chain_decomposition,
+NodeBranchBoundaryVertices node_branch_boundary_vertices(VerticesView vertices,
+                                                         const ChainDecomposition& chain_decomposition,
                                                          const Node* node, uint8_t branch_index);
 
 /// Validates the neighbors of @c node. This function validates whether
@@ -97,6 +98,8 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
 bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& chain_decomposition, const Node* node);
 
 bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition);
+
+bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node);
 
 /// Prints the given nodes as C++.
 ///

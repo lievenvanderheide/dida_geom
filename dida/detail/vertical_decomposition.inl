@@ -87,6 +87,18 @@ bool Edge::operator!=(const Edge b) const
   return start_vertex_it != b.start_vertex_it || end_vertex_it != b.end_vertex_it;
 }
 
+std::ostream& operator << (std::ostream& s, Edge edge)
+{
+  if(edge.is_valid())
+  {
+    return s << "{" << *edge.start_vertex_it << ", " << *edge.end_vertex_it << "}";
+  }
+  else
+  {
+    return s << "Edge::invalid()";
+  }
+}
+
 EdgeRange EdgeRange::invalid()
 {
   return EdgeRange{nullptr, nullptr};
@@ -175,7 +187,7 @@ RegionIterator::RegionIterator(const Node* first_node)
 {
   first_node_ = first_node;
 
-  if (first_node->is_leaf)
+  if (first_node->type == NodeType::leaf)
   {
     cur_node_ = first_node_;
     cur_node_branch_index_ = 0;
@@ -208,7 +220,7 @@ bool RegionIterator::move_next()
 {
   do
   {
-    if (next_node_->is_leaf)
+    if (next_node_->type == NodeType::leaf)
     {
       if (next_node_ == first_node_)
       {

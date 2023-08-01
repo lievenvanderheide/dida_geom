@@ -116,7 +116,7 @@ void zigzag_init(ZigzagState& state)
 
         Node* node = state.node_pool->alloc();
         node->direction = direction;
-        node->is_leaf = false;
+        node->type = NodeType::branch;
         node->vertex_it = it;
         node->lower_opp_edge = Edge::invalid();
         node->upper_opp_edge = Edge::invalid();
@@ -220,7 +220,7 @@ bool zigzag_forward_convex_corner(ZigzagState& state, VerticesView::const_iterat
   {
     Node* node = state.node_pool->alloc();
     node->direction = other_direction(direction);
-    node->is_leaf = false;
+    node->type = NodeType::branch;
     node->vertex_it = state.current_edge.start_vertex_it;
     node->lower_opp_edge = Edge::invalid();
     node->upper_opp_edge = Edge::invalid();
@@ -245,7 +245,7 @@ bool zigzag_forward_convex_corner(ZigzagState& state, VerticesView::const_iterat
 
   Node* node = state.node_pool->alloc();
   node->direction = direction;
-  node->is_leaf = true;
+  node->type = NodeType::leaf;
   node->vertex_it = state.current_edge.start_vertex_it;
 
   Edge incoming_edge{prev_vertex_it, state.current_edge.start_vertex_it};
@@ -272,7 +272,7 @@ bool zigzag_reverse_convex_corner(ZigzagState& state)
 
   Node* old_chain_last_node = state.node_pool->alloc();
   old_chain_last_node->direction = other_direction(direction);
-  old_chain_last_node->is_leaf = false;
+  old_chain_last_node->type = NodeType::branch;
   old_chain_last_node->vertex_it = state.current_edge.start_vertex_it;
   old_chain_last_node->neighbors[0] = state.next_node;
 
@@ -327,7 +327,7 @@ bool zigzag_reverse_convex_corner(ZigzagState& state)
 
   Node* new_chain_first_node = state.node_pool->alloc();
   new_chain_first_node->direction = other_direction(direction);
-  new_chain_first_node->is_leaf = false;
+  new_chain_first_node->type = NodeType::branch;
   new_chain_first_node->vertex_it = state.current_edge.start_vertex_it;
   new_chain_first_node->lower_opp_edge = Edge::invalid();
   new_chain_first_node->upper_opp_edge = Edge::invalid();
@@ -350,7 +350,7 @@ void zigzag_concave_corner(ZigzagState& state)
 {
   Node* node = state.node_pool->alloc();
   node->direction = other_direction(direction);
-  node->is_leaf = false;
+  node->type = NodeType::branch;
   node->vertex_it = state.current_edge.start_vertex_it;
 
   if constexpr (direction == HorizontalDirection::right)

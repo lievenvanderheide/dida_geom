@@ -6,9 +6,11 @@ add_executable(dida_detail_tests
     convex_polygons_intersection_tests.cpp
     polygon_sweep_tests.cpp
     tmp_object_pool_tests.cpp
-    vertical_decomposition_zigzag_phase_tests.cpp
+    vertical_decomposition_dnc_builder_tests.cpp
+    vertical_decomposition_merge_tests.cpp
     vertical_decomposition_sweep_line_builder_tests.cpp
     vertical_decomposition_test_utils_tests.cpp
+    vertical_decomposition_zigzag_phase_tests.cpp
     vertical_decomposition_test_utils.cpp
     vertical_decomposition_test_utils.hpp
     vertical_decomposition_tests.cpp)
