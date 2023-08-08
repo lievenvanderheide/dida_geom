@@ -78,22 +78,19 @@ IntType add_modulo(IntType a, IntType b, IntType m);
 template <class IntType>
 IntType sub_modulo(IntType a, IntType b, IntType m);
 
-/// Returns whether @c a, @c b and @c c occur in that order in a cyclically ordered set, that is, when starting from @c
-/// a, and cyclically iterating over the elements, whether element @c b is encountered before element @c c.
-///
-/// If @c a, @c b, @c c are not all distinct then the reslt is @c false.
+/// Returns whether @c a comes before @c b when iterating over a cyclic set starting from @c base.
 ///
 /// @tparam T The type of elements to compare.
-/// @param a The first operand.
-/// @param b The second operand.
-/// @param c The third operand.
-/// @return True iff @c a, @c b and @c are cyclically ordered.
+/// @param base The base element.
+/// @param b The first operand.
+/// @param c The second operand.
+/// @return True iff @c a comes before @c b.
 template <class T>
-bool cyclic_order(const T& a, const T& b, const T& c);
+bool cyclic_less_than(const T& base, const T& a, const T& b);
 
 /// An overload of @c cyclic_order which takes a user provided @c less_than functor.
 template <class T, class LessThan>
-bool cyclic_order(const T& a, const T& b, const T& c, LessThan less_than);
+bool cyclic_less_than(const T& base, const T& a, const T& b, LessThan less_than);
 
 } // namespace dida
 

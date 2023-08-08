@@ -71,21 +71,27 @@ IntType sub_modulo(IntType a, IntType b, IntType m)
 }
 
 template <class T>
-bool cyclic_order(const T& a, const T& b, const T& c)
+bool cyclic_less_than(const T& base, const T& a, const T& b)
 {
-  return cyclic_order(a, b, c, std::less<T>());
+  return cyclic_less_than(base, a, b, std::less<T>());
 }
 
 template <class T, class LessThan>
-bool cyclic_order(const T& a, const T& b, const T& c, LessThan less_than)
+bool cyclic_less_than(const T& base, const T& a, const T& b, LessThan less_than)
 {
-  if (less_than(a, b))
+  // The result is true iff one of the following holds
+  //
+  //  - base <= a < b 
+  //  - a < b < base
+  //  - b < base <= a
+
+  if (less_than(a, base))
   {
-    return less_than(c, a) || less_than(b, c);
+    return less_than(a, b) && less_than(b, base);
   }
   else
   {
-    return less_than(b, c) && less_than(c, a);
+    return less_than(a, b) || less_than(b, base);
   }
 }
 
