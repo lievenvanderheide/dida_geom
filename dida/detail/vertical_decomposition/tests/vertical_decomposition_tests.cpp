@@ -1,8 +1,8 @@
-#include "dida/detail/vertical_decomposition.hpp"
+#include "dida/detail/vertical_decomposition/vertical_decomposition.hpp"
 
 #include <catch2/catch.hpp>
 
-#include "dida/detail/vertical_decomposition_sweep_line_builder.hpp"
+#include "dida/detail/vertical_decomposition/sweep_line_builder.hpp"
 
 namespace dida::detail::vertical_decomposition
 {

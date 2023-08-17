@@ -1,4 +1,4 @@
-#include "dida/detail/tests/vertical_decomposition_test_utils.hpp"
+#include "dida/detail/vertical_decomposition/tests/test_utils.hpp"
 
 #include <catch2/catch.hpp>
 

@@ -1,4 +1,4 @@
-#include "dida/detail/vertical_decomposition_zigzag_phase.hpp"
+#include "dida/detail/vertical_decomposition/zigzag_phase.hpp"
 
 namespace dida::detail::vertical_decomposition
 {

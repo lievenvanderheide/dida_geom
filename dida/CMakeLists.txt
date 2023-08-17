@@ -7,20 +7,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include_directories(..)
 
 add_library(dida
+    detail/vertical_decomposition/merge.cpp
+    detail/vertical_decomposition/merge.hpp
+    detail/vertical_decomposition/sweep_line_builder.cpp
+    detail/vertical_decomposition/sweep_line_builder.hpp
+    detail/vertical_decomposition/zigzag_phase.cpp
+    detail/vertical_decomposition/zigzag_phase.hpp
+    detail/vertical_decomposition/vertical_decomposition.hpp
+    detail/vertical_decomposition/vertical_decomposition.inl
     detail/convex_polygons_intersection.hpp
     detail/convex_polygons_intersection.inl
     detail/polygon_sweep.hpp
     detail/polygon_sweep.inl
     detail/tmp_object_pool.hpp
     detail/tmp_object_pool.inl
-    detail/vertical_decomposition_merge.cpp
-    detail/vertical_decomposition_merge.hpp
-    detail/vertical_decomposition_sweep_line_builder.cpp
-    detail/vertical_decomposition_sweep_line_builder.hpp
-    detail/vertical_decomposition_zigzag_phase.cpp
-    detail/vertical_decomposition_zigzag_phase.hpp
-    detail/vertical_decomposition.hpp
-    detail/vertical_decomposition.inl
     math/big_int_utils.hpp
     math/big_int_utils.inl
     math/fraction.hpp
@@ -65,6 +65,7 @@ add_library(dida
 
 add_subdirectory(benchmarks)
 add_subdirectory(detail/tests)
+add_subdirectory(detail/vertical_decomposition/tests)
 add_subdirectory(math/tests)
 add_subdirectory(tests)
 add_subdirectory(viz)

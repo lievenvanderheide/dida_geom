@@ -1,4 +1,4 @@
-#include "dida/detail/vertical_decomposition_sweep_line_builder.hpp"
+#include "dida/detail/vertical_decomposition/sweep_line_builder.hpp"
 
 #include <algorithm>
 

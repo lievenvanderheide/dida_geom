@@ -1,8 +1,8 @@
-#include "dida/detail/vertical_decomposition_zigzag_phase.hpp"
+#include "dida/detail/vertical_decomposition/zigzag_phase.hpp"
 
 #include <catch2/catch.hpp>
 
-#include "dida/detail/tests/vertical_decomposition_test_utils.hpp"
+#include "dida/detail/vertical_decomposition/tests/test_utils.hpp"
 #include "dida/polygon2.hpp"
 
 namespace dida::detail::vertical_decomposition

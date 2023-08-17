@@ -355,4 +355,4 @@ private:
 
 } // namespace dida::detail::vertical_decomposition
 
-#include "dida/detail/vertical_decomposition.inl"
+#include "dida/detail/vertical_decomposition/vertical_decomposition.inl"

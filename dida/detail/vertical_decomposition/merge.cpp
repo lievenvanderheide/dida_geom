@@ -1,4 +1,4 @@
-#include "dida/detail/vertical_decomposition_merge.hpp"
+#include "dida/detail/vertical_decomposition/merge.hpp"
 
 namespace dida::detail::vertical_decomposition
 {
