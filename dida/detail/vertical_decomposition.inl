@@ -87,6 +87,56 @@ bool Edge::operator!=(const Edge b) const
   return start_vertex_it != b.start_vertex_it || end_vertex_it != b.end_vertex_it;
 }
 
+std::ostream& operator<<(std::ostream& s, Edge edge)
+{
+  if (edge.is_valid())
+  {
+    return s << "{" << *edge.start_vertex_it << ", " << *edge.end_vertex_it << "}";
+  }
+  else
+  {
+    return s << "Edge::invalid()";
+  }
+}
+
+uint8_t Node::neighbor_branch_index(const Node* neighbor) const
+{
+  DIDA_DEBUG_ASSERT(neighbor);
+
+  if (neighbors[0] == neighbor)
+  {
+    return 0;
+  }
+  else if (neighbors[1] == neighbor)
+  {
+    return 1;
+  }
+  else
+  {
+    DIDA_DEBUG_ASSERT(neighbors[2] == neighbor);
+    return 2;
+  }
+}
+
+void Node::replace_neighbor(Node* neighbor, Node* new_neighbor)
+{
+  DIDA_DEBUG_ASSERT(neighbor);
+
+  if (neighbors[0] == neighbor)
+  {
+    neighbors[0] = new_neighbor;
+  }
+  else if (neighbors[1] == neighbor)
+  {
+    neighbors[1] = new_neighbor;
+  }
+  else
+  {
+    DIDA_DEBUG_ASSERT(neighbors[2] == neighbor);
+    neighbors[2] = new_neighbor;
+  }
+}
+
 EdgeRange EdgeRange::invalid()
 {
   return EdgeRange{nullptr, nullptr};
