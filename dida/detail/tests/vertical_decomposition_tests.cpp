@@ -177,6 +177,51 @@ TEST_CASE("Edge::operator==/!=")
   }
 }
 
+TEST_CASE("Node::neighbor_branch_index")
+{
+  Node nodes[4];
+
+  nodes[0].neighbors[0] = &nodes[1];
+  nodes[0].neighbors[1] = &nodes[2];
+  nodes[0].neighbors[2] = &nodes[3];
+
+  CHECK(nodes[0].neighbor_branch_index(&nodes[1]) == 0);
+  CHECK(nodes[0].neighbor_branch_index(&nodes[2]) == 1);
+  CHECK(nodes[0].neighbor_branch_index(&nodes[3]) == 2);
+}
+
+TEST_CASE("Node::replace_neighbor")
+{
+  Node nodes[5];
+  nodes[0].neighbors[0] = &nodes[1];
+  nodes[0].neighbors[1] = &nodes[2];
+  nodes[0].neighbors[2] = &nodes[3];
+
+  SECTION("Replace neighbor 0")
+  {
+    nodes[0].replace_neighbor(&nodes[1], &nodes[4]);
+    CHECK(nodes[0].neighbors[0] == &nodes[4]);
+    CHECK(nodes[0].neighbors[1] == &nodes[2]);
+    CHECK(nodes[0].neighbors[2] == &nodes[3]);
+  }
+
+  SECTION("Replace neighbor 1")
+  {
+    nodes[0].replace_neighbor(&nodes[2], &nodes[4]);
+    CHECK(nodes[0].neighbors[0] == &nodes[1]);
+    CHECK(nodes[0].neighbors[1] == &nodes[4]);
+    CHECK(nodes[0].neighbors[2] == &nodes[3]);
+  }
+
+  SECTION("Replace neighbor 2")
+  {
+    nodes[0].replace_neighbor(&nodes[3], &nodes[4]);
+    CHECK(nodes[0].neighbors[0] == &nodes[1]);
+    CHECK(nodes[0].neighbors[1] == &nodes[2]);
+    CHECK(nodes[0].neighbors[2] == &nodes[4]);
+  }
+}
+
 TEST_CASE("EdgeRange::invalid")
 {
   EdgeRange range = EdgeRange::invalid();

@@ -15,7 +15,7 @@ class SweepState
 {
 public:
   /// Constructs a sweep state for the given vertices and decomposition type.
-  SweepState(ArrayView<const Point2> vertices, VerticalDecompositionType decomposition_type);
+  SweepState(VerticesView vertices, VerticalDecompositionType decomposition_type);
 
   /// Initializes the sweep state to the state it should have right before the first event is processed.
   ///
@@ -103,7 +103,7 @@ private:
   ActiveEdgesIt insert_location(Point2 vertex);
 
   /// The vertices of the input polygon.
-  ArrayView<const Point2> vertices_;
+  VerticesView vertices_;
 
   /// The type of decomposition we're computing
   VerticalDecompositionType decomposition_type_;
@@ -444,7 +444,7 @@ Edge SweepState::ActiveEdge::edge() const
 
 } // namespace
 
-VerticalDecomposition vertical_decomposition_with_sweep_line_builder(ArrayView<const Point2> vertices,
+VerticalDecomposition vertical_decomposition_with_sweep_line_builder(VerticesView vertices,
                                                                      VerticalDecompositionType decomposition_type)
 {
   SweepState sweep_state(vertices, decomposition_type);

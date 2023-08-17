@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include "dida/array_view.hpp"
 #include "dida/detail/tmp_object_pool.hpp"
 #include "dida/math/fraction.hpp"
@@ -122,6 +124,9 @@ struct Edge
   inline bool operator!=(const Edge b) const;
 };
 
+/// Writes @c edge to the output stream @c s.
+inline std::ostream& operator<<(std::ostream& s, Edge edge);
+
 /// A node in the vertical decomposition graph.
 struct Node
 {
@@ -157,6 +162,12 @@ struct Node
   ///
   /// Each neighbor pointer can be nullptr.
   Node* neighbors[3];
+
+  /// Returns the index of the given neighbor in this node's @c neighbors array.
+  inline uint8_t neighbor_branch_index(const Node* neighbor) const;
+
+  /// Replaces the entry in this node's @c neighbors array which is currently equal to @c neighbor with @c new_neighbor.
+  inline void replace_neighbor(Node* neighbor, Node* new_neighbor);
 };
 
 using NodePool = TmpObjectPool<Node, 64>;
@@ -218,9 +229,23 @@ struct VerticalDecomposition
   Node* rightmost_node;
 };
 
+/// A struct which holds pointers to the nodes at the beginning and end of the vertical decompisition of a polygonal
+/// chain. All other nodes of the chain can be reached by following the @c neighbors pointers in either of these nodes.
+///
+/// A special case is the chain which consists of all the edges of the input polygon. In this case, @c first_node can be
+/// any leaf node of the vertical decomposition and @c last_node is undefined.
 struct ChainDecomposition
 {
+  /// In the general case, this is the node at the first vertex of this chain.
+  ///
+  /// In the special case when this decomposition is the decomposition of the full polygon, then this is some leaf node
+  /// of the vertical decomposition.
   Node* first_node;
+
+  /// In the general case, this is the  node at the last vertex of this chain.
+  ///
+  /// In the special case when this decomposition is the decomposition of the full polygon, then this value is
+  /// undefined.
   Node* last_node;
 };
 
@@ -269,7 +294,7 @@ struct Region
 ///
 /// The order in which the regions are returned is as follows:
 ///
-/// Image that we start at the vertex of the @c first_node passed to the constructor, and then follow the boundary of
+/// Imagine that we start at the vertex of the @c first_node passed to the constructor, and then follow the boundary of
 /// the decomposition's polygon all the way around until we reach the first vertex again. While doing this, we encounter
 /// all regions of the vertical decomposition in some order, the only problem is that most regions are encountered
 /// twice, once while traversing their lower boundary and once while're traversing their upper boundary. The exceptions
