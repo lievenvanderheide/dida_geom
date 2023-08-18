@@ -49,6 +49,40 @@ TEST_CASE("ArrayView<const int> from const std::vector<int>& and access")
   }
 }
 
+TEST_CASE("ArrayView<std::string> from std::array<std::string>& and access")
+{
+  std::array<std::string, 3> array{"foo", "bar", "baz"};
+  ArrayView<std::string> view(array);
+  const ArrayView<std::string> view_const_ref = view;
+  
+  REQUIRE(view.size() == array.size());
+  CHECK(std::equal(view.begin(), view.end(), array.begin(), array.end()));
+  CHECK(std::equal(view_const_ref.begin(), view_const_ref.end(), array.begin(), array.end()));
+
+  for (size_t i = 0; i < view.size(); i++)
+  {
+    CHECK(view[i] == array[i]);
+    CHECK(view_const_ref[i] == array[i]);
+  }
+}
+
+TEST_CASE("ArrayView<const std::string> from const std::array<std::string>& and access")
+{
+  std::array<std::string, 3> array{"foo", "bar", "baz"};
+  ArrayView<const std::string> view(array);
+  const ArrayView<const std::string> view_const_ref = view;
+  
+  REQUIRE(view.size() == array.size());
+  CHECK(std::equal(view.begin(), view.end(), array.begin(), array.end()));
+  CHECK(std::equal(view_const_ref.begin(), view_const_ref.end(), array.begin(), array.end()));
+
+  for (size_t i = 0; i < view.size(); i++)
+  {
+    CHECK(view[i] == array[i]);
+    CHECK(view_const_ref[i] == array[i]);
+  }
+}
+
 TEST_CASE("ArrayView<int> with pointer and size")
 {
   int data[]{650, -199, 651, 869, -391, -31, 750, 550, 63, 126, -4, 817};

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <type_traits>
 #include <vector>
@@ -34,6 +35,19 @@ public:
                                std::is_const_v<T> && std::is_same_v<std::remove_const_t<T>, std::remove_const_t<SrcT>>>>
   inline ArrayView(const std::vector<SrcT>& v);
   ///@}
+
+  ///@{
+  /// Constructs an @c ArrayView into the content of the given @c std::array.
+  ///
+  /// Since the @c ArrayView does not own the data it refers to, it's the responsibility of the user to make sure the @c
+  /// std::array remains alive during the lifetime of the @c ArrayView.
+  template <size_t N>
+  inline ArrayView(std::array<T, N>& v);
+  template <typename SrcT, size_t N,
+            typename = std::enable_if_t<std::is_const_v<T> &&
+                                        std::is_same_v<std::remove_const_t<T>, std::remove_const_t<SrcT>>>>
+  inline ArrayView(const std::array<SrcT, N>& v);
+  ///*}
 
   /// Constructs an @c ArrayView using a pointer and size.
   ///

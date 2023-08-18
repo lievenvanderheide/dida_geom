@@ -2,19 +2,35 @@ namespace dida
 {
 
 template <class T>
-inline ArrayView<T>::ArrayView() : begin_(nullptr), size_(0)
+ArrayView<T>::ArrayView() : begin_(nullptr), size_(0)
 {
 }
 
 template <class T>
-inline ArrayView<T>::ArrayView(std::vector<T>& v) : begin_(v.data()), size_(v.size())
+ArrayView<T>::ArrayView(std::vector<T>& v) : begin_(v.data()), size_(v.size())
 {
 }
 
 template <class T>
 template <typename SrcT, typename>
-inline ArrayView<T>::ArrayView(const std::vector<SrcT>& v) : begin_(v.data()), size_(v.size())
+ArrayView<T>::ArrayView(const std::vector<SrcT>& v) : begin_(v.data()), size_(v.size())
 {
+}
+
+template <class T>
+template <size_t N>
+ArrayView<T>::ArrayView(std::array<T, N>& v)
+{
+  begin_ = v.data();
+  size_ = v.size();
+}
+
+template <class T>
+template <typename SrcT, size_t N, typename>
+ArrayView<T>::ArrayView(const std::array<SrcT, N>& v)
+{
+  begin_ = v.data();
+  size_ = v.size();
 }
 
 template <class T>
