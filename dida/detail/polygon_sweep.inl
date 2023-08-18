@@ -8,7 +8,7 @@ namespace dida::detail::polygon_sweep
 Events::Events(VerticesView vertices)
 {
   events.resize(vertices.size());
-  num_reflex_vertices = 0;
+  num_side_vertices = 0;
 
   VertexIt prev_vertex_it = vertices.end() - 2;
   VertexIt cur_vertex_it = vertices.end() - 1;
@@ -27,7 +27,7 @@ Events::Events(VerticesView vertices)
       ScalarDeg2 orientation = cross(*cur_vertex_it - *prev_vertex_it, *next_vertex_it - *cur_vertex_it);
       events[i].is_concave_corner = orientation < 0;
 
-      num_reflex_vertices++;
+      num_side_vertices++;
     }
 
     incoming_towards_right = outgoing_towards_right;

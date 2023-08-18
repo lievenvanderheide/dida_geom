@@ -10,8 +10,8 @@ bool validate_convex_polygon_vertices(ArrayView<const Point2> vertices)
     return false;
   }
 
-  bool left_reflex_vertex_found = false;
-  bool right_reflex_vertex_found = false;
+  bool left_side_vertex_found = false;
+  bool right_side_vertex_found = false;
 
   Point2 cur_vertex = vertices[vertices.size() - 1];
   Vector2 incoming = cur_vertex - vertices[vertices.size() - 2];
@@ -26,22 +26,22 @@ bool validate_convex_polygon_vertices(ArrayView<const Point2> vertices)
 
     if (incoming.x() <= 0 && outgoing.x() > 0)
     {
-      if (left_reflex_vertex_found)
+      if (left_side_vertex_found)
       {
         return false;
       }
 
-      left_reflex_vertex_found = true;
+      left_side_vertex_found = true;
     }
 
     if (incoming.x() >= 0 && outgoing.x() < 0)
     {
-      if (right_reflex_vertex_found)
+      if (right_side_vertex_found)
       {
         return false;
       }
 
-      right_reflex_vertex_found = true;
+      right_side_vertex_found = true;
     }
 
     cur_vertex = next_vertex;

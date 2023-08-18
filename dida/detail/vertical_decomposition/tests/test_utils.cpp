@@ -461,7 +461,7 @@ void print_nodes(VerticesView vertices, ArrayView<const Node> nodes)
 
 std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertices, NodePool& node_pool)
 {
-  // Find the first convex reflex vertex.
+  // Find the first convex side vertex.
   VertexIt it = vertices.begin();
   for (; it != vertices.end(); ++it)
   {

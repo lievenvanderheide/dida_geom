@@ -23,11 +23,10 @@ struct Event
   /// <tt>lex_less_than(vertex, next_vertex)</tt>.
   bool outgoing_towards_right;
 
-  /// If this event's vertex is a reflex corner (which is the case if <tt>incoming_towards_right !=
-  /// outgoing_towards_right</tt>), then this indicates if it's a concave corner, that is, if the interior angle is
+  /// If this event's vertex is a side vertex (which is the case if <tt>incoming_towards_right != outgoing_towards_right</tt>), then this indicates if it's a concave corner, that is, if the interior angle is
   /// greater than 180 degrees.
   ///
-  /// This value is not set if the event's vertex isn't a reflex corner.
+  /// This value is not set if the event's vertex isn't a side vertex.
   bool is_concave_corner;
 };
 
@@ -37,8 +36,8 @@ struct Events
   /// The sweep line events, sorted by to the order they occur during the sweep.
   std::vector<Event> events;
 
-  /// The number of reflex vertices in the input polygon.
-  size_t num_reflex_vertices;
+  /// The number of side vertices in the input polygon.
+  size_t num_side_vertices;
 
   /// Constructs an @c Events object for a polygon with the given vertices.
   ///

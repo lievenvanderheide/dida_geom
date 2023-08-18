@@ -137,7 +137,7 @@ struct Node
   ///  - If this is @c HorizontalDirection::left then it has one region on its left and 2 regions on its right.
   ///  - If this is @c HorizontalDirection::right then it has one region on its right and 2 regions on its left.
   ///
-  /// For leaf nodes, this indicates the incoming direction at the convex reflex vertex corresponding to this node.
+  /// For leaf nodes, this indicates the incoming direction at the convex side vertex corresponding to this node.
   HorizontalDirection direction;
 
   /// The type of this node.
@@ -348,7 +348,7 @@ private:
   /// The branch index of the current region in @c next_node_. Undefined if <tt>next_node_ == nullptr</tt>.
   uint8_t next_node_branch_index_;
 
-  // The direction of the boundary at traversal point. If the traversal point is a reflex vertex, then this is the
+  // The direction of the boundary at traversal point. If the traversal point is a side vertex, then this is the
   // direction of the outgoing part.
   HorizontalDirection direction_;
 };

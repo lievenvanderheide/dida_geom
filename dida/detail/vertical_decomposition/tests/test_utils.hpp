@@ -105,7 +105,7 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
 void print_nodes(VerticesView vertices, ArrayView<const Node> nodes);
 
 /// Decomposes the polygon formed by @c vertices into a set of chain decompositions, by starting a new chain
-/// decomposition at each convex reflex vertex.
+/// decomposition at each convex side vertex.
 ///
 /// @param vertices The vertices of the polygon.
 /// @param node_pool The pool used to allocate the nodes in the resulting chain decompositions.

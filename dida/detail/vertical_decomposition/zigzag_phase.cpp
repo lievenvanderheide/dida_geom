@@ -39,7 +39,7 @@ struct ZigzagState
   std::vector<ChainDecomposition> chain_decompositions;
 };
 
-/// Initializes a @c ZigzagState. This function finds a convex reflex vertex to start the first chain with, and
+/// Initializes a @c ZigzagState. This function finds a convex side vertex to start the first chain with, and
 /// initializes the @c ZigzagState to the state with this vertex as its active point.
 ///
 ///
@@ -47,7 +47,7 @@ struct ZigzagState
 /// @c ZigzagState will be in a valid state.
 void zigzag_init(ZigzagState& state);
 
-/// Performs 'forward' iterations until the next reflex vertex.
+/// Performs 'forward' iterations until the next side vertex.
 ///
 /// @tparam The direction. This should be equal to @c state.direction.
 /// @param state The @c ZigzagState.
@@ -55,7 +55,7 @@ void zigzag_init(ZigzagState& state);
 template <HorizontalDirection direction>
 bool zigzag_forward(ZigzagState& state);
 
-/// Performs 'reverse' iterations until the next reflex vertex.
+/// Performs 'reverse' iterations until the next side vertex.
 ///
 /// @tparam The direction. This should be equal to @c state.direction.
 /// @param state The @c ZigzagState.
@@ -63,8 +63,8 @@ bool zigzag_forward(ZigzagState& state);
 template <HorizontalDirection direction>
 bool zigzag_reverse(ZigzagState& state);
 
-/// Handles the case when a convex reflex vertex is reached in @c zigzag_forward. When called, @c state.current_edge
-/// should already have advanced to the outgoing edge of the reflex vertex.
+/// Handles the case when a convex side vertex is reached in @c zigzag_forward. When called, @c state.current_edge
+/// should already have advanced to the outgoing edge of the side vertex.
 ///
 /// This function creates a leaf node at the current vertex. The next iterations will be 'reverse' in the direction
 /// opposite to @c direction.
@@ -75,8 +75,8 @@ bool zigzag_reverse(ZigzagState& state);
 template <HorizontalDirection direction>
 bool zigzag_forward_convex_corner(ZigzagState& state);
 
-/// Handles the case when a convex reflex vertex is reached in @c zigzag_reverse. When called, @c state.current_edge
-/// should already have advanced to the outgoing edge of the reflex vertex.
+/// Handles the case when a convex side vertex is reached in @c zigzag_reverse. When called, @c state.current_edge
+/// should already have advanced to the outgoing edge of the side vertex.
 ///
 /// This function ends the current chain and starts a new one. The initial iterations of this new chain will be
 /// 'forward' in the direction opposite to @c direction.
@@ -87,8 +87,8 @@ bool zigzag_forward_convex_corner(ZigzagState& state);
 template <HorizontalDirection direction>
 bool zigzag_reverse_convex_corner(ZigzagState& state, VerticesView::const_iterator prev_vertex_it);
 
-/// Handles the case when a concave reflex vertex is reached in @c zigzag_forward or @c zigzag_reverse. When called,
-/// @c state.current_edge should already have advanced to the outgoing edge of the reflex vertex.
+/// Handles the case when a concave side vertex is reached in @c zigzag_forward or @c zigzag_reverse. When called,
+/// @c state.current_edge should already have advanced to the outgoing edge of the side vertex.
 ///
 /// The function creates a node at the current vertex. The next iterations will be 'forward' in the direction opposite
 /// to @c direction.
@@ -138,7 +138,7 @@ void zigzag_init(ZigzagState& state)
     }
   }
 
-  DIDA_ASSERT(!"No convex reflex vertex found - input not a valid polygon.");
+  DIDA_ASSERT(!"No convex side vertex found - input not a valid polygon.");
 }
 
 template <HorizontalDirection direction>
@@ -398,7 +398,6 @@ void zigzag_concave_corner(ZigzagState& state)
     node->neighbors[1] = state.prev_node;
     node->neighbors[2] = nullptr;
 
-    
     uint8_t prev_node_branch_index = state.forward ? (state.direction == HorizontalDirection::right ? 2 : 1) : 0;
     state.prev_node->neighbors[prev_node_branch_index] = node;
     if (state.next_node)

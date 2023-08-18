@@ -48,11 +48,11 @@ private:
     /// <tt>lex_less_than(vertex, next_vertex)</tt>.
     bool outgoing_towards_right;
 
-    /// If this event's vertex is a reflex corner (which is the case if <tt>incoming_towards_right !=
+    /// If this event's vertex is a side vertex (which is the case if <tt>incoming_towards_right !=
     /// outgoing_towards_right</tt>), then this indicates if it's a concave corner with respect to the region we're
     /// decomposing.
     ///
-    /// This value is not set if the event's vertex isn't a reflex corner.
+    /// This value is not set if the event's vertex isn't a side vertex.
     bool is_concave_corner;
   };
 
@@ -296,8 +296,8 @@ void SweepState::handle_appear_event(const Event& event)
     new_node.neighbors[1] = nullptr;
     new_node.neighbors[2] = nullptr;
 
-    // The current corner is a convex reflex corner. A new region begins between the two outgoing edges, but since this
-    // is a region which starts in a convex reflex corner, it doesn't have a 'region_left_node'.
+    // The current vertex is a convex side vertex. A new region begins between the two outgoing edges, but since this
+    // is a region which starts in a convex corner, it doesn't have a 'region_left_node'.
     //
     // The region above the upper outgoing edge is not part of the region we're decomposing.
     active_edges_.insert(insert_location_it, {{event.vertex_it, lower_right_vertex_it, &new_node, 0},
