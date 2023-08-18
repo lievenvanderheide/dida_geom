@@ -28,6 +28,11 @@ Point2 Segment2::end() const
   return end_;
 }
 
+Vector2 Segment2::direction() const
+{
+  return end_ - start_;
+}
+
 bool Segment2::operator==(const Segment2& b) const
 {
   return start_ == b.start_ && end_ == b.end_;
