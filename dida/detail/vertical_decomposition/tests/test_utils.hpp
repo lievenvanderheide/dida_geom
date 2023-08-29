@@ -7,6 +7,27 @@
 namespace dida::detail::vertical_decomposition
 {
 
+/// A location on the boundary of a polygon.
+struct PolygonLocation
+{
+  /// The index of the edge containing the location.
+  size_t edge_index;
+
+  /// The x-coordinate of the location.
+  ScalarDeg1 x;
+};
+
+/// A function object for comparing polygon locations. The () operator returns true iff the first operand is encountered
+/// before the second operand, when traversing the polygon's boundary while starting from its first vertex.
+struct PolygonLocationLessThan
+{
+  /// The vertices of the polygon.
+  VerticesView vertices;
+
+  /// Compares two @c PolygonLocation instances.
+  bool operator()(const PolygonLocation& a, const PolygonLocation& b) const;
+};
+
 /// A range of the boundary of a polygon.
 ///
 /// The start and end points of the range are considered part of the range (ie. it's a closed set).
@@ -35,11 +56,6 @@ struct PolygonRange
 ///
 /// The special case where the ray hits the boundary on a vertex is resolved by shifting that vertex an infinitisemal
 /// offset to the right.
-///
-/// @param vertices The vertices of the polygon.
-/// @param range The range.
-/// @param ray_origin The point the ray originates from.
-/// @return The edge.
 Edge ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_origin);
 
 /// Casts a ray downwards from @c ray_origin, until it hits an edge in the given polygon range. If it hits an edge from
@@ -48,17 +64,9 @@ Edge ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_or
 ///
 /// The special case where the ray hits the boundary on a vertex is resolved by shifting that vertex an infinitisemal
 /// offset to the left.
-///
-/// @param vertices The vertices of the polygon.
-/// @param range The range.
-/// @param ray_origin The point the ray originates from.
-/// @return The edge.
 Edge ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_origin);
 
 /// Gathers all nodes which are reachable from @c node through @c neighbors connections (this includes @c node itself).
-///
-/// @param node The node.
-/// @return The set of all nodes reachable from @c node.
 std::set<const Node*> gather_nodes(const Node* node);
 
 /// Validates the @c lower_opp_edge and @c upper_opp_edge members of @c node.

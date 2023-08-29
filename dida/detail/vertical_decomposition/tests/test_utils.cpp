@@ -8,6 +8,23 @@
 namespace dida::detail::vertical_decomposition
 {
 
+bool PolygonLocationLessThan::operator()(const PolygonLocation& a, const PolygonLocation& b) const
+{
+  if (a.edge_index != b.edge_index)
+  {
+    return a.edge_index < b.edge_index;
+  }
+
+  if (lex_less_than(vertices[a.edge_index], vertices[succ_modulo(a.edge_index, vertices.size())]))
+  {
+    return a.x < b.x;
+  }
+  else
+  {
+    return a.x > b.x;
+  }
+}
+
 Edge ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_origin)
 {
   YOnEdge result_y = YOnEdge::infinity();

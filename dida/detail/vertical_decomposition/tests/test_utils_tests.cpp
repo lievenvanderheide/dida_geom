@@ -7,6 +7,43 @@
 namespace dida::detail::vertical_decomposition
 {
 
+TEST_CASE("PolygonLocationLessThan")
+{
+  Polygon2 polygon{{2.44, 4.02}, {5.94, 6.58}, {2.58, 7.52}, {-1.32, 5.42}};
+
+  SECTION("Different edges")
+  {
+    PolygonLocation a{1,ScalarDeg1(4.2)};
+    PolygonLocation b{2, ScalarDeg1(-.12)};
+
+    PolygonLocationLessThan less_than{polygon};
+    CHECK(less_than(a, b));
+    CHECK_FALSE(less_than(b, a));
+  }
+
+  SECTION("On same edge, edge towards right")
+  {
+    PolygonLocation a{3, ScalarDeg1(-0.34)};
+    PolygonLocation b{3, ScalarDeg1(1.36)};
+
+    PolygonLocationLessThan less_than{polygon};
+    CHECK(less_than(a, b));
+    CHECK_FALSE(less_than(b, a));
+    CHECK_FALSE(less_than(a, a));
+  }
+
+  SECTION("On same edge, edge towards left")
+  {
+    PolygonLocation a{1, ScalarDeg1(4.92)};
+    PolygonLocation b{1, ScalarDeg1(2.96)};
+
+    PolygonLocationLessThan less_than{polygon};
+    CHECK(less_than(a, b));
+    CHECK_FALSE(less_than(b, a));
+    CHECK_FALSE(less_than(a, a));
+  }
+}
+
 TEST_CASE("ray_cast_up")
 {
   Polygon2 polygon{
