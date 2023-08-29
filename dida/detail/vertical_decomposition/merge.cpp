@@ -452,23 +452,47 @@ void merge_iteration_reverse_branch(MergeState& merge_state, ChainMergeState& p,
   {
     // The branch vertex is invisible from the current edge of 'q'.
 
-    if constexpr (p_is_lower)
+    if (!p.opp_edge.is_valid() && q.edge.on_interior_side(*p.next->vertex_it))
     {
-      p.edge = p.next->lower_opp_edge;
-      p.opp_edge = p.next->upper_opp_edge;
-      p.next->lower_opp_edge = Edge::invalid();
+      p.edge = p_is_lower ? p.next->lower_opp_edge : p.next->upper_opp_edge;
+      advance_edge<direction, !p_is_lower>(merge_state, q, *p.next->vertex_it);
+
+      Node* outer_branch = merge_state.node_pool.alloc();
+      outer_branch->direction = direction;
+      outer_branch->type = NodeType::outer_branch;
+      outer_branch->vertex_it = p.next->vertex_it;
+      outer_branch->lower_opp_edge = p_is_lower ? p.edge : q.edge;
+      outer_branch->upper_opp_edge = p_is_lower ? q.edge : p.edge;
+
+      outer_branch->neighbors[p_is_lower ? 1 : 2] = p.next;
+      p.next->neighbors[p_is_lower ? 1 : 2] = outer_branch;
+
+      p.prev = p.next;
+      p.next = nullptr;
+      p.edge = Edge::invalid();
+
+      push_merged_node(merge_state, outer_branch, 0, p_is_lower ? 2 : 1);
     }
     else
     {
-      p.edge = p.next->upper_opp_edge;
-      p.opp_edge = p.next->lower_opp_edge;
-      p.next->upper_opp_edge = Edge::invalid();
+      if constexpr (p_is_lower)
+      {
+        p.edge = p.next->lower_opp_edge;
+        p.opp_edge = p.next->upper_opp_edge;
+        p.next->lower_opp_edge = Edge::invalid();
+      }
+      else
+      {
+        p.edge = p.next->upper_opp_edge;
+        p.opp_edge = p.next->lower_opp_edge;
+        p.next->upper_opp_edge = Edge::invalid();
+      }
+
+      push_opp_node(p, p.next, p_is_lower ? 1 : 2, 0);
+
+      p.prev = p.next;
+      p.next = p.next->neighbors[0];
     }
-
-    push_opp_node(p, p.next, p_is_lower ? 1 : 2, 0);
-
-    p.prev = p.next;
-    p.next = p.next->neighbors[0];
   }
 }
 
