@@ -48,6 +48,8 @@ add_library(dida
     perturbation.inl
     point2.hpp
     point2.inl
+    polygon2_utils.hpp
+    polygon2_utils.inl
     polygon2.cpp
     polygon2.hpp
     polygon2.inl
