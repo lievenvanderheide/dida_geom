@@ -75,18 +75,31 @@ std::set<const Node*> gather_nodes(const Node* node);
 /// *node->vertex_it in the downward and upward direction respectively. If @c node is a leaf node, then it's checked if
 /// the edges are the two edges adjacent to @c *node->vertex_it.
 ///
-/// @param vertices The vertices of the polygon.
-/// @param range The range of the part of the polygon's boundary we should ray cast against.
-/// @param node The node to validate.
-/// @return True iff validation succeeded.
+/// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about
+/// these errors was logged using @c UNSCOPED_INFO.
 bool validate_node_opp_edges(VerticesView vertices, const PolygonRange& range, const Node* node);
 
+/// The leftmost or rightmost vertices of the lower and upper boundary of a region.
+///
+/// If the node this @c NodeBranchBoundaryVertices is associated with is on the left side of the region, then the two
+/// vertices are the left vertices of the leftmost edges of each boundary which is at least partially adjacent to the
+/// region. Similarly for nodes on the right side of the region.
 struct NodeBranchBoundaryVertices
 {
+  /// The vertex of the lower boundary on the side of the region the node is on, or @c nullptr if the region has no
+  /// lower boundary.
   VertexIt lower_boundary_vertex_it;
+
+  /// The vertex of the upper boundary on the side of the region the node is on, or @c nullptr if the region has no
+  /// upper boundary.
   VertexIt upper_boundary_vertex_it;
 };
 
+/// Returns the @c NodeBranchBoundaryVertices of the branch of @c node with index @c branch_index.
+///
+/// The @c chain_decomposition parameter is used to check whether @c node is the first or last node of its chain, and is
+/// not otherwise used. If @c node can't be the first or last node, then this can be set to
+/// <tt>ChainDecomposition{nullptr, nullptr}</tt>.
 NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecomposition& chain_decomposition,
                                                          const Node* node, uint8_t branch_index);
 
@@ -98,25 +111,21 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
 ///    node is to the right of its neighbor then it's left to the @c validate_node_neigbors call of the neighboring node
 ///    to call @c validate_neighboring_nodes_pair for this pair.
 ///
-/// @param vertices The vertices of the polygon.
-/// @param chain_decomposition The chain decomposition @c node belongs to.
-/// @param node The node.
-/// @return True iff validation succeeded.
+/// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about these
+/// errors was logged using @c UNSCOPED_INFO.
 bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& chain_decomposition, const Node* node);
 
+/// Validates a chain decomposition.
+///
+/// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about these
+/// errors was logged using @c UNSCOPED_INFO.
 bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition);
 
 /// Prints the given nodes as C++.
-///
-/// @param vertices The vertices of the polygon.
-/// @param nodes The nodes to print.
 void print_nodes(VerticesView vertices, ArrayView<const Node> nodes);
 
 /// Decomposes the polygon formed by @c vertices into a set of chain decompositions, by starting a new chain
 /// decomposition at each convex side vertex.
-///
-/// @param vertices The vertices of the polygon.
-/// @param node_pool The pool used to allocate the nodes in the resulting chain decompositions.
 std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertices, NodePool& node_pool);
 
 } // namespace dida::detail::vertical_decomposition
