@@ -452,10 +452,14 @@ void merge_iteration_reverse_branch(MergeState& merge_state, ChainMergeState& p,
   {
     // The branch vertex is invisible from the current edge of 'q'.
 
+    if (!p.opp_edge.is_valid())
+    {
+      advance_edge<direction, !p_is_lower>(merge_state, q, *p.next->vertex_it);
+    }
+
     if (!p.opp_edge.is_valid() && q.edge.on_interior_side(*p.next->vertex_it))
     {
       p.edge = p_is_lower ? p.next->lower_opp_edge : p.next->upper_opp_edge;
-      advance_edge<direction, !p_is_lower>(merge_state, q, *p.next->vertex_it);
 
       Node* outer_branch = merge_state.node_pool.alloc();
       outer_branch->direction = direction;
@@ -502,25 +506,50 @@ void merge_iteration_reverse_outer_branch(MergeState& merge_state, ChainMergeSta
   DIDA_DEBUG_ASSERT(p.next->type == NodeType::outer_branch);
   DIDA_DEBUG_ASSERT(p.next->direction == other_direction(direction));
 
-  Node* node = p.next;
+  advance_edge<direction, !p_is_lower>(merge_state, q, *p.next->vertex_it);
 
-  if constexpr (p_is_lower)
+  if (q.edge.on_interior_side(*p.next->vertex_it))
   {
-    p.edge = node->lower_opp_edge;
-    p.opp_edge = node->upper_opp_edge;
-    p.opp_last = node->neighbors[2];
+    p.edge = p_is_lower ? p.next->lower_opp_edge : p.next->upper_opp_edge;
+
+    Node* outer_branch = merge_state.node_pool.alloc();
+    outer_branch->direction = direction;
+    outer_branch->type = NodeType::outer_branch;
+    outer_branch->vertex_it = p.next->vertex_it;
+    outer_branch->lower_opp_edge = p_is_lower ? p.edge : q.edge;
+    outer_branch->upper_opp_edge = p_is_lower ? q.edge : p.edge;
+
+    outer_branch->neighbors[p_is_lower ? 1 : 2] = p.next;
+    p.next->neighbors[p_is_lower ? 1 : 2] = outer_branch;
+
+    p.prev = p.next;
+    p.next = nullptr;
+    p.edge = Edge::invalid();
+
+    push_merged_node(merge_state, outer_branch, 0, p_is_lower ? 2 : 1);
   }
   else
   {
-    p.edge = node->upper_opp_edge;
-    p.opp_edge = node->lower_opp_edge;
-    p.opp_last = node->neighbors[1];
+    Node* node = p.next;
+
+    if constexpr (p_is_lower)
+    {
+      p.edge = node->lower_opp_edge;
+      p.opp_edge = node->upper_opp_edge;
+      p.opp_last = node->neighbors[2];
+    }
+    else
+    {
+      p.edge = node->upper_opp_edge;
+      p.opp_edge = node->lower_opp_edge;
+      p.opp_last = node->neighbors[1];
+    }
+
+    p.next = node->neighbors[0];
+    p.next->replace_neighbor(node, p.prev);
+
+    p.opp_last_branch_index = p.opp_last->neighbor_branch_index(node);
   }
-
-  p.next = node->neighbors[0];
-  p.next->replace_neighbor(node, p.prev);
-
-  p.opp_last_branch_index = p.opp_last->neighbor_branch_index(node);
 }
 
 template <HorizontalDirection direction, bool p_is_lower>
