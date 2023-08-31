@@ -410,6 +410,31 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
   return true;
 }
 
+bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node)
+{
+  PolygonRange full_range{0, vertices.size(), vertices[0].x(), vertices[0].x()};
+
+  std::set<const Node*> nodes = gather_nodes(root_node);
+
+  for (const Node* node : nodes)
+  {
+    if (!validate_node_opp_edges(vertices, full_range, node))
+    {
+      return false;
+    }
+  }
+
+  for (const Node* node : nodes)
+  {
+    if (!validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, node))
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void print_nodes(VerticesView vertices, ArrayView<const Node> nodes)
 {
   std::cout << "std::vector<Node> nodes(" << nodes.size() << ");" << std::endl;

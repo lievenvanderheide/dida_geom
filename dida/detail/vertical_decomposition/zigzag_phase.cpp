@@ -270,6 +270,26 @@ bool zigzag_reverse_convex_corner(ZigzagState& state)
 {
   // The zigzag algorithm can't handle convex corners at the end of a reverse edge, so we have to start a new chain.
 
+  if (state.current_edge.start_vertex_it == state.first_vertex_it && state.chain_decompositions.size() == 1)
+  {
+    // We've reached the first vertex while still in our first chain, so it's a closed chain.
+
+    DIDA_DEBUG_ASSERT(state.next_node == state.chain_decompositions[0].first_node);
+
+    // Turn the first node into a leaf node.
+    Node* first_node = state.next_node;
+    first_node->direction = direction;
+    first_node->type = NodeType::leaf;
+
+    Edge incoming_edge{prev_cyclic(state.vertices, first_node->vertex_it), first_node->vertex_it};
+    Edge outgoing_edge{first_node->vertex_it, next_cyclic(state.vertices, first_node->vertex_it)};
+    first_node->lower_opp_edge = direction == HorizontalDirection::right ? incoming_edge : outgoing_edge;
+    first_node->upper_opp_edge = direction == HorizontalDirection::right ? outgoing_edge : incoming_edge;
+
+    first_node->neighbors[0] = state.prev_node;
+    return false;
+  }
+
   Node* old_chain_last_node = state.node_pool->alloc();
   old_chain_last_node->direction = other_direction(direction);
   old_chain_last_node->type = NodeType::branch;
