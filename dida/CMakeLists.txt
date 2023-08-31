@@ -13,10 +13,12 @@ add_library(dida
     detail/vertical_decomposition/merge.hpp
     detail/vertical_decomposition/sweep_line_builder.cpp
     detail/vertical_decomposition/sweep_line_builder.hpp
-    detail/vertical_decomposition/zigzag_phase.cpp
-    detail/vertical_decomposition/zigzag_phase.hpp
+    detail/vertical_decomposition/triangulate.cpp
+    detail/vertical_decomposition/triangulate.hpp
     detail/vertical_decomposition/vertical_decomposition.hpp
     detail/vertical_decomposition/vertical_decomposition.inl
+    detail/vertical_decomposition/zigzag_phase.cpp
+    detail/vertical_decomposition/zigzag_phase.hpp
     detail/convex_polygons_intersection.hpp
     detail/convex_polygons_intersection.inl
     detail/polygon_sweep.hpp

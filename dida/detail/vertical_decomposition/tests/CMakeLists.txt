@@ -9,6 +9,7 @@ add_executable(dida_detail_vertical_decomposition_tests
     test_utils_tests.cpp
     test_utils.cpp
     test_utils.hpp
+    triangulate_tests.cpp
     vertical_decomposition_tests.cpp
     zigzag_phase_tests.cpp)
 
