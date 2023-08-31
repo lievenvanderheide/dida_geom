@@ -111,15 +111,24 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
 ///    node is to the right of its neighbor then it's left to the @c validate_node_neigbors call of the neighboring node
 ///    to call @c validate_neighboring_nodes_pair for this pair.
 ///
-/// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about these
-/// errors was logged using @c UNSCOPED_INFO.
+/// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about
+/// these errors was logged using @c UNSCOPED_INFO.
 bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& chain_decomposition, const Node* node);
 
 /// Validates a chain decomposition.
 ///
-/// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about these
-/// errors was logged using @c UNSCOPED_INFO.
+/// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about
+/// these errors was logged using @c UNSCOPED_INFO.
 bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition);
+
+/// Validates the vertical decomposition of a polygon.
+///
+/// @c root_node should be some node of the vertical decomposition. All other nodes are found by following the @c
+/// neighbors pointers.
+///
+/// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about
+/// these errors was logged using @c UNSCOPED_INFO.
+bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node);
 
 /// Prints the given nodes as C++.
 void print_nodes(VerticesView vertices, ArrayView<const Node> nodes);

@@ -13,7 +13,7 @@ TEST_CASE("PolygonLocationLessThan")
 
   SECTION("Different edges")
   {
-    PolygonLocation a{1,ScalarDeg1(4.2)};
+    PolygonLocation a{1, ScalarDeg1(4.2)};
     PolygonLocation b{2, ScalarDeg1(-.12)};
 
     PolygonLocationLessThan less_than{polygon};
