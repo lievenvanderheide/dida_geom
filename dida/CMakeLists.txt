@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include_directories(..)
 
 add_library(dida
+    detail/vertical_decomposition/divide_and_conquer_builder.cpp
+    detail/vertical_decomposition/divide_and_conquer_builder.hpp
     detail/vertical_decomposition/merge.cpp
     detail/vertical_decomposition/merge.hpp
     detail/vertical_decomposition/sweep_line_builder.cpp
