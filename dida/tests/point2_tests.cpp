@@ -2,6 +2,7 @@
 
 #include <catch2/catch.hpp>
 #include <sstream>
+#include <unordered_set>
 
 namespace dida
 {
@@ -127,6 +128,22 @@ TEST_CASE("Point2 printing")
   std::stringstream s;
   s << Point2(4021, -9580);
   CHECK(s.str() == "{4021, -9580}");
+}
+
+TEST_CASE("Point2 hashing")
+{
+  std::unordered_set<Point2> set;
+
+  Point2 a{-1.06, 3.04};
+  Point2 b{4.40, 5.52};
+  Point2 c{4.64, 0.78};
+
+  set.insert(a);
+  set.insert(b);
+
+  CHECK(set.find(a) != set.end());
+  CHECK(set.find(b) != set.end());
+  CHECK(set.find(c) == set.end());
 }
 
 } // namespace dida

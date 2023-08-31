@@ -101,4 +101,12 @@ inline std::ostream& operator<<(std::ostream& s, Point2 v);
 
 } // namespace dida
 
+/// Adds @c std::hash support to @c dida::Point2.
+template <>
+struct std::hash<dida::Point2>
+{
+  /// Hashes @c point.
+  inline size_t operator()(dida::Point2 point) const noexcept;
+};
+
 #include "dida/point2.inl"

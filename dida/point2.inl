@@ -69,3 +69,8 @@ inline std::ostream& operator<<(std::ostream& s, Point2 v)
 }
 
 } // namespace dida
+
+size_t std::hash<dida::Point2>::operator()(dida::Point2 point) const noexcept
+{
+  return static_cast<size_t>(point.x().numerator()) + 31 * static_cast<size_t>(point.y().numerator());
+}
