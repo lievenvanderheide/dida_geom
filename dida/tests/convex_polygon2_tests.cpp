@@ -1,6 +1,7 @@
 #include "dida/convex_polygon2.hpp"
 
 #include <catch2/catch.hpp>
+#include <sstream>
 
 namespace dida
 {
@@ -186,6 +187,15 @@ TEST_CASE("validate_convex_polygon_vertices")
   {
     test({{3, 1}, {3, -3}, {3, 6}, {3, 4}}, false);
   }
+}
+
+TEST_CASE("ConvexPolygonView2 printing")
+{
+  ConvexPolygon2 polygon{{-3, 1}, {0, 1}, {3, 7}, {-3, 8}};
+
+  std::stringstream s;
+  s << polygon;
+  CHECK(s.str() == "{{-3, 1}, {0, 1}, {3, 7}, {-3, 8}}");
 }
 
 } // namespace dida

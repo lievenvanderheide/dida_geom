@@ -81,6 +81,11 @@ PolygonView2 PolygonView2::unsafe_from_vertices(ArrayView<const Point2> vertices
   return result;
 }
 
+PolygonView2::operator ArrayView<const Point2>() const
+{
+  return vertices_;
+}
+
 size_t PolygonView2::size() const
 {
   return vertices_.size();

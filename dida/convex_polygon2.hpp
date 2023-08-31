@@ -166,6 +166,9 @@ private:
 /// @return True iff @c vertices for a valid convex polygon.
 bool validate_convex_polygon_vertices(ArrayView<const Point2> vertices);
 
+/// Writes @c polygon to the output stream @c s.
+std::ostream& operator<<(std::ostream& s, ConvexPolygonView2 polygon);
+
 } // namespace dida
 
 #include "dida/convex_polygon2.inl"

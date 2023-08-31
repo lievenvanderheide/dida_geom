@@ -122,6 +122,17 @@ TEST_CASE("PolygonView2::unsafe_from_vertices and access")
   CHECK(std::equal(view.begin(), view.end(), vertices.begin(), vertices.end()));
 }
 
+TEST_CASE("PolygonView2::operator ArrayView<const Point2>")
+{
+  std::vector<Point2> vertices{{-2.24, 1.94}, {0.08, 4.58}, {3.60, 1.92}, {3.50, 8.72},
+                               {-1.56, 7.60}, {1.84, 6.92}, {-3.10, 4.92}};
+  PolygonView2 polygon_view(vertices);
+  ArrayView<const Point2> array_view(polygon_view);
+
+  CHECK(polygon_view.size() == array_view.size());
+  CHECK(std::equal(polygon_view.begin(), polygon_view.end(), array_view.begin(), array_view.end()));
+}
+
 TEST_CASE("validate_polygon_vertices")
 {
   SECTION("Valid general")
