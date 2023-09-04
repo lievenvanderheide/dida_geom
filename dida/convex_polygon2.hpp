@@ -45,6 +45,12 @@ public:
   /// @return The convex polygon.
   static ConvexPolygon2T unsafe_from_vertices(Storage vertices);
 
+  /// Tries constructing a @c ConvexPolygon2T with the given vertices.
+  ///
+  /// If the vertices form a valid polygon (according to @c validate_polygon_vertices), then the @c ConvexPolygon2T is
+  /// returned, @c std::nullopt otherwise.
+  static std::optional<ConvexPolygon2T> try_construct_from_vertices(Storage vertices);
+
   /// Returns a @c ConvexPolygonView2 into this @c ConvexPolygon2T.
   ///
   /// Since the @c ConvexPolygonView2 doesn't own the data it refers to, it's the responsibility of the user to make

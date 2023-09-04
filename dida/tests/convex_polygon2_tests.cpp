@@ -48,6 +48,33 @@ TEST_CASE("ConvexPolygon2T::unsafe_from_vertices and access")
   CHECK(std::equal(polygon.begin(), polygon.end(), vertices.begin(), vertices.end()));
 }
 
+TEST_CASE("ConvexPolygon2T::try_construct_from_vertices and access")
+{
+  SECTION("Valid")
+  {
+    std::vector<Point2> vertices{{0.22, 3.44}, {4.06, 6.26}, {-2.12, 9.54}, {-6.52, 5.54}};
+
+    std::optional<ConvexPolygon2> polygon = ConvexPolygon2::try_construct_from_vertices(vertices);
+
+    REQUIRE(polygon);
+    REQUIRE(polygon->size() == vertices.size());
+    for (size_t i = 0; i < polygon->size(); i++)
+    {
+      CHECK((*polygon)[i] == vertices[i]);
+    }
+
+    CHECK(std::equal(polygon->begin(), polygon->end(), vertices.begin(), vertices.end()));
+  }
+
+  SECTION("Invalid")
+  {
+    std::vector<Point2> vertices{{5.24, 2.18}, {-0.18, 8.00}, {-3.78, 2.24}, {-0.78, 4.76}};
+
+    std::optional<ConvexPolygon2> polygon = ConvexPolygon2::try_construct_from_vertices(vertices);
+    CHECK(!polygon);
+  }
+}
+
 TEST_CASE("ConvexPolygon2T::operator ConvexPolygonView2")
 {
   ConvexPolygon2 polygon{{-2.72, 0.42}, {-5.2, -2.58}, {1.3, -3.76}, {3.78, 2.12}, {2.76, 2.92}};

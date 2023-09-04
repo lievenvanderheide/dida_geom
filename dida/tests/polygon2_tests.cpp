@@ -48,6 +48,35 @@ TEST_CASE("Polygon2T::unsafe_from_vertices and access")
   CHECK(std::equal(polygon.begin(), polygon.end(), vertices.begin(), vertices.end()));
 }
 
+TEST_CASE("Polygon2T::try_construct_from_vertices and access")
+{
+  SECTION("Valid")
+  {
+    std::vector<Point2> vertices{
+        {-2.74, 2.04}, {2.66, 3.28}, {4.26, 6.08}, {1.56, 8.64}, {-2.22, 8.86}, {-0.24, 6.78}, {-0.16, 4.64},
+    };
+
+    std::optional<Polygon2> polygon = Polygon2::try_construct_from_vertices(vertices);
+
+    REQUIRE(polygon);
+    REQUIRE(polygon->size() == vertices.size());
+    for (size_t i = 0; i < polygon->size(); i++)
+    {
+      CHECK((*polygon)[i] == vertices[i]);
+    }
+
+    CHECK(std::equal(polygon->begin(), polygon->end(), vertices.begin(), vertices.end()));
+  }
+
+  SECTION("Invalid")
+  {
+    std::vector<Point2> vertices{{-3.84, 0.34}, {7.40, 3.64}, {-3.84, 6.98}, {4.52, 7.28}};
+
+    std::optional<Polygon2> polygon = Polygon2::try_construct_from_vertices(vertices);
+    CHECK(!polygon);
+  }
+}
+
 TEST_CASE("Polygon2T::operator PolygonView2")
 {
   Polygon2 polygon{{-2.72, 0.42}, {-5.2, -2.58}, {1.3, -3.76}, {3.78, 2.12}, {2.76, 2.92}};

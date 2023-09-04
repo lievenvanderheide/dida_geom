@@ -65,11 +65,9 @@ add_library(dida
 
 target_include_directories(dida PUBLIC ..)
 
-if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    add_subdirectory(benchmarks)
-    add_subdirectory(detail/tests)
-    add_subdirectory(detail/vertical_decomposition/tests)
-    add_subdirectory(math/tests)
-    add_subdirectory(tests)
-    add_subdirectory(viz)
-endif()
+add_subdirectory(benchmarks)
+add_subdirectory(detail/tests)
+add_subdirectory(detail/vertical_decomposition/tests)
+add_subdirectory(math/tests)
+add_subdirectory(tests)
+add_subdirectory(viz)

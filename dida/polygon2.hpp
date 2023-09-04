@@ -40,6 +40,12 @@ public:
   /// validate_polygon_vertices for the conditions for a valid polygon.
   static Polygon2T unsafe_from_vertices(Storage vertices);
 
+  /// Tries constructing a @c Polygon2T with the given vertices.
+  ///
+  /// If the vertices form a valid polygon (according to @c validate_polygon_vertices), then the @c Polygon2T is
+  /// returned, @c std::nullopt.
+  static std::optional<Polygon2T> try_construct_from_vertices(Storage vertices);
+
   /// Returns a @c PolygonView2 into this @c Polygon2T.
   ///
   /// Since the @c PolygonView2 doesn't own the data it refers to, it's the responsibility of the user to make sure that

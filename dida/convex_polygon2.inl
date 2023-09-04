@@ -26,6 +26,19 @@ ConvexPolygon2T<Storage> ConvexPolygon2T<Storage>::unsafe_from_vertices(Storage 
 }
 
 template <class Storage>
+std::optional<ConvexPolygon2T<Storage>> ConvexPolygon2T<Storage>::try_construct_from_vertices(Storage vertices)
+{
+  if (!validate_convex_polygon_vertices(vertices))
+  {
+    return std::nullopt;
+  }
+
+  ConvexPolygon2T result;
+  result.vertices_ = std::move(vertices);
+  return result;
+}
+
+template <class Storage>
 ConvexPolygon2T<Storage>::operator ConvexPolygonView2() const
 {
   return ConvexPolygonView2::unsafe_from_vertices(vertices_);

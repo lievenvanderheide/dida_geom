@@ -26,6 +26,19 @@ Polygon2T<Storage> Polygon2T<Storage>::unsafe_from_vertices(Storage vertices)
 }
 
 template <class Storage>
+std::optional<Polygon2T<Storage>> Polygon2T<Storage>::try_construct_from_vertices(Storage vertices)
+{
+  if (!validate_polygon_vertices(vertices))
+  {
+    return std::nullopt;
+  }
+
+  Polygon2T result;
+  result.vertices_ = std::move(vertices);
+  return result;
+}
+
+template <class Storage>
 Polygon2T<Storage>::operator PolygonView2() const
 {
   return PolygonView2::unsafe_from_vertices(vertices_);
