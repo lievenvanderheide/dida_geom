@@ -1,10 +1,4 @@
 cmake_minimum_required(VERSION 3.16.3)
-project(dida)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-include_directories(..)
 
 add_library(dida
     detail/vertical_decomposition/divide_and_conquer_builder.cpp
@@ -69,9 +63,13 @@ add_library(dida
     vector2.hpp
     vector2.inl)
 
-add_subdirectory(benchmarks)
-add_subdirectory(detail/tests)
-add_subdirectory(detail/vertical_decomposition/tests)
-add_subdirectory(math/tests)
-add_subdirectory(tests)
-add_subdirectory(viz)
+target_include_directories(dida PUBLIC ..)
+
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+    add_subdirectory(benchmarks)
+    add_subdirectory(detail/tests)
+    add_subdirectory(detail/vertical_decomposition/tests)
+    add_subdirectory(math/tests)
+    add_subdirectory(tests)
+    add_subdirectory(viz)
+endif()
