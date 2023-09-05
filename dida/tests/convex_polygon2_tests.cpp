@@ -225,4 +225,13 @@ TEST_CASE("ConvexPolygonView2 printing")
   CHECK(s.str() == "{{-3, 1}, {0, 1}, {3, 7}, {-3, 8}}");
 }
 
+TEST_CASE("ConvexPolygonView2 to PolygonView2 conversion")
+{
+  ConvexPolygon2 polygon{{-3, 1}, {0, 1}, {3, 7}, {-3, 8}};
+  ConvexPolygonView2 convex_polygon_view = polygon;
+  PolygonView2 polygon_view = convex_polygon_view;
+
+  CHECK(std::equal(convex_polygon_view.begin(), convex_polygon_view.end(), polygon_view.begin(), polygon_view.end()));
+}
+
 } // namespace dida

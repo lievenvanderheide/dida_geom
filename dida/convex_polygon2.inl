@@ -80,9 +80,11 @@ Storage& ConvexPolygon2T<Storage>::unsafe_mutable_vertices()
   return vertices_;
 }
 
-ConvexPolygonView2::ConvexPolygonView2(ArrayView<const Point2> vertices) : vertices_(vertices)
+ConvexPolygonView2::ConvexPolygonView2(ArrayView<const Point2> vertices)
 {
   DIDA_ASSERT(validate_convex_polygon_vertices(vertices));
+
+  vertices_ = vertices;
 }
 
 ConvexPolygonView2 ConvexPolygonView2::unsafe_from_vertices(ArrayView<const Point2> vertices)
@@ -92,26 +94,6 @@ ConvexPolygonView2 ConvexPolygonView2::unsafe_from_vertices(ArrayView<const Poin
   ConvexPolygonView2 result;
   result.vertices_ = vertices;
   return result;
-}
-
-size_t ConvexPolygonView2::size() const
-{
-  return vertices_.size();
-}
-
-Point2 ConvexPolygonView2::operator[](size_t index) const
-{
-  return vertices_[index];
-}
-
-ConvexPolygonView2::const_iterator ConvexPolygonView2::begin() const
-{
-  return vertices_.begin();
-}
-
-ConvexPolygonView2::const_iterator ConvexPolygonView2::end() const
-{
-  return vertices_.end();
 }
 
 } // namespace dida

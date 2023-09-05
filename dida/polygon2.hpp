@@ -82,9 +82,13 @@ private:
 
 using Polygon2 = Polygon2T<std::vector<Point2>>;
 
+class ConvexPolygonView2;
+
 /// A view into a polygon.
 class PolygonView2
 {
+  friend class ConvexPolygonView2;
+
 public:
   using const_iterator = ArrayView<Point2>::const_iterator;
 

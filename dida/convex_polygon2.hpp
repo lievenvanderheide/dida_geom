@@ -6,6 +6,7 @@
 
 #include "dida/array_view.hpp"
 #include "dida/point2.hpp"
+#include "dida/polygon2.hpp"
 
 namespace dida
 {
@@ -104,11 +105,9 @@ using ConvexQuad2 = ConvexPolygon2T<std::array<Point2, 4U>>;
 using ConvexPolygon2 = ConvexPolygon2T<std::vector<Point2>>;
 
 /// A view into a convex polygon.
-class ConvexPolygonView2
+class ConvexPolygonView2 : public PolygonView2
 {
 public:
-  using const_iterator = ArrayView<Point2>::const_iterator;
-
   /// Constructs a @c ConvexPolygonView2 with the given vertices.
   ///
   /// It's checked using @c DIDA_ASSERT that the vertices form a valid convex polygon. See @c
@@ -133,30 +132,8 @@ public:
   /// @return The convex polygon.
   static inline ConvexPolygonView2 unsafe_from_vertices(ArrayView<const Point2> vertices);
 
-  /// Returns the number of vertices of this polygon.
-  ///
-  /// @return The number of vertices.
-  inline size_t size() const;
-
-  /// Returns the vertex at @c index.
-  ///
-  /// @returns The vertex.
-  inline Point2 operator[](size_t index) const;
-
-  /// Returns an iterator to the beginning of the vertex list.
-  ///
-  /// @return The iterator.
-  inline const_iterator begin() const;
-
-  /// Returns an iterator to the end of the vertex list.
-  ///
-  /// @return The iterator.
-  inline const_iterator end() const;
-
 private:
   ConvexPolygonView2() = default;
-
-  ArrayView<const Point2> vertices_;
 };
 
 /// Validate whether the the vertices in @c vertices form a valid convex polygon.
@@ -171,9 +148,6 @@ private:
 /// @param vertices The vertices to validate.
 /// @return True iff @c vertices for a valid convex polygon.
 bool validate_convex_polygon_vertices(ArrayView<const Point2> vertices);
-
-/// Writes @c polygon to the output stream @c s.
-std::ostream& operator<<(std::ostream& s, ConvexPolygonView2 polygon);
 
 } // namespace dida
 

@@ -53,15 +53,4 @@ bool validate_convex_polygon_vertices(ArrayView<const Point2> vertices)
   return true;
 }
 
-std::ostream& operator<<(std::ostream& s, ConvexPolygonView2 polygon)
-{
-  s << "{";
-  for (size_t i = 0; i < polygon.size() - 1; i++)
-  {
-    s << polygon[i] << ", ";
-  }
-  s << polygon[polygon.size() - 1] << "}";
-  return s;
-}
-
 } // namespace dida
