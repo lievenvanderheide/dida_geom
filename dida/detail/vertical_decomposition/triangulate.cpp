@@ -382,11 +382,9 @@ std::vector<Triangle2> triangulate(VerticesView vertices, const Node* root_node)
   const Node* prev = root_node->neighbors[0];
 
   // This loop iterates over the nodes of the vertical decomposition, in the order they'd be encountered by a point
-  // traversing the boundary of the polygon in the counter clockwise direction (so this means that all non-leaf nodes
-  // are encountered twice).
-  //
-  // During this traversal, if the current location is a location where a new monotone channel starts, then the relevant
-  // function to triangulate the channel is called.
+  // traversing the boundary of the polygon in the counter clockwise direction. During this traversal, if the current
+  // location is a location where a new monotone channel starts, then the relevant function to triangulate the channel
+  // is called.
   do
   {
     if (node->type == NodeType::leaf)

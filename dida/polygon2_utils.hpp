@@ -1,5 +1,6 @@
 #pragma once
 
+#include "dida/convex_polygon2.hpp"
 #include "dida/polygon2.hpp"
 
 namespace dida
@@ -14,6 +15,11 @@ void flip_horizontally(Polygon2T<Storage>& polygon);
 /// to account for the inverted winding.
 template <class Storage>
 void flip_vertically(Polygon2T<Storage>& polygon);
+
+bool geometrically_equal(PolygonView2 a, PolygonView2 b);
+
+/// Triangulates the given polygon.
+std::vector<Triangle2> triangulate(PolygonView2 polygon);
 
 } // namespace dida
 
