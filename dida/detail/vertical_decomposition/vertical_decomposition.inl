@@ -228,23 +228,13 @@ RegionIterator::RegionIterator(const Node* first_node)
   if (first_node->type == NodeType::leaf)
   {
     cur_node_ = first_node_;
-    cur_node_branch_index_ = 0;
-
     next_node_ = first_node_->neighbors[0];
-    next_node_branch_index_ =
-        next_node_->neighbors[0] == cur_node_ ? 0 : (next_node_->neighbors[1] == cur_node_ ? 1 : 2);
-    direction_ =
-        first_node_->direction == HorizontalDirection::left ? HorizontalDirection::right : HorizontalDirection::left;
+    direction_ = other_direction(first_node_->direction);
   }
   else
   {
     cur_node_ = first_node;
-    cur_node_branch_index_ = first_node->direction == HorizontalDirection::left ? 1 : 2;
-
-    next_node_ = first_node->neighbors[cur_node_branch_index_];
-    next_node_branch_index_ =
-        next_node_->neighbors[0] == cur_node_ ? 0 : (next_node_->neighbors[1] == cur_node_ ? 1 : 2);
-
+    next_node_ = first_node->neighbors[first_node->direction == HorizontalDirection::left ? 1 : 2];
     direction_ = first_node->direction;
   }
 
@@ -266,50 +256,37 @@ bool RegionIterator::move_next()
       }
 
       std::swap(next_node_, cur_node_);
-      std::swap(next_node_branch_index_, cur_node_branch_index_);
-      direction_ = direction_ == HorizontalDirection::left ? HorizontalDirection::right : HorizontalDirection::left;
-    }
-    else if (next_node_->direction == direction_)
-    {
-      // The direction of 'next_node_' is equal to the current direction.
-
-      cur_node_ = next_node_;
-
-      cur_node_branch_index_ = direction_ == HorizontalDirection::right ? 1 : 2;
-      next_node_ = cur_node_->neighbors[cur_node_branch_index_];
-      next_node_branch_index_ =
-          next_node_->neighbors[0] == cur_node_ ? 0 : (next_node_->neighbors[1] == cur_node_ ? 1 : 2);
+      direction_ = other_direction(direction_);
     }
     else
     {
-      // The direction of 'next_node_' is opposite to the current direction.
+      DIDA_DEBUG_ASSERT(next_node_->type == NodeType::branch);
 
-      if (next_node_branch_index_ == (direction_ == HorizontalDirection::left ? 1 : 2))
+      if (next_node_ == first_node_ &&
+          cur_node_ == next_node_->neighbors[direction_ == HorizontalDirection::left ? 1 : 2])
       {
-        // We're turning around, entering the branch above/below the incoming branch.
+        return false;
+      }
 
-        if (next_node_ == first_node_)
-        {
-          return false;
-        }
-
+      if (cur_node_ == next_node_->neighbors[0])
+      {
         cur_node_ = next_node_;
-        cur_node_branch_index_ = direction_ == HorizontalDirection::left ? 2 : 1;
-        next_node_ = cur_node_->neighbors[cur_node_branch_index_];
-        direction_ = direction_ == HorizontalDirection::left ? HorizontalDirection::right : HorizontalDirection::left;
+        next_node_ = next_node_->neighbors[direction_ == HorizontalDirection::left ? 2 : 1];
+      }
+      else if (cur_node_ == next_node_->neighbors[1])
+      {
+        cur_node_ = next_node_;
+        next_node_ = next_node_->neighbors[direction_ == HorizontalDirection::left ? 2 : 0];
+        direction_ = HorizontalDirection::right;
       }
       else
       {
-        // We're continuing in the same direction, entering the region between next_node_->lower_opp_edge and
-        // node_->upper_opp_edge.
+        DIDA_DEBUG_ASSERT(cur_node_ == next_node_->neighbors[2]);
 
         cur_node_ = next_node_;
-        next_node_ = cur_node_->neighbors[0];
-        cur_node_branch_index_ = 0;
+        next_node_ = next_node_->neighbors[direction_ == HorizontalDirection::left ? 0 : 1];
+        direction_ = HorizontalDirection::left;
       }
-
-      next_node_branch_index_ =
-          next_node_->neighbors[0] == cur_node_ ? 0 : (next_node_->neighbors[1] == cur_node_ ? 1 : 2);
     }
   } while (should_skip_current_region());
 
@@ -320,11 +297,13 @@ Region RegionIterator::region() const
 {
   if (direction_ == HorizontalDirection::left)
   {
-    return Region{next_node_, cur_node_, next_node_branch_index_, cur_node_branch_index_};
+    return Region{next_node_, cur_node_, next_node_->neighbor_branch_index(cur_node_),
+                  cur_node_->neighbor_branch_index(next_node_)};
   }
   else
   {
-    return Region{cur_node_, next_node_, cur_node_branch_index_, next_node_branch_index_};
+    return Region{cur_node_, next_node_, cur_node_->neighbor_branch_index(next_node_),
+                  next_node_->neighbor_branch_index(cur_node_)};
   }
 }
 

@@ -335,18 +335,12 @@ private:
   /// The first node, passed to the @c RegionIterator constructor.
   const Node* first_node_;
 
-  /// The node where the current traversal point is at (that is, the current traversal point is either
-  /// cur_node_->vertex_it, or one of the two points at the end of the vertical extension of cur_node_->vertex_it.
+  /// The node where the current traversal point is at, that is, the current traversal point is either this node's
+  /// vertex, or the contact point on one of the two opposite edges of the node.
   const Node* cur_node_;
 
-  /// The next node which will be reached, or @c nullptr if we're currently in a leaf region.
+  /// The next node.
   const Node* next_node_;
-
-  /// The branch index of the current region in @c cur_node_.
-  uint8_t cur_node_branch_index_;
-
-  /// The branch index of the current region in @c next_node_. Undefined if <tt>next_node_ == nullptr</tt>.
-  uint8_t next_node_branch_index_;
 
   // The direction of the boundary at traversal point. If the traversal point is a side vertex, then this is the
   // direction of the outgoing part.
