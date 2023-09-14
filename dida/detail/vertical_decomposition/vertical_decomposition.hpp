@@ -253,17 +253,11 @@ struct ChainDecomposition
 /// corresponding to two nodes, and bounded above and below by two x-monotone edge ranges of the input polygon.
 struct Region
 {
-  /// The vertical decomposition node on the left side of this region.
+  /// The node on the left side of this region.
   const Node* left_node;
 
-  /// The vertical decomposition node on the right side of this region.
+  /// The node on the right side of this region.
   const Node* right_node;
-
-  /// The index of the branch of @c left_node which connects to this region.
-  uint8_t left_node_branch_index;
-
-  /// The index of the branch of @c right_node which connects to this region.
-  uint8_t right_node_branch_index;
 
   /// Compares two @c Region instances for equality.
   ///

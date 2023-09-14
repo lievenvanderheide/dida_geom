@@ -173,8 +173,7 @@ Edge edge_for_point_with_monotone_edge_range(VerticesView vertices, EdgeRange ed
 
 bool Region::operator==(const Region& b) const
 {
-  return left_node == b.left_node && right_node == b.right_node && left_node_branch_index == b.left_node_branch_index &&
-         right_node_branch_index == b.right_node_branch_index;
+  return left_node == b.left_node && right_node == b.right_node;
 }
 
 EdgeRange Region::lower_boundary(VerticalDecompositionType vd_type) const
@@ -185,16 +184,16 @@ EdgeRange Region::lower_boundary(VerticalDecompositionType vd_type) const
   {
     // In an interior decomposition, lower boundaries go towards the right.
     return EdgeRange{
-        left_node_branch_index == 2 ? left_node->vertex_it : left_node->lower_opp_edge.start_vertex_it,
-        right_node_branch_index == 2 ? right_node->vertex_it : right_node->lower_opp_edge.end_vertex_it,
+        left_node->neighbors[2] == right_node ? left_node->vertex_it : left_node->lower_opp_edge.start_vertex_it,
+        right_node->neighbors[2] == left_node ? right_node->vertex_it : right_node->lower_opp_edge.end_vertex_it,
     };
   }
   else
   {
     // In an exterior decomposition, lower boundaries go towards the left.
     return EdgeRange{
-        right_node_branch_index == 2 ? right_node->vertex_it : right_node->lower_opp_edge.start_vertex_it,
-        left_node_branch_index == 2 ? left_node->vertex_it : left_node->lower_opp_edge.end_vertex_it,
+        right_node->neighbors[2] == left_node ? right_node->vertex_it : right_node->lower_opp_edge.start_vertex_it,
+        left_node->neighbors[2] == right_node ? left_node->vertex_it : left_node->lower_opp_edge.end_vertex_it,
     };
   }
 }
@@ -207,16 +206,16 @@ EdgeRange Region::upper_boundary(VerticalDecompositionType vd_type) const
   {
     // In an interior decomposition, upper boundaries go towards the left.
     return EdgeRange{
-        right_node_branch_index == 1 ? right_node->vertex_it : right_node->upper_opp_edge.start_vertex_it,
-        left_node_branch_index == 1 ? left_node->vertex_it : left_node->upper_opp_edge.end_vertex_it,
+        right_node->neighbors[1] == left_node ? right_node->vertex_it : right_node->upper_opp_edge.start_vertex_it,
+        left_node->neighbors[1] == right_node ? left_node->vertex_it : left_node->upper_opp_edge.end_vertex_it,
     };
   }
   else
   {
     // In an exterior decomposition, upper boundaries go towards the right.
     return EdgeRange{
-        left_node_branch_index == 1 ? left_node->vertex_it : left_node->upper_opp_edge.start_vertex_it,
-        right_node_branch_index == 1 ? right_node->vertex_it : right_node->upper_opp_edge.end_vertex_it,
+        left_node->neighbors[1] == right_node ? left_node->vertex_it : left_node->upper_opp_edge.start_vertex_it,
+        right_node->neighbors[1] == left_node ? right_node->vertex_it : right_node->upper_opp_edge.end_vertex_it,
     };
   }
 }
@@ -297,13 +296,11 @@ Region RegionIterator::region() const
 {
   if (direction_ == HorizontalDirection::left)
   {
-    return Region{next_node_, cur_node_, next_node_->neighbor_branch_index(cur_node_),
-                  cur_node_->neighbor_branch_index(next_node_)};
+    return Region{next_node_, cur_node_};
   }
   else
   {
-    return Region{cur_node_, next_node_, cur_node_->neighbor_branch_index(next_node_),
-                  next_node_->neighbor_branch_index(cur_node_)};
+    return Region{cur_node_, next_node_};
   }
 }
 

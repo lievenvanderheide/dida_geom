@@ -322,13 +322,11 @@ TEST_CASE("Region::operator==")
   VerticalDecomposition vd =
       vertical_decomposition_with_sweep_line_builder(vertices, VerticalDecompositionType::interior_decomposition);
 
-  Region a{&vd.nodes[2], &vd.nodes[3], 0, 0};
+  Region a{&vd.nodes[2], &vd.nodes[3]};
 
   CHECK(a == a);
-  CHECK_FALSE(a == Region{&vd.nodes[1], &vd.nodes[3], 0, 0});
-  CHECK_FALSE(a == Region{&vd.nodes[2], &vd.nodes[4], 0, 0});
-  CHECK_FALSE(a == Region{&vd.nodes[2], &vd.nodes[3], 1, 0});
-  CHECK_FALSE(a == Region{&vd.nodes[2], &vd.nodes[3], 0, 1});
+  CHECK_FALSE(a == Region{&vd.nodes[1], &vd.nodes[3]});
+  CHECK_FALSE(a == Region{&vd.nodes[2], &vd.nodes[4]});
 }
 
 TEST_CASE("Region::lower_boundary")
@@ -346,7 +344,7 @@ TEST_CASE("Region::lower_boundary")
 
     SECTION("Left branch 0, right branch 2")
     {
-      Region region{&vd.nodes[3], &vd.nodes[4], 0, 2};
+      Region region{&vd.nodes[3], &vd.nodes[4]};
 
       EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::interior_decomposition);
       CHECK(lower_boundary.start_vertex_it == vertices.begin());
@@ -359,7 +357,7 @@ TEST_CASE("Region::lower_boundary")
 
     SECTION("Left branch 1, right branch 0")
     {
-      Region region{&vd.nodes[8], &vd.nodes[10], 1, 0};
+      Region region{&vd.nodes[8], &vd.nodes[10]};
 
       EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::interior_decomposition);
       CHECK(lower_boundary.start_vertex_it == vertices.begin() + 4);
@@ -372,7 +370,7 @@ TEST_CASE("Region::lower_boundary")
 
     SECTION("Left branch 2, right branch 1")
     {
-      Region region{&vd.nodes[6], &vd.nodes[7], 2, 1};
+      Region region{&vd.nodes[6], &vd.nodes[7]};
 
       EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::interior_decomposition);
       CHECK(lower_boundary.start_vertex_it == vertices.begin() + 4);
@@ -385,7 +383,7 @@ TEST_CASE("Region::lower_boundary")
 
     SECTION("Left leaf, right branch 1")
     {
-      Region region{&vd.nodes[2], &vd.nodes[4], 0, 1};
+      Region region{&vd.nodes[2], &vd.nodes[4]};
 
       EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::interior_decomposition);
       CHECK(lower_boundary.start_vertex_it == vertices.begin() + 2);
@@ -398,7 +396,7 @@ TEST_CASE("Region::lower_boundary")
 
     SECTION("Left branch 2, right leaf")
     {
-      Region region{&vd.nodes[10], &vd.nodes[13], 2, 0};
+      Region region{&vd.nodes[10], &vd.nodes[13]};
 
       EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::interior_decomposition);
       CHECK(lower_boundary.start_vertex_it == vertices.begin() + 6);
@@ -427,7 +425,7 @@ TEST_CASE("Region::lower_boundary")
 
       SECTION("Left neighbor 0, right neighbor 1")
       {
-        Region region{&vd.nodes[3], &vd.nodes[4], 0, 1};
+        Region region{&vd.nodes[3], &vd.nodes[4]};
 
         EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::exterior_decomposition);
         CHECK(lower_boundary.start_vertex_it == nullptr);
@@ -440,7 +438,7 @@ TEST_CASE("Region::lower_boundary")
 
       SECTION("Left neighbor 1, right neighbor 0")
       {
-        Region region{&vd.nodes[5], &vd.nodes[6], 1, 0};
+        Region region{&vd.nodes[5], &vd.nodes[6]};
 
         EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::exterior_decomposition);
         CHECK(lower_boundary.start_vertex_it == nullptr);
@@ -467,7 +465,7 @@ TEST_CASE("Region::lower_boundary")
 
       SECTION("Left neighbor 0, right neighbor 2")
       {
-        Region region{&vd.nodes[3], &vd.nodes[4], 0, 2};
+        Region region{&vd.nodes[3], &vd.nodes[4]};
 
         EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::exterior_decomposition);
         CHECK(lower_boundary.start_vertex_it == vertices.begin() + 12);
@@ -480,7 +478,7 @@ TEST_CASE("Region::lower_boundary")
 
       SECTION("Left neighbor 2, right neighbor 0")
       {
-        Region region{&vd.nodes[5], &vd.nodes[6], 2, 0};
+        Region region{&vd.nodes[5], &vd.nodes[6]};
 
         EdgeRange lower_boundary = region.lower_boundary(VerticalDecompositionType::exterior_decomposition);
         CHECK(lower_boundary.start_vertex_it == vertices.begin() + 4);
@@ -551,80 +549,54 @@ TEST_CASE("RegionIterator")
 
       CHECK(iterator.region().left_node == &vd.nodes[1]);
       CHECK(iterator.region().right_node == &vd.nodes[6]);
-      CHECK(iterator.region().left_node_branch_index == 2);
-      CHECK(iterator.region().right_node_branch_index == 2);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[2]);
       CHECK(iterator.region().right_node == &vd.nodes[5]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 2);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[4]);
       CHECK(iterator.region().right_node == &vd.nodes[5]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 1);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[5]);
       CHECK(iterator.region().right_node == &vd.nodes[6]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 1);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[6]);
       CHECK(iterator.region().right_node == &vd.nodes[7]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[7]);
       CHECK(iterator.region().right_node == &vd.nodes[10]);
-      CHECK(iterator.region().left_node_branch_index == 1);
-      CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[10]);
       CHECK(iterator.region().right_node == &vd.nodes[13]);
-      CHECK(iterator.region().left_node_branch_index == 1);
-      CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[10]);
       CHECK(iterator.region().right_node == &vd.nodes[12]);
-      CHECK(iterator.region().left_node_branch_index == 2);
-      CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[7]);
       CHECK(iterator.region().right_node == &vd.nodes[9]);
-      CHECK(iterator.region().left_node_branch_index == 2);
-      CHECK(iterator.region().right_node_branch_index == 2);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[8]);
       CHECK(iterator.region().right_node == &vd.nodes[9]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 1);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[9]);
       CHECK(iterator.region().right_node == &vd.nodes[11]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[0]);
       CHECK(iterator.region().right_node == &vd.nodes[1]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[1]);
       CHECK(iterator.region().right_node == &vd.nodes[3]);
-      CHECK(iterator.region().left_node_branch_index == 1);
-      CHECK(iterator.region().right_node_branch_index == 0);
 
       CHECK(!iterator.move_next());
     }
@@ -635,14 +607,10 @@ TEST_CASE("RegionIterator")
 
       CHECK(iterator.region().left_node == &vd.nodes[1]);
       CHECK(iterator.region().right_node == &vd.nodes[6]);
-      CHECK(iterator.region().left_node_branch_index == 2);
-      CHECK(iterator.region().right_node_branch_index == 2);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[2]);
       CHECK(iterator.region().right_node == &vd.nodes[5]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 2);
 
       // The rest is the same as in "Start with rightward non leaf node" section, so no need to test it again.
     }
@@ -653,14 +621,10 @@ TEST_CASE("RegionIterator")
 
       CHECK(iterator.region().left_node == &vd.nodes[2]);
       CHECK(iterator.region().right_node == &vd.nodes[5]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 2);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[4]);
       CHECK(iterator.region().right_node == &vd.nodes[5]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 1);
 
       // The rest belongs to the general case, so no need to test it again.
     }
@@ -671,14 +635,10 @@ TEST_CASE("RegionIterator")
 
       CHECK(iterator.region().left_node == &vd.nodes[4]);
       CHECK(iterator.region().right_node == &vd.nodes[5]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 1);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[5]);
       CHECK(iterator.region().right_node == &vd.nodes[6]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 1);
 
       // The rest belongs to the general case, so no need to test it again.
     }
@@ -706,62 +666,42 @@ TEST_CASE("RegionIterator")
 
       CHECK(iterator.region().left_node == &vd.nodes[0]);
       CHECK(iterator.region().right_node == &vd.nodes[2]);
-      CHECK(iterator.region().left_node_branch_index == 2);
-      CHECK(iterator.region().right_node_branch_index == 2);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[1]);
       CHECK(iterator.region().right_node == &vd.nodes[2]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 1);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[2]);
       CHECK(iterator.region().right_node == &vd.nodes[5]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[5]);
       CHECK(iterator.region().right_node == &vd.nodes[7]);
-      CHECK(iterator.region().left_node_branch_index == 1);
-      CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[5]);
       CHECK(iterator.region().right_node == &vd.nodes[9]);
-      CHECK(iterator.region().left_node_branch_index == 2);
-      CHECK(iterator.region().right_node_branch_index == 2);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[6]);
       CHECK(iterator.region().right_node == &vd.nodes[9]);
-      CHECK(iterator.region().left_node_branch_index == 1);
-      CHECK(iterator.region().right_node_branch_index == 1);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[6]);
       CHECK(iterator.region().right_node == &vd.nodes[8]);
-      CHECK(iterator.region().left_node_branch_index == 2);
-      CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[4]);
       CHECK(iterator.region().right_node == &vd.nodes[6]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 0);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[3]);
       CHECK(iterator.region().right_node == &vd.nodes[4]);
-      CHECK(iterator.region().left_node_branch_index == 0);
-      CHECK(iterator.region().right_node_branch_index == 2);
 
       REQUIRE(iterator.move_next());
       CHECK(iterator.region().left_node == &vd.nodes[0]);
       CHECK(iterator.region().right_node == &vd.nodes[4]);
-      CHECK(iterator.region().left_node_branch_index == 1);
-      CHECK(iterator.region().right_node_branch_index == 1);
 
       CHECK(!iterator.move_next());
     }
