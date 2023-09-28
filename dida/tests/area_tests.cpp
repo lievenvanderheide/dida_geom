@@ -1,6 +1,7 @@
 #include "dida/area.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 
 namespace dida
 {
@@ -8,7 +9,7 @@ namespace dida
 TEST_CASE("area")
 {
   ConvexPolygon2 polygon{{-4, 1}, {-2, -4}, {4, -6}, {6, -3}, {4, 3}, {-2, 2}};
-  CHECK(area(polygon) == Approx(60));
+  CHECK(area(polygon) == Catch::Approx(60));
 }
 
 TEST_CASE("intersection_area(ConvexPolygonView2, ConvexPolygonView2)")

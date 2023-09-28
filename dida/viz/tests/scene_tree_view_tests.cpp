@@ -1,6 +1,6 @@
 #include "dida/viz/scene_tree_view.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 namespace dida::viz
 {

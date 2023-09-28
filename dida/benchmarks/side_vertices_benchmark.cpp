@@ -1,8 +1,7 @@
 #include "dida/convex_polygon2_utils.hpp"
 
-#define CATCH_CONFIG_MAIN
-#define CATCH_CONFIG_ENABLE_BENCHMARKING
-#include <catch2/catch.hpp>
+#include <catch2/benchmark/catch_benchmark_all.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <cmath>
 
 namespace dida::benchmarks
@@ -65,4 +64,4 @@ TEST_CASE("leftmost_vertex benchmark")
   }
 }
 
-} // namespace dida
+} // namespace dida::benchmarks

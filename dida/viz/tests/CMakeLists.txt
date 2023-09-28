@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.16.3)
 
-find_package(Catch2 2 REQUIRED)
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 
 add_executable(dida_viz_tests

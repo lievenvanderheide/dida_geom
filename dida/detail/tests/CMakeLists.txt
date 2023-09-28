@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.16.3)
 
-find_package(Catch2 2 REQUIRED)
-
 add_executable(dida_detail_tests
     convex_polygons_intersection_tests.cpp
     polygon_sweep_tests.cpp

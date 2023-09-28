@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.16.3)
 
-find_package(Catch2 2 REQUIRED)
-
 add_executable(dida_detail_vertical_decomposition_tests
     divide_and_conquer_builder_tests.cpp
     merge_tests.cpp

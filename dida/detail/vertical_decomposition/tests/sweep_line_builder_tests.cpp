@@ -1,6 +1,6 @@
 #include "dida/detail/vertical_decomposition/sweep_line_builder.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 namespace dida::detail::vertical_decomposition
 {

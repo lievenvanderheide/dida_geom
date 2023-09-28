@@ -1,6 +1,6 @@
 #include "dida/detail/vertical_decomposition/triangulate.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <unordered_set>
 
 #include "dida/detail/vertical_decomposition/sweep_line_builder.hpp"

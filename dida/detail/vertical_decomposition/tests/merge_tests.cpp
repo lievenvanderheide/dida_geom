@@ -1,6 +1,6 @@
 #include "dida/detail/vertical_decomposition/merge.hpp"
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "dida/detail/vertical_decomposition/tests/test_utils.hpp"
 #include "dida/polygon2.hpp"

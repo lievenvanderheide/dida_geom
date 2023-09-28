@@ -1,6 +1,7 @@
 #include "dida/convex_polygon2.hpp"
 
-#include <catch2/catch.hpp>
+#include <algorithm>
+#include <catch2/catch_test_macros.hpp>
 #include <sstream>
 
 namespace dida
