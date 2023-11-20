@@ -8,7 +8,7 @@ namespace dida::detail::vertical_decomposition
 
 /// Triangulates the polygon with the given vertices and vertical decomposition.
 ///
-/// @c root_node should be some vertex of the vertical decomposition. All other nodes are reached by following @c
+/// @c root_node should be some leaf node of the vertical decomposition. All other nodes are reached by following @c
 /// neighbors pointers.
 std::vector<Triangle2> triangulate(VerticesView vertices, const Node* root_node);
 
