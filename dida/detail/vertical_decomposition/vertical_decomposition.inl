@@ -51,6 +51,16 @@ Edge Edge::edge_from_index(VerticesView vertices, size_t index)
   return result;
 }
 
+Edge Edge::incoming_edge(VerticesView vertices, VertexIt end_vertex_it)
+{
+  return Edge{prev_cyclic(vertices, end_vertex_it), end_vertex_it};
+}
+
+Edge Edge::outgoing_edge(VerticesView vertices, VertexIt start_vertex_it)
+{
+  return Edge{start_vertex_it, next_cyclic(vertices, start_vertex_it)};
+}
+
 Edge Edge::invalid()
 {
   return Edge{nullptr, nullptr};

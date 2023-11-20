@@ -78,11 +78,13 @@ struct Edge
   VertexIt end_vertex_it;
 
   /// Returns the edge with the vertex at @c index as its start vertex.
-  ///
-  /// @param vertices The vertices.
-  /// @param index The index of the start vertex.
-  /// @return The edge.
   static inline Edge edge_from_index(VerticesView vertices, size_t index);
+
+  /// Returns the edge which ends in @c end_vertex_it.
+  static inline Edge incoming_edge(VerticesView vertices, VertexIt end_vertex_it);
+
+  /// Returns the edge which starts at @c start_vertex_it.
+  static inline Edge outgoing_edge(VerticesView vertices, VertexIt start_vertex_it);
 
   /// Returns the invalid edge.
   ///

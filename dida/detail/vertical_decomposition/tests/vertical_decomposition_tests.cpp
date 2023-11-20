@@ -82,6 +82,46 @@ TEST_CASE("Edge::edge_from_index")
   }
 }
 
+TEST_CASE("Edge::incoming_edge")
+{
+  std::vector<Point2> vertices_storage{{-2.18, 3.86}, {3.04, 4.96}, {0.24, 9.40}};
+  VerticesView vertices(vertices_storage);
+
+  SECTION("Without wrapping")
+  {
+    Edge edge = Edge::incoming_edge(vertices, vertices.begin() + 2);
+    CHECK(edge.start_vertex_it == vertices.begin() + 1);
+    CHECK(edge.end_vertex_it == vertices.begin() + 2);
+  }
+
+  SECTION("With wrapping")
+  {
+    Edge edge = Edge::incoming_edge(vertices, vertices.begin());
+    CHECK(edge.start_vertex_it == vertices.begin() + 2);
+    CHECK(edge.end_vertex_it == vertices.begin());
+  }
+}
+
+TEST_CASE("Edge::outgoing_edge")
+{
+  std::vector<Point2> vertices_storage{{-2.18, 3.86}, {3.04, 4.96}, {0.24, 9.40}};
+  VerticesView vertices(vertices_storage);
+
+  SECTION("Without wrapping")
+  {
+    Edge edge = Edge::outgoing_edge(vertices, vertices.begin());
+    CHECK(edge.start_vertex_it == vertices.begin());
+    CHECK(edge.end_vertex_it == vertices.begin() + 1);
+  }
+
+  SECTION("With wrapping")
+  {
+    Edge edge = Edge::outgoing_edge(vertices, vertices.begin() + 2);
+    CHECK(edge.start_vertex_it == vertices.begin() + 2);
+    CHECK(edge.end_vertex_it == vertices.begin());
+  }
+}
+
 TEST_CASE("Edge::invalid")
 {
   Edge invalid_edge = Edge::invalid();
