@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16.3)
 
 add_executable(dida_detail_vertical_decomposition_tests
     divide_and_conquer_builder_tests.cpp
+    intersect_tests.cpp
     merge_tests.cpp
     sweep_line_builder_tests.cpp
     test_utils_tests.cpp

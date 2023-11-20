@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.16.3)
 add_library(dida
     detail/vertical_decomposition/divide_and_conquer_builder.cpp
     detail/vertical_decomposition/divide_and_conquer_builder.hpp
+    detail/vertical_decomposition/intersect.cpp
+    detail/vertical_decomposition/intersect.hpp
     detail/vertical_decomposition/merge.cpp
     detail/vertical_decomposition/merge.hpp
     detail/vertical_decomposition/sweep_line_builder.cpp

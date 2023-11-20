@@ -242,6 +242,10 @@ RegionIterator::RegionIterator(const Node* first_node)
   }
   else
   {
+    // If neighbors[1] and neighbors[2] are equal then we're dealing with the exterior decomposition of a monotone
+    // polygon, which is not supported by this class.
+    DIDA_DEBUG_ASSERT(first_node->neighbors[1] != first_node->neighbors[2]);
+
     cur_node_ = first_node;
     next_node_ = first_node->neighbors[first_node->direction == HorizontalDirection::left ? 1 : 2];
     direction_ = first_node->direction;
