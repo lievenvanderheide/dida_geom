@@ -67,15 +67,23 @@ enum class IntermediateResult
   continue_iterating,
 };
 
+/// A pair of an edge on the lower boundary and an edge on the upper boundary of a region.
 struct EdgePair
 {
+  /// The lower edge.
   Edge lower_edge;
+
+  /// The upper edge.
   Edge upper_edge;
 };
 
+/// The return type of the @c find_initial_region function.
 struct InitialRegion
 {
+  /// The region which contains @c b_leftmost.
   Region region;
+
+  /// An edge pair with the edges of @c region wich are immediately below and above @c b_leftmost.
   EdgePair edge_pair;
 };
 
@@ -83,6 +91,18 @@ struct InitialRegion
 /// leftmost vertex of polygon @c b.
 bool intersect_ordered(VerticesView a_vertices, const VerticalDecomposition& a_exterior_decomposition,
                        VerticesView b_vertices, const VerticalDecomposition& b_exterior_decomposition);
+
+/// Finds the initial region of polygon @c a, given the leftmost vertex of polygon @c b. If @c b_leftmost lies inside @c
+/// a, then @c std::nullopt is returned.
+///
+/// It is assumed that <tt>a_leftmost <= b_leftmost <= a_rightmost</tt>.
+std::optional<InitialRegion>
+find_initial_region(VerticesView a_vertices, const VerticalDecomposition& a_exterior_decomposition, Point2 b_leftmost);
+
+/// Checks whether @c point is inside @c region, and if so, returns the @c EdgePair with the two boundary edges
+/// immediately above and immediately below @c point (both can be @c Edge::invalid(), if the region extends to infinity
+/// in the corresponding direction). If @c point doesn't lie inside region, @c std::nullopt is returned.
+std::optional<EdgePair> is_point_in_region(VerticesView vertices, Region region, Point2 point);
 
 /// Implements the mainloop of the intersection test. This functions expects a fully initialized @c state, and keeps
 /// iterating until the intermediate result is something other than @c IntermediateResult::continue_iterating.
@@ -101,18 +121,6 @@ IntermediateResult intersect_iteration_advance_forward_node(IntersectState& stat
 template <HorizontalDirection direction, bool p_is_lower>
 IntermediateResult intersect_iteration_advance_reverse_node(IntersectState& state, PolygonIntersectState& p,
                                                             PolygonIntersectState& q);
-
-/// Finds the initial region of polygon @c a, given the leftmost vertex of polygon @c b. If @c b_leftmost lies inside @c
-/// a, then @c std::nullopt is returned.
-///
-/// It is assumed that <tt>a_leftmost <= b_leftmost <= a_rightmost</tt>.
-std::optional<InitialRegion>
-find_initial_region(VerticesView a_vertices, const VerticalDecomposition& a_exterior_decomposition, Point2 b_leftmost);
-
-/// Checks whether @c point is inside @c region, and if so, returns the @c EdgePair with the two boundary edges
-/// immediately above and immediately below @c point (both can be @c Edge::invalid(), if the region extends to infinity
-/// in the corresponding direction). If @c point doesn't lie inside region, @c std::nullopt is returned.
-std::optional<EdgePair> is_point_in_region(VerticesView vertices, Region region, Point2 point);
 
 /// Advances the current edge of @c state to the next edge. @c advance_forward indicates whether to advance in the CCW
 /// or CW direction.
@@ -145,6 +153,9 @@ bool intersect_ordered(VerticesView a_vertices, const VerticalDecomposition& a_e
 
   if (initial_region->edge_pair.upper_edge.is_valid())
   {
+    // Start a traversal which starts with b's leftmost vertex, while traversing a's boundary in the counter clockwise
+    // direction and b's boundary in the clockwise direction.
+
     IntersectState state;
     state.a.vertices = a_vertices;
     state.a.edge = initial_region->edge_pair.upper_edge;
@@ -164,6 +175,12 @@ bool intersect_ordered(VerticesView a_vertices, const VerticalDecomposition& a_e
     }
   }
 
+  // If the previous traversal ended with IntermediateResult::separated, or if it couldn't start because there was no
+  // upper_edge in A's region (which can be considered an immediate separation), then we have to start another
+  // traversal, which also starts with b's leftmost vertex, but this time traverses the boundaries in the opposite
+  // direction.
+  //
+  // If there's no lower_edge, then there's nothing left to traverse, so there's no intersection.
   if (initial_region->edge_pair.lower_edge.is_valid())
   {
     IntersectState state;
@@ -537,23 +554,6 @@ Edge opposite_edge_for_point(const PolygonIntersectState& p, Point2 point)
   constexpr HorizontalDirection opp_edge_range_direction =
       p_is_lower ? HorizontalDirection::right : HorizontalDirection::left;
   return edge_for_point_with_monotone_edge_range<opp_edge_range_direction>(p.vertices, opp_edge_range, point);
-}
-
-template <HorizontalDirection direction, bool on_lower_boundary>
-Edge boundary_edge_of_current_region_for_point(const PolygonIntersectState& p, Point2 point)
-{
-  Region region = direction == HorizontalDirection::right ? Region{p.prev, p.next} : Region{p.next, p.prev};
-
-  EdgeRange edge_range = on_lower_boundary ? region.lower_boundary(VerticalDecompositionType::exterior_decomposition)
-                                           : region.upper_boundary(VerticalDecompositionType::exterior_decomposition);
-  if (!edge_range.is_valid())
-  {
-    return Edge::invalid();
-  }
-
-  constexpr HorizontalDirection boundary_direction =
-      on_lower_boundary ? HorizontalDirection::left : HorizontalDirection::right;
-  return edge_for_point_with_monotone_edge_range<boundary_direction>(p.vertices, edge_range, point);
 }
 
 } // namespace
