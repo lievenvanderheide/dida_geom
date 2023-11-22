@@ -4,11 +4,16 @@ project(dida LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include(FetchContent)
+find_package(Catch2 3 REQUIRED)
 
-FetchContent_Declare(catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG v3.4.0)
-FetchContent_MakeAvailable(catch2)
+include(CTest)
+include(Catch)
 
-add_subdirectory(dida)
+add_library(dida)
+target_include_directories(dida PRIVATE src PUBLIC include)
+
+add_subdirectory(include)
+add_subdirectory(src)
+
+add_subdirectory(benchmarks)
+add_subdirectory(apps)
