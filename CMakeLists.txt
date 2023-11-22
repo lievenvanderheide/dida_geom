@@ -17,3 +17,5 @@ add_subdirectory(src)
 
 add_subdirectory(benchmarks)
 add_subdirectory(apps)
+
+install(TARGETS dida)

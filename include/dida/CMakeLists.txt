@@ -1,10 +1,4 @@
-target_sources(dida PUBLIC
-    math/big_int_utils.hpp
-    math/big_int_utils.inl
-    math/fraction.hpp
-    math/fraction.inl
-    math/int128.hpp
-    math/int128.inl
+set(DIDA_PUBLIC_INCLUDE_FILES
     area.hpp
     array_view.hpp
     array_view.inl
@@ -33,3 +27,9 @@ target_sources(dida PUBLIC
     utils.hpp
     utils.inl
     vector2.inl)
+
+target_sources(dida PUBLIC ${DIDA_PUBLIC_INCLUDE_FILES})
+
+install(FILES ${DIDA_PUBLIC_INCLUDE_FILES} DESTINATION include/dida)
+
+add_subdirectory(math)
