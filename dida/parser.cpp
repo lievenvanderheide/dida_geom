@@ -48,97 +48,138 @@ std::optional<std::string_view> Parser::parse_identifier()
 namespace
 {
 
-/// Divides @c a by @c b with round to nearest. Ties are rounded down.
+/// Returns the number of significant fractional digits in the base 10 representation of a scalar of the given type.
 ///
-/// @param a The dividend. Must be non-negative.
-/// @param b The divisor. Must be positive.
-/// @return The quotient <tt>a/b</tt> rounded to the nearest integers.
-int32_t div_round_nearest(int32_t a, int32_t b)
+/// This is the number of digits such that truncating the decimal representation to this many digits results in a value
+/// which is less than half a quantum lower than the untruncated value:
+///
+///   v - truncated(v) < .5 * ScalarType::quantum
+///
+template <class ScalarType>
+constexpr size_t base_10_num_significant_fractional_digits()
 {
-  DIDA_DEBUG_ASSERT(a >= 0);
-  DIDA_DEBUG_ASSERT(b > 0);
-  return (a + (b >> 1)) / b;
+  using IntType = typename ScalarType::IntType;
+
+  // The result is the lowest 'n' for which
+  //
+  //   1/10^n <= .5 * 1/2^radix
+  //
+  // Taking the reciprocal gives
+  //
+  //   10^n >= 2^(radix + 1)
+
+  IntType lhs = 1;
+  IntType rhs = static_cast<IntType>(2) << ScalarType::radix;
+  size_t n = 0;
+  while (lhs < rhs)
+  {
+    lhs *= 10;
+    n++;
+  }
+
+  return n;
 }
 
-} // namespace
+}
 
-ScalarDeg1 parse_scalar_fractional_part(std::string_view digits)
+template <class ScalarType>
+ScalarType Parser::parse_scalar_fractional_part()
 {
-  static_assert(ScalarDeg1::radix == 12);
+  using IntType = typename ScalarType::IntType;
 
-  // The number of significant digits is the number of digits necessary to compute the result with an error of at most
-  // ScalarDeg1::quantum.
-  static constexpr size_t num_significant_digits = 4;
+  constexpr size_t num_significant_digits = base_10_num_significant_fractional_digits<ScalarType>();
 
-  if (digits.size() <= num_significant_digits)
+  IntType base_10_num = 0;
+  IntType base_10_denom = 1;
+  for (size_t i = 0; i < num_significant_digits; i++)
   {
-    int32_t fractional_part_num = 0;
-    int32_t fractional_part_denom = 1;
-    for (size_t i = 0; i < digits.size(); i++)
+    if (head_ == end_ || !is_digit(*head_))
     {
-      DIDA_DEBUG_ASSERT(is_digit(digits[i]));
-      int32_t digit = static_cast<int32_t>(digits[i] - '0');
-      fractional_part_num = 10 * fractional_part_num + digit;
-      fractional_part_denom *= 10;
+      break;
     }
 
-    return ScalarDeg1::from_numerator(
-        div_round_nearest(fractional_part_num << ScalarDeg1::radix, fractional_part_denom));
+    base_10_num = 10 * base_10_num + static_cast<IntType>(*head_ - '0');
+    base_10_denom *= 10;
+
+    head_++;
   }
-  else
+
+  // The significant digits have been parsed. The final value will be either base_2_num / base_2_denom or base_2_num /
+  // base_2_denom + quantum.
+
+  IntType base_2_denom = static_cast<IntType>(1) << ScalarType::radix;
+  IntType base_2_num = base_10_num * base_2_denom / base_10_denom;
+  IntType remainder = base_10_num * base_2_denom % base_10_denom;
+
+  if (remainder > (base_10_denom / 2) || (remainder == (base_10_denom / 2) && (base_2_num & 1) == 1))
   {
-    int32_t significant_digits = 0;
-    for (size_t i = 0; i < num_significant_digits; i++)
+    // We're already rounding up, so even if there are digits remaining, these can't be enough to bump the result up by
+    // another ScalarDeg1::quantum.
+
+    while (head_ != end_ && is_digit(*head_))
     {
-      DIDA_DEBUG_ASSERT(is_digit(digits[i]));
-      int32_t digit = static_cast<int32_t>(digits[i] - '0');
-      significant_digits = 10 * significant_digits + digit;
+      head_++;
     }
 
-    // The numerator of the correctly rounded result of this function is either 'result_num' or 'result_num + 1'.
-    int32_t result_num = div_round_nearest(significant_digits << ScalarDeg1::radix, 10000);
+    return ScalarType::from_numerator(base_2_num + 1);
+  }
 
-    // 'threshold = threshold_num/threshold_denom' is the midpoint between 'result' and 'result + quantum'. If the full
-    // digit sequence represents a decimal number less than or equal to this threshold, then we should round down,
-    // otherwise we should round up.
-    int32_t threshold_num = 2 * result_num + 1;
-    int32_t threshold_denom = 1 << (ScalarDeg1::radix + 1);
+  if (head_ == end_ || !is_digit(*head_))
+  {
+    // There are no digits remaining.
+    return ScalarType::from_numerator(base_2_num);
+  }
 
-    // Compare 'significant_digits' against the significant digits of 'threshold', and update 'threshold' to the
-    // threshold for the remaining digits.
-    int32_t threshold_significant_digits = (threshold_num * 10000) / threshold_denom;
-    threshold_num = (threshold_num * 10000) % threshold_denom;
-    if (threshold_significant_digits != significant_digits)
+  // The truncated value resulted in downwards rounding, and there are digits remaining, so it may be possible that
+  // these remaining digits push 'v' over the threshold for upwards rounding.
+  //
+  // We should round up if
+  //
+  //                     truncated(v) + tail(v) > base_2_num / base_2_denom + .5 / base_2_denom
+  //                                    tail(v) > .5 / base_2_denom - remainder / (base_10_denom * base_2_denom)
+  //   (tail(v) * base_10_denom) * base_2_denom > base_10_denom / 2 - remainder
+  //
+
+  IntType threshold = base_10_denom / 2 - remainder;
+
+  for (; head_ != end_ && is_digit(*head_); head_++)
+  {
+    IntType digit_base_2_num = static_cast<IntType>(*head_ - '0') * base_2_denom;
+    threshold *= 10;
+    if (digit_base_2_num + base_2_denom <= threshold)
     {
-      DIDA_DEBUG_ASSERT(significant_digits < threshold_significant_digits);
-      return ScalarDeg1::from_numerator(result_num);
-    }
-
-    for (size_t i = num_significant_digits; i < digits.size(); i++)
-    {
-      DIDA_DEBUG_ASSERT(is_digit(digits[i]));
-      int32_t digit = static_cast<int32_t>(digits[i] - '0');
-
-      // Compute the most significant digit of 'threshold'.
-      int32_t threshold_digit = (threshold_num * 10) / threshold_denom;
-      if (threshold_digit != digit)
+      while (head_ != end_ && is_digit(*head_))
       {
-        // If the current digit is different from 'threshold_digit', then we have enough information to know which way
-        // we should round.
-        if (digit > threshold_digit)
-        {
-          result_num++;
-        }
-
-        break;
+        head_++;
       }
 
-      // Update 'threshold' to the threshold for the remaining digits.
-      threshold_num = (threshold_num * 10) % threshold_denom;
+      return ScalarType::from_numerator(base_2_num);
     }
+    else if (digit_base_2_num > threshold)
+    {
+      while (head_ != end_ && is_digit(*head_))
+      {
+        head_++;
+      }
 
-    return ScalarDeg1::from_numerator(result_num);
+      return ScalarType::from_numerator(base_2_num + 1);
+    }
+    else
+    {
+      threshold -= digit_base_2_num;
+    }
   }
+
+  if (threshold == 0)
+  {
+    // We're exactly on the threshold, so we should round to even.
+    if ((base_2_num & 1) == 1)
+    {
+      base_2_num++;
+    }
+  }
+
+  return ScalarDeg1::from_numerator(base_2_num);
 }
 
 std::optional<ScalarDeg1> Parser::parse_scalar()
@@ -188,19 +229,14 @@ std::optional<ScalarDeg1> Parser::parse_scalar()
   {
     head_++;
 
-    const char* fractional_digits_begin = head_;
-    while (head_ != end_ && is_digit(*head_))
+    if (head_ != end_ && is_digit(*head_))
     {
-      head_++;
+      fractional_part = parse_scalar_fractional_part<ScalarDeg1>();
     }
-    size_t num_fractional_digits = head_ - fractional_digits_begin;
-
-    if (num_digits == 0 && num_fractional_digits == 0)
+    else if (num_digits == 0)
     {
       return std::nullopt;
     }
-
-    fractional_part = parse_scalar_fractional_part(std::string_view(fractional_digits_begin, num_fractional_digits));
   }
 
   if (negative)
@@ -309,7 +345,7 @@ std::optional<std::vector<Point2>> Parser::parse_point2_vector()
 
     skip_optional_whitespace();
 
-    if(match('}'))
+    if (match('}'))
     {
       // There was a comma, but the comma was immediately followed by closing brace, so we've reached the end of the
       // vector.

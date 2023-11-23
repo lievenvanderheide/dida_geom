@@ -135,16 +135,12 @@ public:
   std::optional<std::vector<Point2>> parse_point2_vector();
 
 private:
+  template <class ScalarType>
+  ScalarType parse_scalar_fractional_part();
+
   const char* head_;
   const char* end_;
 };
-
-/// Parses a sequence of decimal digits as the fractional part after a decimal '.', and rounds it to the nearest
-/// @c ScalarDeg1 (so the result is in the in the range '[0, 1)').
-///
-/// @param digits The digits. Should consists of 0 or more decimal digits.
-/// @return The nearest @c ScalarDeg1 to a fractional part with the digits in @c digits.
-ScalarDeg1 parse_scalar_fractional_part(std::string_view digits);
 
 } // namespace dida
 
