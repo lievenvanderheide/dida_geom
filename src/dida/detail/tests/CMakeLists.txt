@@ -4,6 +4,8 @@ add_executable(dida_detail_tests
     tmp_object_pool_tests.cpp)
 
 target_link_libraries(dida_detail_tests PRIVATE dida Catch2::Catch2WithMain)
-target_include_directories(dida_detail_tests PRIVATE ${CMAKE_SOURCE_DIR}/src)
+
+get_target_property(DIDA_INCLUDE_DIRS dida INCLUDE_DIRECTORIES)
+target_include_directories(dida_detail_tests PRIVATE ${DIDA_INCLUDE_DIRS})
 
 catch_discover_tests(dida_detail_tests)
