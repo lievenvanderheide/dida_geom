@@ -1,8 +1,8 @@
 namespace dida
 {
 
-template <int degree, class IntType>
-constexpr double Scalar<degree, IntType>::calc_quantum()
+template <int degree, class IntTypeT>
+constexpr double Scalar<degree, IntTypeT>::calc_quantum()
 {
   if constexpr (std::is_same_v<IntType, int32_t> || std::is_same_v<IntType, int64_t>)
   {
@@ -26,8 +26,8 @@ constexpr double Scalar<degree, IntType>::calc_quantum()
   }
 }
 
-template <int degree, class IntType>
-constexpr Scalar<degree, IntType> Scalar<degree, IntType>::calc_min()
+template <int degree, class IntTypeT>
+constexpr Scalar<degree, IntTypeT> Scalar<degree, IntTypeT>::calc_min()
 {
   static_assert(std::is_same_v<IntType, int32_t> || std::is_same_v<IntType, int64_t>,
                 "Not implemented yet for higher degree scalar types");
@@ -37,8 +37,8 @@ constexpr Scalar<degree, IntType> Scalar<degree, IntType>::calc_min()
   return result;
 }
 
-template <int degree, class IntType>
-constexpr Scalar<degree, IntType> Scalar<degree, IntType>::calc_max()
+template <int degree, class IntTypeT>
+constexpr Scalar<degree, IntTypeT> Scalar<degree, IntTypeT>::calc_max()
 {
   static_assert(std::is_same_v<IntType, int32_t> || std::is_same_v<IntType, int64_t>,
                 "Not implemented yet for higher degree scalar types");
@@ -48,137 +48,137 @@ constexpr Scalar<degree, IntType> Scalar<degree, IntType>::calc_max()
   return result;
 }
 
-template <int degree, class IntType>
-Scalar<degree, IntType>::Scalar(double value)
+template <int degree, class IntTypeT>
+Scalar<degree, IntTypeT>::Scalar(double value)
 {
   numerator_ = static_cast<IntType>(std::nearbyint(std::ldexp(value, radix)));
 }
 
-template <int degree, class IntType>
-Scalar<degree, IntType>::operator double() const
+template <int degree, class IntTypeT>
+Scalar<degree, IntTypeT>::operator double() const
 {
   return static_cast<double>(numerator_) * quantum;
 }
 
-template <int degree, class IntType>
-Scalar<degree, IntType> Scalar<degree, IntType>::from_numerator(const IntType& numerator)
+template <int degree, class IntTypeT>
+Scalar<degree, IntTypeT> Scalar<degree, IntTypeT>::from_numerator(const IntType& numerator)
 {
   Scalar result;
   result.numerator_ = numerator;
   return result;
 }
 
-template <int degree, class IntType>
-const IntType& Scalar<degree, IntType>::numerator() const
+template <int degree, class IntTypeT>
+const IntTypeT& Scalar<degree, IntTypeT>::numerator() const
 {
   return numerator_;
 }
 
-template <int degree, class IntType>
-bool Scalar<degree, IntType>::operator==(const Scalar& b) const
+template <int degree, class IntTypeT>
+bool Scalar<degree, IntTypeT>::operator==(const Scalar& b) const
 {
   return numerator_ == b.numerator_;
 }
 
-template <int degree, class IntType>
-bool Scalar<degree, IntType>::operator!=(const Scalar& b) const
+template <int degree, class IntTypeT>
+bool Scalar<degree, IntTypeT>::operator!=(const Scalar& b) const
 {
   return numerator_ != b.numerator_;
 }
 
-template <int degree, class IntType>
-bool Scalar<degree, IntType>::operator<(const Scalar& b) const
+template <int degree, class IntTypeT>
+bool Scalar<degree, IntTypeT>::operator<(const Scalar& b) const
 {
   return numerator_ < b.numerator_;
 }
 
-template <int degree, class IntType>
-bool Scalar<degree, IntType>::operator<=(const Scalar& b) const
+template <int degree, class IntTypeT>
+bool Scalar<degree, IntTypeT>::operator<=(const Scalar& b) const
 {
   return numerator_ <= b.numerator_;
 }
 
-template <int degree, class IntType>
-bool Scalar<degree, IntType>::operator>=(const Scalar& b) const
+template <int degree, class IntTypeT>
+bool Scalar<degree, IntTypeT>::operator>=(const Scalar& b) const
 {
   return numerator_ >= b.numerator_;
 }
 
-template <int degree, class IntType>
-bool Scalar<degree, IntType>::operator>(const Scalar& b) const
+template <int degree, class IntTypeT>
+bool Scalar<degree, IntTypeT>::operator>(const Scalar& b) const
 {
   return numerator_ > b.numerator_;
 }
 
-template <int degree, class IntType>
-bool Scalar<degree, IntType>::operator==(const double b) const
+template <int degree, class IntTypeT>
+bool Scalar<degree, IntTypeT>::operator==(const double b) const
 {
   return *this == Scalar(b);
 }
 
-template <int degree, class IntType>
-bool Scalar<degree, IntType>::operator!=(const double b) const
+template <int degree, class IntTypeT>
+bool Scalar<degree, IntTypeT>::operator!=(const double b) const
 {
   return *this != Scalar(b);
 }
 
-template <int degree, class IntType>
-bool Scalar<degree, IntType>::operator<(const double b) const
+template <int degree, class IntTypeT>
+bool Scalar<degree, IntTypeT>::operator<(const double b) const
 {
   return *this < Scalar(b);
 }
 
-template <int degree, class IntType>
-bool Scalar<degree, IntType>::operator<=(const double b) const
+template <int degree, class IntTypeT>
+bool Scalar<degree, IntTypeT>::operator<=(const double b) const
 {
   return *this <= Scalar(b);
 }
 
-template <int degree, class IntType>
-bool Scalar<degree, IntType>::operator>=(const double b) const
+template <int degree, class IntTypeT>
+bool Scalar<degree, IntTypeT>::operator>=(const double b) const
 {
   return *this >= Scalar(b);
 }
 
-template <int degree, class IntType>
-bool Scalar<degree, IntType>::operator>(const double b) const
+template <int degree, class IntTypeT>
+bool Scalar<degree, IntTypeT>::operator>(const double b) const
 {
   return *this > Scalar(b);
 }
 
-template <int degree, class IntType>
-Scalar<degree, IntType> Scalar<degree, IntType>::operator+(const Scalar& b) const
+template <int degree, class IntTypeT>
+Scalar<degree, IntTypeT> Scalar<degree, IntTypeT>::operator+(const Scalar& b) const
 {
   Scalar result;
   result.numerator_ = numerator_ + b.numerator_;
   return result;
 }
 
-template <int degree, class IntType>
-Scalar<degree, IntType> Scalar<degree, IntType>::operator-(const Scalar& b) const
+template <int degree, class IntTypeT>
+Scalar<degree, IntTypeT> Scalar<degree, IntTypeT>::operator-(const Scalar& b) const
 {
   Scalar result;
   result.numerator_ = numerator_ - b.numerator_;
   return result;
 }
 
-template <int degree, class IntType>
-Scalar<degree, IntType> Scalar<degree, IntType>::operator-() const
+template <int degree, class IntTypeT>
+Scalar<degree, IntTypeT> Scalar<degree, IntTypeT>::operator-() const
 {
   Scalar result;
   result.numerator_ = -numerator_;
   return result;
 }
 
-template <int degree, class IntType>
-Scalar<degree, IntType>& Scalar<degree, IntType>::operator+=(const Scalar& b)
+template <int degree, class IntTypeT>
+Scalar<degree, IntTypeT>& Scalar<degree, IntTypeT>::operator+=(const Scalar& b)
 {
   numerator_ += b.numerator_;
   return *this;
 }
 
-template <int degree, class IntType>
-Scalar<degree, IntType>& Scalar<degree, IntType>::operator-=(const Scalar& b)
+template <int degree, class IntTypeT>
+Scalar<degree, IntTypeT>& Scalar<degree, IntTypeT>::operator-=(const Scalar& b)
 {
   numerator_ -= b.numerator_;
   return *this;

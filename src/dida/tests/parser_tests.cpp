@@ -252,7 +252,7 @@ TEST_CASE("Parser::parse_identifier")
   }
 }
 
-TEST_CASE("Parser::try_parse_scalar")
+TEST_CASE("Parser::parse_scalar")
 {
   SECTION("Positive integer")
   {
@@ -479,67 +479,72 @@ TEST_CASE("Parser::try_parse_scalar")
       CHECK(result == std::nullopt);
     }
   }
-}
 
-TEST_CASE("parse_scalar_fractional_part")
-{
-  SECTION("Short")
+  SECTION("parse_scalar_fractional_part")
   {
-    SECTION("Exact")
+    auto parse_scalar_deg1 = [](std::string_view str)
     {
-      // 512 * ScalarDeg1::quantum = 0.125
-      ScalarDeg1 result = parse_scalar_fractional_part("125");
-      CHECK(result == ScalarDeg1::from_numerator(512));
+      Parser parser(str);
+      std::optional<ScalarDeg1> result = parser.parse_scalar();
+      REQUIRE(result);
+      CHECK(parser.finished());
+      return *result;
+    };
+
+    SECTION("Few significant digits, exact")
+    {
+      CHECK(parse_scalar_deg1(".25") == ScalarDeg1(.25));
     }
 
-    SECTION("Round up")
+    SECTION("Few significant digits, round up")
     {
-      // Slightly lower than 512 * ScalarDeg1::quantum, but should still round up to it.
-      ScalarDeg1 result = parse_scalar_fractional_part("1249");
-      CHECK(result == ScalarDeg1::from_numerator(512));
+      CHECK(parse_scalar_deg1(".123") == ScalarDeg1(0.123047));
     }
 
-    SECTION("Round down")
+    SECTION("Few significant digits, round down")
     {
-      // Slightly greater than 512 * ScalarDeg1::quantum, but should still round down to it.
-      ScalarDeg1 result = parse_scalar_fractional_part("1251");
-      CHECK(result == ScalarDeg1::from_numerator(512));
-    }
-  }
-
-  SECTION("Long")
-  {
-    // Parse numbers around the mid point between 1951 * ScalarDeg1::quantum and 1952 * ScalarDeg::quantum.
-
-    SECTION("Exactly at mid point")
-    {
-      ScalarDeg1 result = parse_scalar_fractional_part("4764404296875");
-      CHECK(result == ScalarDeg1::from_numerator(1951));
+      CHECK(parse_scalar_deg1(".126") == ScalarDeg1(0.125977));
     }
 
-    SECTION("Slightly below mid point")
+    SECTION("Ignore tail if significant digits round up")
     {
-      ScalarDeg1 result = parse_scalar_fractional_part("4764404296865");
-      CHECK(result == ScalarDeg1::from_numerator(1951));
+      CHECK(parse_scalar_deg1(".23659891") == ScalarDeg1(0.236572));
     }
 
-    SECTION("Slightly above mid point")
+    SECTION("First tail digit lower than threshold digit")
     {
-      ScalarDeg1 result = parse_scalar_fractional_part("4764404296975");
-      CHECK(result == ScalarDeg1::from_numerator(1952));
+      CHECK(parse_scalar_deg1(".3148099") == ScalarDeg1(0.314697));
     }
 
-    SECTION("Below midpoint in significant part")
+    SECTION("First tail digit greater than threshold digit")
     {
-      // 1951 * ScalarDeg1::quantum = 0.476318359375
-      ScalarDeg1 result = parse_scalar_fractional_part("4763");
-      CHECK(result == ScalarDeg1::from_numerator(1951));
+      CHECK(parse_scalar_deg1(".31482001") == ScalarDeg1(0.314941));
     }
-  }
 
-  SECTION("Empty string")
-  {
-    CHECK(parse_scalar_fractional_part("") == ScalarDeg1(0));
+    SECTION("Tail digit lower than threshold digit")
+    {
+      CHECK(parse_scalar_deg1(".31481932") == ScalarDeg1(0.314697));
+    }
+
+    SECTION("Tail digit greater than threshold digit")
+    {
+      CHECK(parse_scalar_deg1(".31481934") == ScalarDeg1(0.314941));
+    }
+
+    SECTION("Tail matches threshold, round down")
+    {
+      CHECK(parse_scalar_deg1(".8345947265625") == ScalarDeg1(0.834473));
+    }
+
+    SECTION("Tail matches threshold, round up")
+    {
+      CHECK(parse_scalar_deg1(".5081787109375") == ScalarDeg1(0.508301));
+    }
+
+    SECTION("Tail too short")
+    {
+      CHECK(parse_scalar_deg1(".508178710") == ScalarDeg1(0.508057));
+    }
   }
 }
 
