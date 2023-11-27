@@ -29,18 +29,12 @@ struct PolygonLocationLessThan
 };
 
 /// A range of the boundary of a polygon.
-///
-/// The start and end points of the range are considered part of the range (ie. it's a closed set).
 struct PolygonRange
 {
   /// The first of the range.
-  ///
-  /// The first edge should not be a vertical edge.
   size_t first_edge_index;
 
   /// The number of edges (full or partial) in this range.
-  ///
-  /// The edge at 'first_edge_index + num_edges - 1' should not be a vertical edge.
   size_t num_edges;
 
   /// The x-coordinate of the point on the first edge which is the start point of the range.
@@ -48,6 +42,9 @@ struct PolygonRange
 
   /// The x-coordinate of the point on the last edge which is the end point of the range.
   ScalarDeg1 end_point_x;
+
+  /// Splits this @c PolygonRange at the given location, returning the two sub-ranges.
+  std::pair<PolygonRange, PolygonRange> split(VerticesView vertices, PolygonLocation location) const;
 };
 
 /// Casts a ray upwards from @c ray_origin, until it hits an edge in the given polygon range. If it hits an edge from

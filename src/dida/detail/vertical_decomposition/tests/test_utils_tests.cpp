@@ -720,6 +720,79 @@ TEST_CASE("vertical_extension_contact_points")
   }
 }
 
+TEST_CASE("PolygonRange::split")
+{
+  Polygon2 polygon{{-4.48, 2.08}, {-2.64, 4.16}, {0.32, 2.40}, {2.98, 4.26}, {-7.36, 7.58}};
+  VerticesView vertices(polygon);
+
+  PolygonRange range_without_wrapping{1, 4, ScalarDeg1(-.92), ScalarDeg1(-6.82)};
+  PolygonRange range_with_wrapping{4, 5, ScalarDeg1(-6.82), ScalarDeg1(-4.52)};
+
+  SECTION("Split at vertex")
+  {
+    std::pair<PolygonRange, PolygonRange> result =
+        range_without_wrapping.split(vertices, PolygonLocation{3, ScalarDeg1(2.98)});
+
+    CHECK(result.first.first_edge_index == 1);
+    CHECK(result.first.num_edges == 2);
+    CHECK(result.first.start_point_x == ScalarDeg1(-.92));
+    CHECK(result.first.end_point_x == ScalarDeg1(2.98));
+
+    CHECK(result.second.first_edge_index == 3);
+    CHECK(result.second.num_edges == 2);
+    CHECK(result.second.start_point_x == ScalarDeg1(2.98));
+    CHECK(result.second.end_point_x == ScalarDeg1(-6.82));
+  }
+
+  SECTION("Split at vertex with wrapping")
+  {
+    std::pair<PolygonRange, PolygonRange> result =
+        range_with_wrapping.split(vertices, PolygonLocation{1, ScalarDeg1(-2.64)});
+
+    CHECK(result.first.first_edge_index == 4);
+    CHECK(result.first.num_edges == 2);
+    CHECK(result.first.start_point_x == ScalarDeg1(-6.82));
+    CHECK(result.first.end_point_x == ScalarDeg1(-2.64));
+
+    CHECK(result.second.first_edge_index == 1);
+    CHECK(result.second.num_edges == 3);
+    CHECK(result.second.start_point_x == ScalarDeg1(-2.64));
+    CHECK(result.second.end_point_x == ScalarDeg1(-4.52));
+  }
+
+  SECTION("Split mid edge")
+  {
+    std::pair<PolygonRange, PolygonRange> result =
+        range_without_wrapping.split(vertices, PolygonLocation{3, ScalarDeg1(-4.52)});
+
+    CHECK(result.first.first_edge_index == 1);
+    CHECK(result.first.num_edges == 3);
+    CHECK(result.first.start_point_x == ScalarDeg1(-.92));
+    CHECK(result.first.end_point_x == ScalarDeg1(-4.52));
+
+    CHECK(result.second.first_edge_index == 3);
+    CHECK(result.second.num_edges == 2);
+    CHECK(result.second.start_point_x == ScalarDeg1(-4.52));
+    CHECK(result.second.end_point_x == ScalarDeg1(-6.82));
+  }
+
+  SECTION("Split mid edge, with wrapping")
+  {
+    std::pair<PolygonRange, PolygonRange> result =
+        range_with_wrapping.split(vertices, PolygonLocation{1, ScalarDeg1(-0.92)});
+
+    CHECK(result.first.first_edge_index == 4);
+    CHECK(result.first.num_edges == 3);
+    CHECK(result.first.start_point_x == ScalarDeg1(-6.82));
+    CHECK(result.first.end_point_x == ScalarDeg1(-0.92));
+
+    CHECK(result.second.first_edge_index == 1);
+    CHECK(result.second.num_edges == 3);
+    CHECK(result.second.start_point_x == ScalarDeg1(-0.92));
+    CHECK(result.second.end_point_x == ScalarDeg1(-4.52));
+  }
+}
+
 TEST_CASE("validate_node_opp_edges")
 {
   Polygon2 polygon{

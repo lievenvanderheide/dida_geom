@@ -25,6 +25,35 @@ bool PolygonLocationLessThan::operator()(const PolygonLocation& a, const Polygon
   }
 }
 
+std::pair<PolygonRange, PolygonRange> PolygonRange::split(VerticesView vertices, PolygonLocation location) const
+{
+  // There's no support yet for the case when num_edges == vertices.size() + 1 (which can happen when we have a range
+  // whose start and end point are strictly on the interior of the same edge).
+  DIDA_ASSERT(num_edges <= vertices.size());
+
+  size_t a_num_edges = sub_modulo(location.edge_index, first_edge_index, vertices.size());
+  size_t b_num_edges = num_edges - a_num_edges;
+
+  if (location.x != vertices[location.edge_index].x())
+  {
+    a_num_edges++;
+  }
+
+  return std::make_pair(
+      PolygonRange{
+          first_edge_index,
+          a_num_edges,
+          start_point_x,
+          location.x,
+      },
+      PolygonRange{
+          location.edge_index,
+          b_num_edges,
+          location.x,
+          end_point_x,
+      });
+}
+
 Edge ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_origin)
 {
   YOnEdge result_y = YOnEdge::infinity();
