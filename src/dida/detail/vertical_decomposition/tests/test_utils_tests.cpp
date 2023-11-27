@@ -523,9 +523,9 @@ TEST_CASE("vertical_extension_contact_points")
 
     std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
 
-    REQUIRE(contact_points.size() == 16);
+    REQUIRE(contact_points.size() == 18);
 
-    CHECK(contact_points[0].type == VerticalExtensionContactPoint::Type::vertex);
+    CHECK(contact_points[0].type == VerticalExtensionContactPoint::Type::vertex_upwards);
     CHECK(contact_points[0].node == &nodes[1]);
 
     CHECK(contact_points[1].type == VerticalExtensionContactPoint::Type::leaf);
@@ -540,38 +540,44 @@ TEST_CASE("vertical_extension_contact_points")
     CHECK(contact_points[4].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
     CHECK(contact_points[4].node == &nodes[1]);
 
-    CHECK(contact_points[5].type == VerticalExtensionContactPoint::Type::vertex);
+    CHECK(contact_points[5].type == VerticalExtensionContactPoint::Type::vertex_upwards);
     CHECK(contact_points[5].node == &nodes[4]);
 
-    CHECK(contact_points[6].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[6].node == &nodes[3]);
+    CHECK(contact_points[6].type == VerticalExtensionContactPoint::Type::vertex_downwards);
+    CHECK(contact_points[6].node == &nodes[4]);
 
-    CHECK(contact_points[7].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
-    CHECK(contact_points[7].node == &nodes[4]);
+    CHECK(contact_points[7].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[7].node == &nodes[3]);
 
     CHECK(contact_points[8].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
-    CHECK(contact_points[8].node == &nodes[5]);
+    CHECK(contact_points[8].node == &nodes[4]);
 
-    CHECK(contact_points[9].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[9].node == &nodes[6]);
+    CHECK(contact_points[9].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
+    CHECK(contact_points[9].node == &nodes[5]);
 
-    CHECK(contact_points[10].type == VerticalExtensionContactPoint::Type::vertex);
-    CHECK(contact_points[10].node == &nodes[5]);
+    CHECK(contact_points[10].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[10].node == &nodes[6]);
 
-    CHECK(contact_points[11].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
-    CHECK(contact_points[11].node == &nodes[8]);
+    CHECK(contact_points[11].type == VerticalExtensionContactPoint::Type::vertex_downwards);
+    CHECK(contact_points[11].node == &nodes[5]);
 
-    CHECK(contact_points[12].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[12].node == &nodes[9]);
+    CHECK(contact_points[12].type == VerticalExtensionContactPoint::Type::vertex_upwards);
+    CHECK(contact_points[12].node == &nodes[5]);
 
-    CHECK(contact_points[13].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
+    CHECK(contact_points[13].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
     CHECK(contact_points[13].node == &nodes[8]);
 
     CHECK(contact_points[14].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[14].node == &nodes[7]);
+    CHECK(contact_points[14].node == &nodes[9]);
 
-    CHECK(contact_points[15].type == VerticalExtensionContactPoint::Type::vertex);
+    CHECK(contact_points[15].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
     CHECK(contact_points[15].node == &nodes[8]);
+
+    CHECK(contact_points[16].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[16].node == &nodes[7]);
+
+    CHECK(contact_points[17].type == VerticalExtensionContactPoint::Type::vertex_upwards);
+    CHECK(contact_points[17].node == &nodes[8]);
   }
 
   SECTION("Chain 2")
@@ -668,9 +674,9 @@ TEST_CASE("vertical_extension_contact_points")
 
     std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
 
-    REQUIRE(contact_points.size() == 16);
+    REQUIRE(contact_points.size() == 18);
 
-    CHECK(contact_points[0].type == VerticalExtensionContactPoint::Type::vertex);
+    CHECK(contact_points[0].type == VerticalExtensionContactPoint::Type::vertex_downwards);
     CHECK(contact_points[0].node == &nodes[1]);
 
     CHECK(contact_points[1].type == VerticalExtensionContactPoint::Type::leaf);
@@ -685,38 +691,44 @@ TEST_CASE("vertical_extension_contact_points")
     CHECK(contact_points[4].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
     CHECK(contact_points[4].node == &nodes[1]);
 
-    CHECK(contact_points[5].type == VerticalExtensionContactPoint::Type::vertex);
+    CHECK(contact_points[5].type == VerticalExtensionContactPoint::Type::vertex_downwards);
     CHECK(contact_points[5].node == &nodes[4]);
 
-    CHECK(contact_points[6].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[6].node == &nodes[3]);
+    CHECK(contact_points[6].type == VerticalExtensionContactPoint::Type::vertex_upwards);
+    CHECK(contact_points[6].node == &nodes[4]);
 
-    CHECK(contact_points[7].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
-    CHECK(contact_points[7].node == &nodes[4]);
+    CHECK(contact_points[7].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[7].node == &nodes[3]);
 
     CHECK(contact_points[8].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
-    CHECK(contact_points[8].node == &nodes[5]);
+    CHECK(contact_points[8].node == &nodes[4]);
 
-    CHECK(contact_points[9].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[9].node == &nodes[6]);
+    CHECK(contact_points[9].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
+    CHECK(contact_points[9].node == &nodes[5]);
 
-    CHECK(contact_points[10].type == VerticalExtensionContactPoint::Type::vertex);
-    CHECK(contact_points[10].node == &nodes[5]);
+    CHECK(contact_points[10].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[10].node == &nodes[6]);
 
-    CHECK(contact_points[11].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
-    CHECK(contact_points[11].node == &nodes[8]);
+    CHECK(contact_points[11].type == VerticalExtensionContactPoint::Type::vertex_upwards);
+    CHECK(contact_points[11].node == &nodes[5]);
 
-    CHECK(contact_points[12].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[12].node == &nodes[9]);
+    CHECK(contact_points[12].type == VerticalExtensionContactPoint::Type::vertex_downwards);
+    CHECK(contact_points[12].node == &nodes[5]);
 
-    CHECK(contact_points[13].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
+    CHECK(contact_points[13].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
     CHECK(contact_points[13].node == &nodes[8]);
 
     CHECK(contact_points[14].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[14].node == &nodes[7]);
+    CHECK(contact_points[14].node == &nodes[9]);
 
-    CHECK(contact_points[15].type == VerticalExtensionContactPoint::Type::vertex);
+    CHECK(contact_points[15].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
     CHECK(contact_points[15].node == &nodes[8]);
+
+    CHECK(contact_points[16].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[16].node == &nodes[7]);
+
+    CHECK(contact_points[17].type == VerticalExtensionContactPoint::Type::vertex_downwards);
+    CHECK(contact_points[17].node == &nodes[8]);
   }
 }
 

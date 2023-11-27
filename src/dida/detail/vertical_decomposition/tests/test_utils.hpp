@@ -72,13 +72,16 @@ struct VerticalExtensionContactPoint
   /// The type of contact point.
   enum class Type
   {
-    /// The contact point is the vertex of @c node.
-    vertex,
+    /// The contact point of a downward vertical extension and the vertex it originates from.
+    vertex_downwards,
 
-    /// The contact point is the point where the vertical extension meets @c node->lower_opp_edge.
+    /// The contact point of an upward vertical extension and the vertex it originates from.
+    vertex_upwards,
+
+    /// The contact point of an upward vertical extension and its @c node->lower_opp_edge.
     lower_opp_edge,
 
-    /// The contact point is the point where the vertical extension meets @c node->upper_opp_edge.
+    /// The contact point of a downward vertical extension and its @c node->upper_opp_edge.
     upper_opp_edge,
 
     /// The contact point is the vertex of @c node, and @c node is a leaf node.
