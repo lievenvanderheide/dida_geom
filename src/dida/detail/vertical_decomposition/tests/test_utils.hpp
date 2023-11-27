@@ -69,6 +69,37 @@ Edge ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_
 /// Gathers all nodes which are reachable from @c node through @c neighbors connections (this includes @c node itself).
 std::set<const Node*> gather_nodes(const Node* node);
 
+/// A contact point where a vertical extension meets its chain.
+struct VerticalExtensionContactPoint
+{
+  /// The type of contact point.
+  enum class Type
+  {
+    /// The contact point is the vertex of @c node.
+    vertex,
+
+    /// The contact point is the point where the vertical extension meets @c node->lower_opp_edge.
+    lower_opp_edge,
+
+    /// The contact point is the point where the vertical extension meets @c node->upper_opp_edge.
+    upper_opp_edge,
+
+    /// The contact point is the vertex of @c node, and @c node is a leaf node.
+    leaf,
+  };
+
+  /// The type of this @c contact point.
+  Type type;
+
+  /// The node.
+  const Node* node;
+};
+
+/// Returns the @c VerticalExtensionContactPoint of the given chain decomposition, in the order they're encountered when
+/// following the chain from beginning to end.
+std::vector<VerticalExtensionContactPoint>
+vertical_extension_contact_points(const ChainDecomposition& chain_decomposition);
+
 /// Validates the @c lower_opp_edge and @c upper_opp_edge members of @c node.
 ///
 /// If @c node is a non-leaf node, then it's checked whether the edges match the result of a ray cast from @c

@@ -114,6 +114,83 @@ std::set<const Node*> gather_nodes(const Node* node)
   return result;
 }
 
+std::vector<VerticalExtensionContactPoint>
+vertical_extension_contact_points(const ChainDecomposition& chain_decomposition)
+{
+  std::vector<VerticalExtensionContactPoint> contact_points;
+
+  contact_points.push_back({VerticalExtensionContactPoint::Type::vertex, chain_decomposition.first_node});
+
+  const Node* prev = chain_decomposition.first_node;
+  const Node* node = prev->neighbors[prev->direction == HorizontalDirection::right ? 2 : 1];
+
+  while (true)
+  {
+    if (node->type == NodeType::leaf)
+    {
+      VerticalExtensionContactPoint contact_point;
+      contact_point.type = VerticalExtensionContactPoint::Type::leaf;
+      contact_point.node = node;
+      contact_points.push_back(contact_point);
+
+      std::swap(node, prev);
+    }
+    else
+    {
+      if (node->neighbors[0] == prev)
+      {
+        VerticalExtensionContactPoint contact_point;
+        contact_point.type = node->direction == HorizontalDirection::right
+                                 ? VerticalExtensionContactPoint::Type::lower_opp_edge
+                                 : VerticalExtensionContactPoint::Type::upper_opp_edge;
+        contact_point.node = node;
+        contact_points.push_back(contact_point);
+
+        prev = node;
+        node = node->neighbors[node->direction == HorizontalDirection::right ? 1 : 2];
+      }
+      else if (node->neighbors[1] == prev)
+      {
+        VerticalExtensionContactPoint contact_point;
+        contact_point.type = node->direction == HorizontalDirection::right
+                                 ? VerticalExtensionContactPoint::Type::vertex
+                                 : VerticalExtensionContactPoint::Type::lower_opp_edge;
+        contact_point.node = node;
+        contact_points.push_back(contact_point);
+
+        if (node->direction == HorizontalDirection::right && node == chain_decomposition.last_node)
+        {
+          break;
+        }
+
+        prev = node;
+        node = node->neighbors[node->direction == HorizontalDirection::right ? 2 : 0];
+      }
+      else
+      {
+        DIDA_ASSERT(node->neighbors[2] == prev);
+
+        VerticalExtensionContactPoint contact_point;
+        contact_point.type = node->direction == HorizontalDirection::right
+                                 ? VerticalExtensionContactPoint::Type::upper_opp_edge
+                                 : VerticalExtensionContactPoint::Type::vertex;
+        contact_point.node = node;
+        contact_points.push_back(contact_point);
+
+        if (node->direction == HorizontalDirection::left && node == chain_decomposition.last_node)
+        {
+          break;
+        }
+
+        prev = node;
+        node = node->neighbors[node->direction == HorizontalDirection::right ? 0 : 1];
+      }
+    }
+  }
+
+  return contact_points;
+}
+
 bool validate_node_opp_edges(VerticesView vertices, const PolygonRange& range, const Node* node)
 {
   if (node->type == NodeType::leaf)

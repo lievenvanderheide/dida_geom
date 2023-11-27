@@ -2,6 +2,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "dida/detail/vertical_decomposition/sweep_line_builder.hpp"
 #include "dida/polygon2.hpp"
 
 namespace dida::detail::vertical_decomposition
@@ -425,6 +426,297 @@ TEST_CASE("gather_nodes")
       std::set<const Node*> result = gather_nodes(&nodes[2]);
       check_node_set(result, nodes);
     }
+  }
+}
+
+TEST_CASE("vertical_extension_contact_points")
+{
+  SECTION("Chain 1")
+  {
+    Polygon2 polygon{
+        {-3.00, 2.64}, {-0.30, 3.64}, {-3.12, 5.62}, {-5.92, 3.10}, {-2.76, 0.64}, {0.78, 2.34}, {-0.02, 0.62},
+        {2.88, 0.70},  {2.06, 2.08},  {5.34, 1.70},  {6.74, 3.64},  {4.40, 6.00},  {3.20, 4.00}, {4.68, 3.20},
+    };
+
+    VerticesView vertices(polygon);
+
+    std::vector<Node> nodes(10);
+    nodes[0].direction = HorizontalDirection::left;
+    nodes[0].type = NodeType::leaf;
+    nodes[0].vertex_it = vertices.begin() + 3;
+    nodes[0].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[0].upper_opp_edge = Edge::edge_from_index(vertices, 2);
+    nodes[0].neighbors[0] = &nodes[1];
+
+    nodes[1].direction = HorizontalDirection::right;
+    nodes[1].type = NodeType::branch;
+    nodes[1].vertex_it = vertices.begin() + 0;
+    nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[1].neighbors[0] = &nodes[0];
+    nodes[1].neighbors[1] = &nodes[4];
+    nodes[1].neighbors[2] = &nodes[2];
+
+    nodes[2].direction = HorizontalDirection::right;
+    nodes[2].type = NodeType::leaf;
+    nodes[2].vertex_it = vertices.begin() + 1;
+    nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 0);
+    nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[2].neighbors[0] = &nodes[1];
+
+    nodes[3].direction = HorizontalDirection::left;
+    nodes[3].type = NodeType::leaf;
+    nodes[3].vertex_it = vertices.begin() + 6;
+    nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 6);
+    nodes[3].upper_opp_edge = Edge::edge_from_index(vertices, 5);
+    nodes[3].neighbors[0] = &nodes[4];
+
+    nodes[4].direction = HorizontalDirection::left;
+    nodes[4].type = NodeType::branch;
+    nodes[4].vertex_it = vertices.begin() + 5;
+    nodes[4].lower_opp_edge = Edge::edge_from_index(vertices, 6);
+    nodes[4].upper_opp_edge = Edge::invalid();
+    nodes[4].neighbors[0] = &nodes[5];
+    nodes[4].neighbors[1] = &nodes[3];
+    nodes[4].neighbors[2] = &nodes[1];
+
+    nodes[5].direction = HorizontalDirection::right;
+    nodes[5].type = NodeType::branch;
+    nodes[5].vertex_it = vertices.begin() + 8;
+    nodes[5].lower_opp_edge = Edge::edge_from_index(vertices, 6);
+    nodes[5].upper_opp_edge = Edge::invalid();
+    nodes[5].neighbors[0] = &nodes[4];
+    nodes[5].neighbors[1] = &nodes[6];
+    nodes[5].neighbors[2] = &nodes[8];
+
+    nodes[6].direction = HorizontalDirection::right;
+    nodes[6].type = NodeType::leaf;
+    nodes[6].vertex_it = vertices.begin() + 7;
+    nodes[6].lower_opp_edge = Edge::edge_from_index(vertices, 6);
+    nodes[6].upper_opp_edge = Edge::edge_from_index(vertices, 7);
+    nodes[6].neighbors[0] = &nodes[5];
+
+    nodes[7].direction = HorizontalDirection::left;
+    nodes[7].type = NodeType::leaf;
+    nodes[7].vertex_it = vertices.begin() + 12;
+    nodes[7].lower_opp_edge = Edge::edge_from_index(vertices, 12);
+    nodes[7].upper_opp_edge = Edge::edge_from_index(vertices, 11);
+    nodes[7].neighbors[0] = &nodes[8];
+
+    nodes[8].direction = HorizontalDirection::left;
+    nodes[8].type = NodeType::branch;
+    nodes[8].vertex_it = vertices.begin() + 13;
+    nodes[8].lower_opp_edge = Edge::edge_from_index(vertices, 8);
+    nodes[8].upper_opp_edge = Edge::edge_from_index(vertices, 10);
+    nodes[8].neighbors[0] = &nodes[9];
+    nodes[8].neighbors[1] = &nodes[5];
+    nodes[8].neighbors[2] = &nodes[7];
+
+    nodes[9].direction = HorizontalDirection::right;
+    nodes[9].type = NodeType::leaf;
+    nodes[9].vertex_it = vertices.begin() + 10;
+    nodes[9].lower_opp_edge = Edge::edge_from_index(vertices, 9);
+    nodes[9].upper_opp_edge = Edge::edge_from_index(vertices, 10);
+    nodes[9].neighbors[0] = &nodes[8];
+
+    ChainDecomposition chain_decomposition{&nodes[1], &nodes[8]};
+
+    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+
+    REQUIRE(contact_points.size() == 16);
+
+    CHECK(contact_points[0].type == VerticalExtensionContactPoint::Type::vertex);
+    CHECK(contact_points[0].node == &nodes[1]);
+
+    CHECK(contact_points[1].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[1].node == &nodes[2]);
+
+    CHECK(contact_points[2].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
+    CHECK(contact_points[2].node == &nodes[1]);
+
+    CHECK(contact_points[3].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[3].node == &nodes[0]);
+
+    CHECK(contact_points[4].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
+    CHECK(contact_points[4].node == &nodes[1]);
+
+    CHECK(contact_points[5].type == VerticalExtensionContactPoint::Type::vertex);
+    CHECK(contact_points[5].node == &nodes[4]);
+
+    CHECK(contact_points[6].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[6].node == &nodes[3]);
+
+    CHECK(contact_points[7].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
+    CHECK(contact_points[7].node == &nodes[4]);
+
+    CHECK(contact_points[8].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
+    CHECK(contact_points[8].node == &nodes[5]);
+
+    CHECK(contact_points[9].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[9].node == &nodes[6]);
+
+    CHECK(contact_points[10].type == VerticalExtensionContactPoint::Type::vertex);
+    CHECK(contact_points[10].node == &nodes[5]);
+
+    CHECK(contact_points[11].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
+    CHECK(contact_points[11].node == &nodes[8]);
+
+    CHECK(contact_points[12].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[12].node == &nodes[9]);
+
+    CHECK(contact_points[13].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
+    CHECK(contact_points[13].node == &nodes[8]);
+
+    CHECK(contact_points[14].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[14].node == &nodes[7]);
+
+    CHECK(contact_points[15].type == VerticalExtensionContactPoint::Type::vertex);
+    CHECK(contact_points[15].node == &nodes[8]);
+  }
+
+  SECTION("Chain 2")
+  {
+    // The same chain as in the previous section, rotated by 180 degrees. This way, we're covering all the cases.
+
+    Polygon2 polygon{
+        {3.00, -2.64},  {0.30, -3.64},  {3.12, -5.62},  {5.92, -3.10},  {2.76, -0.64},  {-0.78, -2.34}, {0.02, -0.62},
+        {-2.88, -0.70}, {-2.06, -2.08}, {-5.34, -1.70}, {-6.74, -3.64}, {-4.40, -6.00}, {-3.20, -4.00}, {-4.68, -3.20},
+    };
+
+    VerticesView vertices(polygon);
+
+    std::vector<Node> nodes(10);
+    nodes[0].direction = HorizontalDirection::right;
+    nodes[0].type = NodeType::leaf;
+    nodes[0].vertex_it = vertices.begin() + 3;
+    nodes[0].lower_opp_edge = Edge::edge_from_index(vertices, 2);
+    nodes[0].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[0].neighbors[0] = &nodes[1];
+
+    nodes[1].direction = HorizontalDirection::left;
+    nodes[1].type = NodeType::branch;
+    nodes[1].vertex_it = vertices.begin() + 0;
+    nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[1].neighbors[0] = &nodes[0];
+    nodes[1].neighbors[1] = &nodes[2];
+    nodes[1].neighbors[2] = &nodes[4];
+
+    nodes[2].direction = HorizontalDirection::left;
+    nodes[2].type = NodeType::leaf;
+    nodes[2].vertex_it = vertices.begin() + 1;
+    nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 0);
+    nodes[2].neighbors[0] = &nodes[1];
+
+    nodes[3].direction = HorizontalDirection::right;
+    nodes[3].type = NodeType::leaf;
+    nodes[3].vertex_it = vertices.begin() + 6;
+    nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 5);
+    nodes[3].upper_opp_edge = Edge::edge_from_index(vertices, 6);
+    nodes[3].neighbors[0] = &nodes[4];
+
+    nodes[4].direction = HorizontalDirection::right;
+    nodes[4].type = NodeType::branch;
+    nodes[4].vertex_it = vertices.begin() + 5;
+    nodes[4].lower_opp_edge = Edge::invalid();
+    nodes[4].upper_opp_edge = Edge::edge_from_index(vertices, 6);
+    nodes[4].neighbors[0] = &nodes[5];
+    nodes[4].neighbors[1] = &nodes[1];
+    nodes[4].neighbors[2] = &nodes[3];
+
+    nodes[5].direction = HorizontalDirection::left;
+    nodes[5].type = NodeType::branch;
+    nodes[5].vertex_it = vertices.begin() + 8;
+    nodes[5].lower_opp_edge = Edge::invalid();
+    nodes[5].upper_opp_edge = Edge::edge_from_index(vertices, 6);
+    nodes[5].neighbors[0] = &nodes[4];
+    nodes[5].neighbors[1] = &nodes[8];
+    nodes[5].neighbors[2] = &nodes[6];
+
+    nodes[6].direction = HorizontalDirection::left;
+    nodes[6].type = NodeType::leaf;
+    nodes[6].vertex_it = vertices.begin() + 7;
+    nodes[6].lower_opp_edge = Edge::edge_from_index(vertices, 7);
+    nodes[6].upper_opp_edge = Edge::edge_from_index(vertices, 6);
+    nodes[6].neighbors[0] = &nodes[5];
+
+    nodes[7].direction = HorizontalDirection::right;
+    nodes[7].type = NodeType::leaf;
+    nodes[7].vertex_it = vertices.begin() + 12;
+    nodes[7].lower_opp_edge = Edge::edge_from_index(vertices, 11);
+    nodes[7].upper_opp_edge = Edge::edge_from_index(vertices, 12);
+    nodes[7].neighbors[0] = &nodes[8];
+
+    nodes[8].direction = HorizontalDirection::right;
+    nodes[8].type = NodeType::branch;
+    nodes[8].vertex_it = vertices.begin() + 13;
+    nodes[8].lower_opp_edge = Edge::edge_from_index(vertices, 10);
+    nodes[8].upper_opp_edge = Edge::edge_from_index(vertices, 8);
+    nodes[8].neighbors[0] = &nodes[9];
+    nodes[8].neighbors[1] = &nodes[7];
+    nodes[8].neighbors[2] = &nodes[5];
+
+    nodes[9].direction = HorizontalDirection::left;
+    nodes[9].type = NodeType::leaf;
+    nodes[9].vertex_it = vertices.begin() + 10;
+    nodes[9].lower_opp_edge = Edge::edge_from_index(vertices, 10);
+    nodes[9].upper_opp_edge = Edge::edge_from_index(vertices, 9);
+    nodes[9].neighbors[0] = &nodes[8];
+
+    ChainDecomposition chain_decomposition{&nodes[1], &nodes[8]};
+
+    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+
+    REQUIRE(contact_points.size() == 16);
+
+    CHECK(contact_points[0].type == VerticalExtensionContactPoint::Type::vertex);
+    CHECK(contact_points[0].node == &nodes[1]);
+
+    CHECK(contact_points[1].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[1].node == &nodes[2]);
+
+    CHECK(contact_points[2].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
+    CHECK(contact_points[2].node == &nodes[1]);
+
+    CHECK(contact_points[3].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[3].node == &nodes[0]);
+
+    CHECK(contact_points[4].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
+    CHECK(contact_points[4].node == &nodes[1]);
+
+    CHECK(contact_points[5].type == VerticalExtensionContactPoint::Type::vertex);
+    CHECK(contact_points[5].node == &nodes[4]);
+
+    CHECK(contact_points[6].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[6].node == &nodes[3]);
+
+    CHECK(contact_points[7].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
+    CHECK(contact_points[7].node == &nodes[4]);
+
+    CHECK(contact_points[8].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
+    CHECK(contact_points[8].node == &nodes[5]);
+
+    CHECK(contact_points[9].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[9].node == &nodes[6]);
+
+    CHECK(contact_points[10].type == VerticalExtensionContactPoint::Type::vertex);
+    CHECK(contact_points[10].node == &nodes[5]);
+
+    CHECK(contact_points[11].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
+    CHECK(contact_points[11].node == &nodes[8]);
+
+    CHECK(contact_points[12].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[12].node == &nodes[9]);
+
+    CHECK(contact_points[13].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
+    CHECK(contact_points[13].node == &nodes[8]);
+
+    CHECK(contact_points[14].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[14].node == &nodes[7]);
+
+    CHECK(contact_points[15].type == VerticalExtensionContactPoint::Type::vertex);
+    CHECK(contact_points[15].node == &nodes[8]);
   }
 }
 
