@@ -66,7 +66,7 @@ constexpr size_t base_10_num_significant_fractional_digits()
   //
   // Taking the reciprocal gives
   //
-  //   10^n >= 2^(radix + 1)
+  //   10^n >= 2^radix
 
   IntType lhs = 1;
   IntType rhs = static_cast<IntType>(2) << ScalarType::radix;
@@ -80,7 +80,7 @@ constexpr size_t base_10_num_significant_fractional_digits()
   return n;
 }
 
-}
+} // namespace
 
 template <class ScalarType>
 ScalarType Parser::parse_scalar_fractional_part()
@@ -104,8 +104,8 @@ ScalarType Parser::parse_scalar_fractional_part()
     head_++;
   }
 
-  // The significant digits have been parsed. The final value will be either base_2_num / base_2_denom or base_2_num /
-  // base_2_denom + quantum.
+  // The significant digits have been parsed. The final value will be either base_2_num / base_2_denom or (base_2_num +
+  // 1) / base_2_denom.
 
   IntType base_2_denom = static_cast<IntType>(1) << ScalarType::radix;
   IntType base_2_num = base_10_num * base_2_denom / base_10_denom;
@@ -114,7 +114,7 @@ ScalarType Parser::parse_scalar_fractional_part()
   if (remainder > (base_10_denom / 2) || (remainder == (base_10_denom / 2) && (base_2_num & 1) == 1))
   {
     // We're already rounding up, so even if there are digits remaining, these can't be enough to bump the result up by
-    // another ScalarDeg1::quantum.
+    // another ScalarType::quantum.
 
     while (head_ != end_ && is_digit(*head_))
     {
@@ -130,8 +130,8 @@ ScalarType Parser::parse_scalar_fractional_part()
     return ScalarType::from_numerator(base_2_num);
   }
 
-  // The truncated value resulted in downwards rounding, and there are digits remaining, so it may be possible that
-  // these remaining digits push 'v' over the threshold for upwards rounding.
+  // The truncated value resulted in downwards rounding, but there are digits remaining, so it is be possible that these
+  // remaining digits push 'v' over the threshold for upwards rounding.
   //
   // We should round up if
   //
