@@ -100,6 +100,27 @@ struct VerticalExtensionContactPoint
 std::vector<VerticalExtensionContactPoint>
 vertical_extension_contact_points(const ChainDecomposition& chain_decomposition);
 
+/// An island of a chain decomposition consists of a subset of the chain's boundary, such that for a valid
+/// decomposition, the following conditions must hold:
+///
+///  - Finite vertical extensions may only connect contact points within the same island.
+///  - Finite vertical extensions do not cross the boundary.
+///  - No infinite vertical extensions belong to an island (in fact, infinite extensions determine island boundaries).
+///
+struct ChainDecompositionIsland
+{
+  /// The contact points of the vertical extensions in this island.
+  ArrayView<const VerticalExtensionContactPoint> contact_points;
+
+  /// The part of the polygon's boundary belonging to this island.
+  PolygonRange range;
+};
+
+/// Splits a chain decomposition into its set of islands.
+std::vector<ChainDecompositionIsland>
+split_chain_decomposition_into_islands(VerticesView vertices, const ChainDecomposition& chain_decomposition,
+                                       ArrayView<const VerticalExtensionContactPoint> contact_points);
+
 /// Validates the @c lower_opp_edge and @c upper_opp_edge members of @c node.
 ///
 /// If @c node is a non-leaf node, then it's checked whether the edges match the result of a ray cast from @c

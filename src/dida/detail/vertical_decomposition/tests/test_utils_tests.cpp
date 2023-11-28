@@ -45,6 +45,79 @@ TEST_CASE("PolygonLocationLessThan")
   }
 }
 
+TEST_CASE("PolygonRange::split")
+{
+  Polygon2 polygon{{-4.48, 2.08}, {-2.64, 4.16}, {0.32, 2.40}, {2.98, 4.26}, {-7.36, 7.58}};
+  VerticesView vertices(polygon);
+
+  PolygonRange range_without_wrapping{1, 4, ScalarDeg1(-.92), ScalarDeg1(-6.82)};
+  PolygonRange range_with_wrapping{4, 5, ScalarDeg1(-6.82), ScalarDeg1(-4.52)};
+
+  SECTION("Split at vertex")
+  {
+    std::pair<PolygonRange, PolygonRange> result =
+        range_without_wrapping.split(vertices, PolygonLocation{3, ScalarDeg1(2.98)});
+
+    CHECK(result.first.first_edge_index == 1);
+    CHECK(result.first.num_edges == 2);
+    CHECK(result.first.start_point_x == ScalarDeg1(-.92));
+    CHECK(result.first.end_point_x == ScalarDeg1(2.98));
+
+    CHECK(result.second.first_edge_index == 3);
+    CHECK(result.second.num_edges == 2);
+    CHECK(result.second.start_point_x == ScalarDeg1(2.98));
+    CHECK(result.second.end_point_x == ScalarDeg1(-6.82));
+  }
+
+  SECTION("Split at vertex with wrapping")
+  {
+    std::pair<PolygonRange, PolygonRange> result =
+        range_with_wrapping.split(vertices, PolygonLocation{1, ScalarDeg1(-2.64)});
+
+    CHECK(result.first.first_edge_index == 4);
+    CHECK(result.first.num_edges == 2);
+    CHECK(result.first.start_point_x == ScalarDeg1(-6.82));
+    CHECK(result.first.end_point_x == ScalarDeg1(-2.64));
+
+    CHECK(result.second.first_edge_index == 1);
+    CHECK(result.second.num_edges == 3);
+    CHECK(result.second.start_point_x == ScalarDeg1(-2.64));
+    CHECK(result.second.end_point_x == ScalarDeg1(-4.52));
+  }
+
+  SECTION("Split mid edge")
+  {
+    std::pair<PolygonRange, PolygonRange> result =
+        range_without_wrapping.split(vertices, PolygonLocation{3, ScalarDeg1(-4.52)});
+
+    CHECK(result.first.first_edge_index == 1);
+    CHECK(result.first.num_edges == 3);
+    CHECK(result.first.start_point_x == ScalarDeg1(-.92));
+    CHECK(result.first.end_point_x == ScalarDeg1(-4.52));
+
+    CHECK(result.second.first_edge_index == 3);
+    CHECK(result.second.num_edges == 2);
+    CHECK(result.second.start_point_x == ScalarDeg1(-4.52));
+    CHECK(result.second.end_point_x == ScalarDeg1(-6.82));
+  }
+
+  SECTION("Split mid edge, with wrapping")
+  {
+    std::pair<PolygonRange, PolygonRange> result =
+        range_with_wrapping.split(vertices, PolygonLocation{1, ScalarDeg1(-0.92)});
+
+    CHECK(result.first.first_edge_index == 4);
+    CHECK(result.first.num_edges == 3);
+    CHECK(result.first.start_point_x == ScalarDeg1(-6.82));
+    CHECK(result.first.end_point_x == ScalarDeg1(-0.92));
+
+    CHECK(result.second.first_edge_index == 1);
+    CHECK(result.second.num_edges == 3);
+    CHECK(result.second.start_point_x == ScalarDeg1(-0.92));
+    CHECK(result.second.end_point_x == ScalarDeg1(-4.52));
+  }
+}
+
 TEST_CASE("ray_cast_up")
 {
   Polygon2 polygon{
@@ -732,76 +805,704 @@ TEST_CASE("vertical_extension_contact_points")
   }
 }
 
-TEST_CASE("PolygonRange::split")
+TEST_CASE("split_chain_decomposition_into_islands")
 {
-  Polygon2 polygon{{-4.48, 2.08}, {-2.64, 4.16}, {0.32, 2.40}, {2.98, 4.26}, {-7.36, 7.58}};
-  VerticesView vertices(polygon);
-
-  PolygonRange range_without_wrapping{1, 4, ScalarDeg1(-.92), ScalarDeg1(-6.82)};
-  PolygonRange range_with_wrapping{4, 5, ScalarDeg1(-6.82), ScalarDeg1(-4.52)};
-
-  SECTION("Split at vertex")
+  SECTION("Split at contact point of type 'vertex_downwards'")
   {
-    std::pair<PolygonRange, PolygonRange> result =
-        range_without_wrapping.split(vertices, PolygonLocation{3, ScalarDeg1(2.98)});
+    Polygon2 polygon{
+        {2.40, 4.74},  {4.06, 5.68},  {-1.22, 6.18}, {-0.06, 5.00},
+        {-3.96, 4.14}, {-2.34, 3.46}, {-2.98, 2.74}, {3.48, 3.94},
+    };
+    VerticesView vertices(polygon);
 
-    CHECK(result.first.first_edge_index == 1);
-    CHECK(result.first.num_edges == 2);
-    CHECK(result.first.start_point_x == ScalarDeg1(-.92));
-    CHECK(result.first.end_point_x == ScalarDeg1(2.98));
+    std::vector<Node> nodes(6);
+    nodes[0].direction = HorizontalDirection::left;
+    nodes[0].type = NodeType::leaf;
+    nodes[0].vertex_it = vertices.begin() + 4;
+    nodes[0].lower_opp_edge = Edge::edge_from_index(vertices, 4);
+    nodes[0].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[0].neighbors[0] = &nodes[1];
 
-    CHECK(result.second.first_edge_index == 3);
-    CHECK(result.second.num_edges == 2);
-    CHECK(result.second.start_point_x == ScalarDeg1(2.98));
-    CHECK(result.second.end_point_x == ScalarDeg1(-6.82));
+    nodes[1].direction = HorizontalDirection::left;
+    nodes[1].type = NodeType::branch;
+    nodes[1].vertex_it = vertices.begin() + 5;
+    nodes[1].lower_opp_edge = Edge::invalid();
+    nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[1].neighbors[0] = &nodes[3];
+    nodes[1].neighbors[1] = nullptr;
+    nodes[1].neighbors[2] = &nodes[0];
+
+    nodes[2].direction = HorizontalDirection::left;
+    nodes[2].type = NodeType::leaf;
+    nodes[2].vertex_it = vertices.begin() + 2;
+    nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 2);
+    nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[2].neighbors[0] = &nodes[3];
+
+    nodes[3].direction = HorizontalDirection::left;
+    nodes[3].type = NodeType::branch;
+    nodes[3].vertex_it = vertices.begin() + 3;
+    nodes[3].lower_opp_edge = Edge::invalid();
+    nodes[3].upper_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[3].neighbors[0] = &nodes[4];
+    nodes[3].neighbors[1] = &nodes[1];
+    nodes[3].neighbors[2] = &nodes[2];
+
+    nodes[4].direction = HorizontalDirection::right;
+    nodes[4].type = NodeType::branch;
+    nodes[4].vertex_it = vertices.begin() + 0;
+    nodes[4].lower_opp_edge = Edge::invalid();
+    nodes[4].upper_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[4].neighbors[0] = &nodes[3];
+    nodes[4].neighbors[1] = nullptr;
+    nodes[4].neighbors[2] = &nodes[5];
+
+    nodes[5].direction = HorizontalDirection::right;
+    nodes[5].type = NodeType::leaf;
+    nodes[5].vertex_it = vertices.begin() + 1;
+    nodes[5].lower_opp_edge = Edge::edge_from_index(vertices, 0);
+    nodes[5].upper_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[5].neighbors[0] = &nodes[4];
+
+    ChainDecomposition chain_decomposition{&nodes[4], &nodes[1]};
+
+    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    REQUIRE(contact_points.size() == 10);
+
+    std::vector<ChainDecompositionIsland> islands =
+        split_chain_decomposition_into_islands(vertices, chain_decomposition, contact_points);
+
+    REQUIRE(islands.size() == 2);
+
+    CHECK(islands[0].contact_points.begin() == contact_points.data());
+    CHECK(islands[0].contact_points.end() == contact_points.data() + 6);
+    CHECK(islands[0].range.first_edge_index == 0);
+    CHECK(islands[0].range.num_edges == 3);
+    CHECK(islands[0].range.start_point_x == ScalarDeg1(2.40));
+    CHECK(islands[0].range.end_point_x == ScalarDeg1(-0.06));
+
+    CHECK(islands[1].contact_points.begin() == contact_points.data() + 7);
+    CHECK(islands[1].contact_points.end() == contact_points.data() + 10);
+    CHECK(islands[1].range.first_edge_index == 3);
+    CHECK(islands[1].range.num_edges == 2);
+    CHECK(islands[1].range.start_point_x == ScalarDeg1(-0.06));
+    CHECK(islands[1].range.end_point_x == ScalarDeg1(-2.34));
   }
 
-  SECTION("Split at vertex with wrapping")
+  SECTION("Split at contact point of type 'vertex_upwards'")
   {
-    std::pair<PolygonRange, PolygonRange> result =
-        range_with_wrapping.split(vertices, PolygonLocation{1, ScalarDeg1(-2.64)});
+    Polygon2 polygon{
+        {-1.20, 4.86}, {-2.50, 4.24}, {0.56, 2.96}, {-0.24, 2.16},
+        {2.66, 2.28},  {2.04, 3.26},  {3.44, 4.68}, {-1.92, 5.72},
+    };
+    VerticesView vertices(polygon);
 
-    CHECK(result.first.first_edge_index == 4);
-    CHECK(result.first.num_edges == 2);
-    CHECK(result.first.start_point_x == ScalarDeg1(-6.82));
-    CHECK(result.first.end_point_x == ScalarDeg1(-2.64));
+    std::vector<Node> nodes(6);
+    nodes[0].direction = HorizontalDirection::left;
+    nodes[0].type = NodeType::leaf;
+    nodes[0].vertex_it = vertices.begin() + 1;
+    nodes[0].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[0].upper_opp_edge = Edge::edge_from_index(vertices, 0);
+    nodes[0].neighbors[0] = &nodes[1];
 
-    CHECK(result.second.first_edge_index == 1);
-    CHECK(result.second.num_edges == 3);
-    CHECK(result.second.start_point_x == ScalarDeg1(-2.64));
-    CHECK(result.second.end_point_x == ScalarDeg1(-4.52));
+    nodes[1].direction = HorizontalDirection::left;
+    nodes[1].type = NodeType::branch;
+    nodes[1].vertex_it = vertices.begin() + 0;
+    nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[1].upper_opp_edge = Edge::invalid();
+    nodes[1].neighbors[0] = &nodes[3];
+    nodes[1].neighbors[1] = &nodes[0];
+    nodes[1].neighbors[2] = nullptr;
+
+    nodes[2].direction = HorizontalDirection::left;
+    nodes[2].type = NodeType::leaf;
+    nodes[2].vertex_it = vertices.begin() + 3;
+    nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 2);
+    nodes[2].neighbors[0] = &nodes[3];
+
+    nodes[3].direction = HorizontalDirection::left;
+    nodes[3].type = NodeType::branch;
+    nodes[3].vertex_it = vertices.begin() + 2;
+    nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[3].upper_opp_edge = Edge::invalid();
+    nodes[3].neighbors[0] = &nodes[4];
+    nodes[3].neighbors[1] = &nodes[2];
+    nodes[3].neighbors[2] = &nodes[1];
+
+    nodes[4].direction = HorizontalDirection::right;
+    nodes[4].type = NodeType::branch;
+    nodes[4].vertex_it = vertices.begin() + 5;
+    nodes[4].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[4].upper_opp_edge = Edge::invalid();
+    nodes[4].neighbors[0] = &nodes[3];
+    nodes[4].neighbors[1] = &nodes[5];
+    nodes[4].neighbors[2] = nullptr;
+
+    nodes[5].direction = HorizontalDirection::right;
+    nodes[5].type = NodeType::leaf;
+    nodes[5].vertex_it = vertices.begin() + 4;
+    nodes[5].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[5].upper_opp_edge = Edge::edge_from_index(vertices, 4);
+    nodes[5].neighbors[0] = &nodes[4];
+
+    ChainDecomposition chain_decomposition{&nodes[1], &nodes[4]};
+
+    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    REQUIRE(contact_points.size() == 10);
+
+    std::vector<ChainDecompositionIsland> islands =
+        split_chain_decomposition_into_islands(vertices, chain_decomposition, contact_points);
+
+    REQUIRE(islands.size() == 2);
+
+    CHECK(islands[0].contact_points.begin() == contact_points.data());
+    CHECK(islands[0].contact_points.end() == contact_points.data() + 3);
+    CHECK(islands[0].range.first_edge_index == 0);
+    CHECK(islands[0].range.num_edges == 2);
+    CHECK(islands[0].range.start_point_x == ScalarDeg1(-1.20));
+    CHECK(islands[0].range.end_point_x == ScalarDeg1(0.56));
+
+    CHECK(islands[1].contact_points.begin() == contact_points.data() + 4);
+    CHECK(islands[1].contact_points.end() == contact_points.data() + 10);
+    CHECK(islands[1].range.first_edge_index == 2);
+    CHECK(islands[1].range.num_edges == 3);
+    CHECK(islands[1].range.start_point_x == ScalarDeg1(0.56));
+    CHECK(islands[1].range.end_point_x == ScalarDeg1(2.04));
   }
 
-  SECTION("Split mid edge")
+  SECTION("Split at contact point of type 'lower_opp_edge'")
   {
-    std::pair<PolygonRange, PolygonRange> result =
-        range_without_wrapping.split(vertices, PolygonLocation{3, ScalarDeg1(-4.52)});
+    Polygon2 polygon{
+        {-5.10, 3.10},  {-3.62, 4.28}, {-4.80, 6.04}, {-8.00, 3.60}, {-5.68, -0.34},
+        {-1.84, -0.34}, {0.76, 1.74},  {-1.62, 2.64}, {-1.00, 3.22},
+    };
 
-    CHECK(result.first.first_edge_index == 1);
-    CHECK(result.first.num_edges == 3);
-    CHECK(result.first.start_point_x == ScalarDeg1(-.92));
-    CHECK(result.first.end_point_x == ScalarDeg1(-4.52));
+    VerticesView vertices(polygon);
 
-    CHECK(result.second.first_edge_index == 3);
-    CHECK(result.second.num_edges == 2);
-    CHECK(result.second.start_point_x == ScalarDeg1(-4.52));
-    CHECK(result.second.end_point_x == ScalarDeg1(-6.82));
+    std::vector<Node> nodes(5);
+    nodes[0].direction = HorizontalDirection::left;
+    nodes[0].type = NodeType::leaf;
+    nodes[0].vertex_it = vertices.begin() + 3;
+    nodes[0].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[0].upper_opp_edge = Edge::edge_from_index(vertices, 2);
+    nodes[0].neighbors[0] = &nodes[1];
+
+    nodes[1].direction = HorizontalDirection::right;
+    nodes[1].type = NodeType::branch;
+    nodes[1].vertex_it = vertices.begin() + 0;
+    nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 4);
+    nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 2);
+    nodes[1].neighbors[0] = &nodes[0];
+    nodes[1].neighbors[1] = &nodes[3];
+    nodes[1].neighbors[2] = &nodes[2];
+
+    nodes[2].direction = HorizontalDirection::right;
+    nodes[2].type = NodeType::leaf;
+    nodes[2].vertex_it = vertices.begin() + 1;
+    nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 0);
+    nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[2].neighbors[0] = &nodes[1];
+
+    nodes[3].direction = HorizontalDirection::right;
+    nodes[3].type = NodeType::branch;
+    nodes[3].vertex_it = vertices.begin() + 7;
+    nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 5);
+    nodes[3].upper_opp_edge = Edge::invalid();
+    nodes[3].neighbors[0] = &nodes[1];
+    nodes[3].neighbors[1] = &nodes[4];
+    nodes[3].neighbors[2] = nullptr;
+
+    nodes[4].direction = HorizontalDirection::right;
+    nodes[4].type = NodeType::leaf;
+    nodes[4].vertex_it = vertices.begin() + 6;
+    nodes[4].lower_opp_edge = Edge::edge_from_index(vertices, 5);
+    nodes[4].upper_opp_edge = Edge::edge_from_index(vertices, 6);
+    nodes[4].neighbors[0] = &nodes[3];
+
+    ChainDecomposition chain_decomposition{&nodes[1], &nodes[3]};
+
+    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    REQUIRE(contact_points.size() == 8);
+
+    std::vector<ChainDecompositionIsland> islands =
+        split_chain_decomposition_into_islands(vertices, chain_decomposition, contact_points);
+
+    REQUIRE(islands.size() == 2);
+
+    CHECK(islands[0].contact_points.begin() == contact_points.data());
+    CHECK(islands[0].contact_points.end() == contact_points.data() + 4);
+    CHECK(islands[0].range.first_edge_index == 0);
+    CHECK(islands[0].range.num_edges == 5);
+    CHECK(islands[0].range.start_point_x == ScalarDeg1(-5.10));
+    CHECK(islands[0].range.end_point_x == ScalarDeg1(-5.10));
+
+    CHECK(islands[1].contact_points.begin() == contact_points.data() + 5);
+    CHECK(islands[1].contact_points.end() == contact_points.data() + 8);
+    CHECK(islands[1].range.first_edge_index == 4);
+    CHECK(islands[1].range.num_edges == 3);
+    CHECK(islands[1].range.start_point_x == ScalarDeg1(-5.10));
+    CHECK(islands[1].range.end_point_x == ScalarDeg1(-1.62));
   }
 
-  SECTION("Split mid edge, with wrapping")
+  SECTION("Split at contact point of type 'upper_opp_edge'")
   {
-    std::pair<PolygonRange, PolygonRange> result =
-        range_with_wrapping.split(vertices, PolygonLocation{1, ScalarDeg1(-0.92)});
+    Polygon2 polygon{
+        {4.28, 6.00}, {2.54, 5.00},  {3.38, 3.68}, {7.64, 5.94},
+        {4.06, 9.02}, {-0.26, 7.54}, {0.56, 6.62}, {-1.74, 5.66},
+    };
+    VerticesView vertices(polygon);
 
-    CHECK(result.first.first_edge_index == 4);
-    CHECK(result.first.num_edges == 3);
-    CHECK(result.first.start_point_x == ScalarDeg1(-6.82));
-    CHECK(result.first.end_point_x == ScalarDeg1(-0.92));
+    std::vector<Node> nodes(6);
+    nodes[0].direction = HorizontalDirection::right;
+    nodes[0].type = NodeType::branch;
+    nodes[0].vertex_it = vertices.begin() + 7;
+    nodes[0].lower_opp_edge = Edge::invalid();
+    nodes[0].upper_opp_edge = Edge::invalid();
+    nodes[0].neighbors[0] = nullptr;
+    nodes[0].neighbors[1] = nullptr;
+    nodes[0].neighbors[1] = &nodes[2];
 
-    CHECK(result.second.first_edge_index == 1);
-    CHECK(result.second.num_edges == 3);
-    CHECK(result.second.start_point_x == ScalarDeg1(-0.92));
-    CHECK(result.second.end_point_x == ScalarDeg1(-4.52));
+    nodes[1].direction = HorizontalDirection::left;
+    nodes[1].type = NodeType::leaf;
+    nodes[1].vertex_it = vertices.begin() + 5;
+    nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 5);
+    nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 4);
+    nodes[1].neighbors[0] = &nodes[2];
+
+    nodes[2].direction = HorizontalDirection::left;
+    nodes[2].type = NodeType::branch;
+    nodes[2].vertex_it = vertices.begin() + 6;
+    nodes[2].lower_opp_edge = Edge::invalid();
+    nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 4);
+    nodes[2].neighbors[0] = &nodes[4];
+    nodes[2].neighbors[1] = &nodes[0];
+    nodes[2].neighbors[2] = &nodes[1];
+
+    nodes[3].direction = HorizontalDirection::left;
+    nodes[3].type = NodeType::leaf;
+    nodes[3].vertex_it = vertices.begin() + 1;
+    nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[3].upper_opp_edge = Edge::edge_from_index(vertices, 0);
+    nodes[3].neighbors[0] = &nodes[4];
+
+    nodes[4].direction = HorizontalDirection::left;
+    nodes[4].type = NodeType::branch;
+    nodes[4].vertex_it = vertices.begin() + 0;
+    nodes[4].lower_opp_edge = Edge::edge_from_index(vertices, 2);
+    nodes[4].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[4].neighbors[0] = &nodes[5];
+    nodes[4].neighbors[1] = &nodes[3];
+    nodes[4].neighbors[2] = &nodes[2];
+
+    nodes[5].direction = HorizontalDirection::right;
+    nodes[5].type = NodeType::leaf;
+    nodes[5].vertex_it = vertices.begin() + 3;
+    nodes[5].lower_opp_edge = Edge::edge_from_index(vertices, 2);
+    nodes[5].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[5].neighbors[0] = &nodes[4];
+
+    ChainDecomposition chain_decomposition{&nodes[4], &nodes[0]};
+
+    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    REQUIRE(contact_points.size() == 10);
+
+    std::vector<ChainDecompositionIsland> islands =
+        split_chain_decomposition_into_islands(vertices, chain_decomposition, contact_points);
+
+    REQUIRE(islands.size() == 2);
+
+    CHECK(islands[0].contact_points.begin() == contact_points.data());
+    CHECK(islands[0].contact_points.end() == contact_points.data() + 4);
+    CHECK(islands[0].range.first_edge_index == 0);
+    CHECK(islands[0].range.num_edges == 4);
+    CHECK(islands[0].range.start_point_x == ScalarDeg1(4.28));
+    CHECK(islands[0].range.end_point_x == ScalarDeg1(4.28));
+
+    CHECK(islands[1].contact_points.begin() == contact_points.data() + 5);
+    CHECK(islands[1].contact_points.end() == contact_points.data() + 8);
+    CHECK(islands[1].range.first_edge_index == 3);
+    CHECK(islands[1].range.num_edges == 3);
+    CHECK(islands[1].range.start_point_x == ScalarDeg1(4.28));
+    CHECK(islands[1].range.end_point_x == ScalarDeg1(0.56));
+  }
+
+  SECTION("Infinite vertical extensions which don't agree with ray-cast result")
+  {
+    SECTION("Contact point on upper_opp_edge")
+    {
+    }
+
+    SECTION("Contact point on upper_opp_edge")
+    {
+      Polygon2 polygon{
+          {4.88, 8.22}, {3.34, 7.14}, {6.26, 5.08}, {10.54, 7.50}, {4.08, 9.62}, {5.30, 8.76}, {4.26, 8.50},
+      };
+      VerticesView vertices(polygon);
+
+      std::vector<Node> nodes(6);
+      nodes[0].direction = HorizontalDirection::left;
+      nodes[0].type = NodeType::leaf;
+      nodes[0].vertex_it = vertices.begin() + 1;
+      nodes[0].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+      nodes[0].upper_opp_edge = Edge::edge_from_index(vertices, 0);
+      nodes[0].neighbors[0] = &nodes[3];
+
+      nodes[1].direction = HorizontalDirection::left;
+      nodes[1].type = NodeType::leaf;
+      nodes[1].vertex_it = vertices.begin() + 4;
+      nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 4);
+      nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+      nodes[1].neighbors[0] = &nodes[4];
+
+      nodes[2].direction = HorizontalDirection::right;
+      nodes[2].type = NodeType::branch;
+      nodes[2].vertex_it = vertices.begin() + 6;
+      nodes[2].lower_opp_edge = Edge::invalid();
+      nodes[2].upper_opp_edge = Edge::invalid();
+      nodes[2].neighbors[0] = nullptr;
+      nodes[2].neighbors[1] = &nodes[3];
+      nodes[2].neighbors[2] = nullptr;
+
+      nodes[3].direction = HorizontalDirection::left;
+      nodes[3].type = NodeType::branch;
+      nodes[3].vertex_it = vertices.begin() + 0;
+      nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+      nodes[3].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+      nodes[3].neighbors[0] = &nodes[4];
+      nodes[3].neighbors[1] = &nodes[0];
+      nodes[3].neighbors[2] = &nodes[2];
+
+      nodes[4].direction = HorizontalDirection::left;
+      nodes[4].type = NodeType::branch;
+      nodes[4].vertex_it = vertices.begin() + 5;
+      nodes[4].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+      nodes[4].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+      nodes[4].neighbors[0] = &nodes[5];
+      nodes[4].neighbors[1] = &nodes[3];
+      nodes[4].neighbors[2] = &nodes[1];
+
+      nodes[5].direction = HorizontalDirection::right;
+      nodes[5].type = NodeType::leaf;
+      nodes[5].vertex_it = vertices.begin() + 3;
+      nodes[5].lower_opp_edge = Edge::edge_from_index(vertices, 2);
+      nodes[5].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+      nodes[5].neighbors[0] = &nodes[4];
+
+      ChainDecomposition chain_decomposition{&nodes[3], &nodes[2]};
+
+      std::vector<VerticalExtensionContactPoint> contact_points =
+          vertical_extension_contact_points(chain_decomposition);
+      REQUIRE(contact_points.size() == 11);
+
+      std::vector<ChainDecompositionIsland> islands =
+          split_chain_decomposition_into_islands(vertices, chain_decomposition, contact_points);
+
+      REQUIRE(islands.size() == 1);
+      CHECK(islands[0].contact_points.begin() == contact_points.data());
+      CHECK(islands[0].contact_points.end() == contact_points.data() + 10);
+      CHECK(islands[0].range.first_edge_index == 0);
+      CHECK(islands[0].range.num_edges == 6);
+      CHECK(islands[0].range.start_point_x == ScalarDeg1(4.88));
+      CHECK(islands[0].range.end_point_x == ScalarDeg1(4.26));
+    }
+
+    SECTION("Contact points on vertices")
+    {
+      Polygon2 polygon{
+          {-2.50, 4.54}, {-3.14, 3.68}, {0.58, 3.86},  {-0.30, 3.00}, {4.10, 4.66},
+          {0.88, 5.28},  {1.84, 6.30},  {-0.08, 5.20}, {-3.62, 5.96},
+      };
+      VerticesView vertices(polygon);
+
+      std::vector<Node> nodes(8);
+      nodes[0].direction = HorizontalDirection::right;
+      nodes[0].type = NodeType::branch;
+      nodes[0].vertex_it = vertices.begin() + 8;
+      nodes[0].lower_opp_edge = Edge::invalid();
+      nodes[0].upper_opp_edge = Edge::invalid();
+      nodes[0].neighbors[0] = nullptr;
+      nodes[0].neighbors[1] = &nodes[2];
+      nodes[0].neighbors[2] = nullptr;
+
+      nodes[1].direction = HorizontalDirection::left;
+      nodes[1].type = NodeType::leaf;
+      nodes[1].vertex_it = vertices.begin() + 1;
+      nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+      nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 0);
+      nodes[1].neighbors[0] = &nodes[2];
+
+      nodes[2].direction = HorizontalDirection::left;
+      nodes[2].type = NodeType::branch;
+      nodes[2].vertex_it = vertices.begin() + 0;
+      nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+      nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 7);
+      nodes[2].neighbors[0] = &nodes[4];
+      nodes[2].neighbors[1] = &nodes[1];
+      nodes[2].neighbors[2] = &nodes[0];
+
+      nodes[3].direction = HorizontalDirection::left;
+      nodes[3].type = NodeType::leaf;
+      nodes[3].vertex_it = vertices.begin() + 3;
+      nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+      nodes[3].upper_opp_edge = Edge::edge_from_index(vertices, 2);
+      nodes[3].neighbors[0] = &nodes[4];
+
+      nodes[4].direction = HorizontalDirection::left;
+      nodes[4].type = NodeType::branch;
+      nodes[4].vertex_it = vertices.begin() + 2;
+      nodes[4].lower_opp_edge = Edge::invalid();
+      nodes[4].upper_opp_edge = Edge::edge_from_index(vertices, 6);
+      nodes[4].neighbors[0] = &nodes[5];
+      nodes[4].neighbors[1] = &nodes[3];
+      nodes[4].neighbors[2] = &nodes[2];
+
+      nodes[5].direction = HorizontalDirection::right;
+      nodes[5].type = NodeType::branch;
+      nodes[5].vertex_it = vertices.begin() + 5;
+      nodes[5].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+      nodes[5].upper_opp_edge = Edge::invalid();
+      nodes[5].neighbors[0] = &nodes[4];
+      nodes[5].neighbors[1] = &nodes[7];
+      nodes[5].neighbors[2] = &nodes[6];
+
+      nodes[6].direction = HorizontalDirection::right;
+      nodes[6].type = NodeType::leaf;
+      nodes[6].vertex_it = vertices.begin() + 6;
+      nodes[6].lower_opp_edge = Edge::edge_from_index(vertices, 5);
+      nodes[6].upper_opp_edge = Edge::edge_from_index(vertices, 6);
+      nodes[6].neighbors[0] = &nodes[5];
+
+      nodes[7].direction = HorizontalDirection::right;
+      nodes[7].type = NodeType::leaf;
+      nodes[7].vertex_it = vertices.begin() + 4;
+      nodes[7].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+      nodes[7].upper_opp_edge = Edge::edge_from_index(vertices, 4);
+      nodes[7].neighbors[0] = &nodes[5];
+
+      ChainDecomposition chain_decomposition{&nodes[2], &nodes[0]};
+
+      std::vector<VerticalExtensionContactPoint> contact_points =
+          vertical_extension_contact_points(chain_decomposition);
+      REQUIRE(contact_points.size() == 14);
+
+      std::vector<ChainDecompositionIsland> islands =
+          split_chain_decomposition_into_islands(vertices, chain_decomposition, contact_points);
+
+      REQUIRE(islands.size() == 1);
+      CHECK(islands[0].contact_points.begin() == contact_points.data());
+      CHECK(islands[0].contact_points.end() == contact_points.data() + 12);
+    }
+  }
+
+  SECTION("Split at multiple locations, in one pass")
+  {
+    Polygon2 polygon{
+        {-3.60, 3.22}, {-5.20, 2.88}, {-1.28, 0.98}, {-2.52, 0.12}, {2.54, 0.30},
+        {1.24, 1.12},  {5.10, 2.92},  {2.64, 3.66},  {3.32, 4.42},  {-4.18, 4.28},
+    };
+    VerticesView vertices(polygon);
+
+    std::vector<Node> nodes(8);
+    nodes[0].direction = HorizontalDirection::left;
+    nodes[0].type = NodeType::leaf;
+    nodes[0].vertex_it = vertices.begin() + 1;
+    nodes[0].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[0].upper_opp_edge = Edge::edge_from_index(vertices, 0);
+    nodes[0].neighbors[0] = &nodes[1];
+
+    nodes[1].direction = HorizontalDirection::left;
+    nodes[1].type = NodeType::branch;
+    nodes[1].vertex_it = vertices.begin() + 0;
+    nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[1].upper_opp_edge = Edge::invalid();
+    nodes[1].neighbors[0] = &nodes[3];
+    nodes[1].neighbors[1] = &nodes[0];
+    nodes[1].neighbors[2] = nullptr;
+
+    nodes[2].direction = HorizontalDirection::left;
+    nodes[2].type = NodeType::leaf;
+    nodes[2].vertex_it = vertices.begin() + 3;
+    nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 2);
+    nodes[2].neighbors[0] = &nodes[3];
+
+    nodes[3].direction = HorizontalDirection::left;
+    nodes[3].type = NodeType::branch;
+    nodes[3].vertex_it = vertices.begin() + 2;
+    nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[3].upper_opp_edge = Edge::invalid();
+    nodes[3].neighbors[0] = &nodes[4];
+    nodes[3].neighbors[1] = &nodes[2];
+    nodes[3].neighbors[2] = &nodes[1];
+
+    nodes[4].direction = HorizontalDirection::right;
+    nodes[4].type = NodeType::branch;
+    nodes[4].vertex_it = vertices.begin() + 5;
+    nodes[4].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[4].upper_opp_edge = Edge::invalid();
+    nodes[4].neighbors[0] = &nodes[3];
+    nodes[4].neighbors[1] = &nodes[5];
+    nodes[4].neighbors[2] = &nodes[6];
+
+    nodes[5].direction = HorizontalDirection::right;
+    nodes[5].type = NodeType::leaf;
+    nodes[5].vertex_it = vertices.begin() + 4;
+    nodes[5].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[5].upper_opp_edge = Edge::edge_from_index(vertices, 4);
+    nodes[5].neighbors[0] = &nodes[4];
+
+    nodes[6].direction = HorizontalDirection::right;
+    nodes[6].type = NodeType::branch;
+    nodes[6].vertex_it = vertices.begin() + 7;
+    nodes[6].lower_opp_edge = Edge::edge_from_index(vertices, 5);
+    nodes[6].upper_opp_edge = Edge::invalid();
+    nodes[6].neighbors[0] = &nodes[4];
+    nodes[6].neighbors[1] = &nodes[7];
+    nodes[6].neighbors[2] = nullptr;
+
+    nodes[7].direction = HorizontalDirection::right;
+    nodes[7].type = NodeType::leaf;
+    nodes[7].vertex_it = vertices.begin() + 6;
+    nodes[7].lower_opp_edge = Edge::edge_from_index(vertices, 5);
+    nodes[7].upper_opp_edge = Edge::edge_from_index(vertices, 6);
+    nodes[7].neighbors[0] = &nodes[6];
+
+    ChainDecomposition chain_decomposition{&nodes[1], &nodes[6]};
+
+    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    REQUIRE(contact_points.size() == 14);
+
+    std::vector<ChainDecompositionIsland> islands =
+        split_chain_decomposition_into_islands(vertices, chain_decomposition, contact_points);
+
+    REQUIRE(islands.size() == 3);
+
+    CHECK(islands[0].contact_points.begin() == contact_points.data());
+    CHECK(islands[0].contact_points.end() == contact_points.data() + 3);
+    CHECK(islands[0].range.first_edge_index == 0);
+    CHECK(islands[0].range.num_edges == 2);
+    CHECK(islands[0].range.start_point_x == ScalarDeg1(-3.60));
+    CHECK(islands[0].range.end_point_x == ScalarDeg1(-1.28));
+
+    CHECK(islands[1].contact_points.begin() == contact_points.data() + 4);
+    CHECK(islands[1].contact_points.end() == contact_points.data() + 10);
+    CHECK(islands[1].range.first_edge_index == 2);
+    CHECK(islands[1].range.num_edges == 3);
+    CHECK(islands[1].range.start_point_x == ScalarDeg1(-1.28));
+    CHECK(islands[1].range.end_point_x == ScalarDeg1(1.24));
+
+    CHECK(islands[2].contact_points.begin() == contact_points.data() + 11);
+    CHECK(islands[2].contact_points.end() == contact_points.data() + 14);
+    CHECK(islands[2].range.first_edge_index == 5);
+    CHECK(islands[2].range.num_edges == 2);
+    CHECK(islands[2].range.start_point_x == ScalarDeg1(1.24));
+    CHECK(islands[2].range.end_point_x == ScalarDeg1(2.64));
+  }
+
+  SECTION("Split at multiple locations, needs recursion")
+  {
+    Polygon2 polygon{
+        {1.52, 1.80}, {6.12, 2.14}, {9.18, 5.06}, {6.64, 8.32}, {3.70, 4.94}, {5.88, 3.18}, {7.60, 4.68},
+        {6.44, 6.50}, {5.00, 5.20}, {6.24, 4.06}, {4.42, 5.04}, {6.48, 7.28}, {8.34, 4.92}, {5.96, 2.80},
+    };
+    VerticesView vertices(polygon);
+
+    std::vector<Node> nodes(8);
+    nodes[0].direction = HorizontalDirection::right;
+    nodes[0].type = NodeType::branch;
+    nodes[0].vertex_it = vertices.begin();
+    nodes[0].lower_opp_edge = Edge::invalid();
+    nodes[0].upper_opp_edge = Edge::invalid();
+    nodes[0].neighbors[0] = nullptr;
+    nodes[0].neighbors[1] = nullptr;
+    nodes[0].neighbors[2] = &nodes[1];
+
+    nodes[1].direction = HorizontalDirection::left;
+    nodes[1].type = NodeType::outer_branch;
+    nodes[1].vertex_it = vertices.begin() + 9;
+    nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[1].neighbors[0] = &nodes[2];
+    nodes[1].neighbors[1] = &nodes[0];
+    nodes[1].neighbors[2] = &nodes[3];
+
+    nodes[2].direction = HorizontalDirection::right;
+    nodes[2].type = NodeType::leaf;
+    nodes[2].vertex_it = vertices.begin() + 2;
+    nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 2);
+    nodes[2].neighbors[0] = &nodes[1];
+
+    nodes[3].direction = HorizontalDirection::right;
+    nodes[3].type = NodeType::outer_branch;
+    nodes[3].vertex_it = vertices.begin() + 9;
+    nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 5);
+    nodes[3].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[3].neighbors[0] = &nodes[4];
+    nodes[3].neighbors[1] = &nodes[5];
+    nodes[3].neighbors[2] = &nodes[1];
+
+    nodes[4].direction = HorizontalDirection::left;
+    nodes[4].type = NodeType::leaf;
+    nodes[4].vertex_it = vertices.begin() + 4;
+    nodes[4].lower_opp_edge = Edge::edge_from_index(vertices, 4);
+    nodes[4].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[4].neighbors[0] = &nodes[3];
+
+    nodes[5].direction = HorizontalDirection::left;
+    nodes[5].type = NodeType::branch;
+    nodes[5].vertex_it = vertices.begin() + 9;
+    nodes[5].lower_opp_edge = Edge::edge_from_index(vertices, 5);
+    nodes[5].upper_opp_edge = Edge::edge_from_index(vertices, 7);
+    nodes[5].neighbors[0] = &nodes[6];
+    nodes[5].neighbors[1] = &nodes[3];
+    nodes[5].neighbors[2] = &nodes[7];
+
+    nodes[6].direction = HorizontalDirection::right;
+    nodes[6].type = NodeType::leaf;
+    nodes[6].vertex_it = vertices.begin() + 6;
+    nodes[6].lower_opp_edge = Edge::edge_from_index(vertices, 5);
+    nodes[6].upper_opp_edge = Edge::edge_from_index(vertices, 6);
+    nodes[6].neighbors[0] = &nodes[5];
+
+    nodes[7].direction = HorizontalDirection::left;
+    nodes[7].type = NodeType::leaf;
+    nodes[7].vertex_it = vertices.begin() + 8;
+    nodes[7].lower_opp_edge = Edge::edge_from_index(vertices, 8);
+    nodes[7].upper_opp_edge = Edge::edge_from_index(vertices, 7);
+    nodes[7].neighbors[0] = &nodes[5];
+
+    ChainDecomposition chain_decomposition{&nodes[0], &nodes[5]};
+
+    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    REQUIRE(contact_points.size() == 12);
+
+    std::vector<ChainDecompositionIsland> islands =
+        split_chain_decomposition_into_islands(vertices, chain_decomposition, contact_points);
+
+    REQUIRE(islands.size() == 3);
+
+    CHECK(islands[0].contact_points.begin() == contact_points.data() + 2);
+    CHECK(islands[0].contact_points.end() == contact_points.data() + 3);
+    CHECK(islands[0].range.first_edge_index == 1);
+    CHECK(islands[0].range.num_edges == 3);
+    CHECK(islands[0].range.start_point_x == ScalarDeg1(6.24));
+    CHECK(islands[0].range.end_point_x == ScalarDeg1(6.24));
+
+    CHECK(islands[1].contact_points.begin() == contact_points.data() + 5);
+    CHECK(islands[1].contact_points.end() == contact_points.data() + 6);
+    CHECK(islands[1].range.first_edge_index == 3);
+    CHECK(islands[1].range.num_edges == 3);
+    CHECK(islands[1].range.start_point_x == ScalarDeg1(6.24));
+    CHECK(islands[1].range.end_point_x == ScalarDeg1(6.24));
+
+    CHECK(islands[2].contact_points.begin() == contact_points.data() + 8);
+    CHECK(islands[2].contact_points.end() == contact_points.data() + 12);
+    CHECK(islands[2].range.first_edge_index == 5);
+    CHECK(islands[2].range.num_edges == 4);
+    CHECK(islands[2].range.start_point_x == ScalarDeg1(6.24));
+    CHECK(islands[2].range.end_point_x == ScalarDeg1(6.24));
   }
 }
 

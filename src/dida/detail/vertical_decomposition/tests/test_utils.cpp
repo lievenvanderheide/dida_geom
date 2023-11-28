@@ -190,10 +190,16 @@ vertical_extension_contact_points(const ChainDecomposition& chain_decomposition)
       {
         if (node->neighbors[0] == prev)
         {
-          contact_points.push_back(VerticalExtensionContactPoint{
-              VerticalExtensionContactPoint::Type::lower_opp_edge,
-              node,
-          });
+          // Note: in a valid vertical decomposition, this branch is always taken, because if lower_opp_edge is not
+          // valid, then there's no boundary to traverse either, however, since the purpose of this function is
+          // validation, we should should handle invalid decompositions as gracefully as possible.
+          if (node->lower_opp_edge.is_valid())
+          {
+            contact_points.push_back(VerticalExtensionContactPoint{
+                VerticalExtensionContactPoint::Type::lower_opp_edge,
+                node,
+            });
+          }
 
           prev = node;
           node = node->neighbors[1];
@@ -222,10 +228,13 @@ vertical_extension_contact_points(const ChainDecomposition& chain_decomposition)
         {
           DIDA_ASSERT(node->neighbors[2] == prev);
 
-          contact_points.push_back(VerticalExtensionContactPoint{
-              VerticalExtensionContactPoint::Type::upper_opp_edge,
-              node,
-          });
+          if (node->upper_opp_edge.is_valid())
+          {
+            contact_points.push_back(VerticalExtensionContactPoint{
+                VerticalExtensionContactPoint::Type::upper_opp_edge,
+                node,
+            });
+          }
 
           prev = node;
           node = node->neighbors[0];
@@ -235,20 +244,26 @@ vertical_extension_contact_points(const ChainDecomposition& chain_decomposition)
       {
         if (node->neighbors[0] == prev)
         {
-          contact_points.push_back(VerticalExtensionContactPoint{
-              VerticalExtensionContactPoint::Type::upper_opp_edge,
-              node,
-          });
+          if (node->upper_opp_edge.is_valid())
+          {
+            contact_points.push_back(VerticalExtensionContactPoint{
+                VerticalExtensionContactPoint::Type::upper_opp_edge,
+                node,
+            });
+          }
 
           prev = node;
           node = node->neighbors[2];
         }
         else if (node->neighbors[1] == prev)
         {
-          contact_points.push_back(VerticalExtensionContactPoint{
-              VerticalExtensionContactPoint::Type::lower_opp_edge,
-              node,
-          });
+          if (node->lower_opp_edge.is_valid())
+          {
+            contact_points.push_back(VerticalExtensionContactPoint{
+                VerticalExtensionContactPoint::Type::lower_opp_edge,
+                node,
+            });
+          }
 
           prev = node;
           node = node->neighbors[0];
@@ -280,6 +295,121 @@ vertical_extension_contact_points(const ChainDecomposition& chain_decomposition)
   }
 
   return contact_points;
+}
+
+namespace
+{
+
+void split_chain_decomposition_into_islands_rec(VerticesView vertices, const ChainDecomposition& chain_decomposition,
+                                                ArrayView<const VerticalExtensionContactPoint> contact_points,
+                                                PolygonRange range, std::vector<ChainDecompositionIsland>& result)
+{
+  using ContactPointsIt = ArrayView<const VerticalExtensionContactPoint>::iterator;
+
+  ContactPointsIt island_begin = contact_points.begin();
+
+  for (ContactPointsIt it = contact_points.begin(); it != contact_points.end(); ++it)
+  {
+    const Node* node = it->node;
+
+    bool should_split = false;
+    PolygonLocation split_location;
+
+    switch (it->type)
+    {
+    case VerticalExtensionContactPoint::Type::vertex_downwards:
+      if (!node->lower_opp_edge.is_valid())
+      {
+        should_split = ray_cast_down(vertices, range, *node->vertex_it) == Edge::invalid();
+        split_location = PolygonLocation{
+            static_cast<size_t>(node->vertex_it - vertices.begin()),
+            node->vertex_it->x(),
+        };
+      }
+      break;
+    case VerticalExtensionContactPoint::Type::vertex_upwards:
+      if (!node->upper_opp_edge.is_valid())
+      {
+        should_split = ray_cast_up(vertices, range, *node->vertex_it) == Edge::invalid();
+        split_location = PolygonLocation{
+            static_cast<size_t>(node->vertex_it - vertices.begin()),
+            node->vertex_it->x(),
+        };
+      }
+      break;
+
+    case VerticalExtensionContactPoint::Type::lower_opp_edge:
+      if ((node == chain_decomposition.first_node && node->direction == HorizontalDirection::right) ||
+          (node == chain_decomposition.last_node && node->direction == HorizontalDirection::left) ||
+          node->type == NodeType::outer_branch)
+      {
+        should_split = ray_cast_down(vertices, range, *node->vertex_it) == node->lower_opp_edge;
+        split_location = PolygonLocation{
+            static_cast<size_t>(node->lower_opp_edge.start_vertex_it - vertices.begin()),
+            node->vertex_it->x(),
+        };
+      }
+      break;
+
+    case VerticalExtensionContactPoint::Type::upper_opp_edge:
+      if ((node == chain_decomposition.first_node && node->direction == HorizontalDirection::left) ||
+          (node == chain_decomposition.last_node && node->direction == HorizontalDirection::right) ||
+          node->type == NodeType::outer_branch)
+      {
+        should_split = ray_cast_up(vertices, range, *node->vertex_it) == node->upper_opp_edge;
+        split_location = PolygonLocation{
+            static_cast<size_t>(node->upper_opp_edge.start_vertex_it - vertices.begin()),
+            node->vertex_it->x(),
+        };
+      }
+      break;
+
+    case VerticalExtensionContactPoint::Type::leaf:
+      break;
+    }
+
+    if (should_split)
+    {
+      std::pair<PolygonRange, PolygonRange> sub_ranges = range.split(vertices, split_location);
+
+      if (it != island_begin)
+      {
+        split_chain_decomposition_into_islands_rec(
+            vertices, chain_decomposition,
+            ArrayView<const VerticalExtensionContactPoint>(island_begin, static_cast<size_t>(it - island_begin)),
+            sub_ranges.first, result);
+      }
+
+      range = sub_ranges.second;
+      island_begin = it + 1;
+    }
+  }
+
+  if (island_begin != contact_points.end())
+  {
+    result.push_back({
+        ArrayView<const VerticalExtensionContactPoint>(island_begin,
+                                                       static_cast<size_t>(contact_points.end() - island_begin)),
+        range,
+    });
+  }
+}
+
+} // namespace
+
+std::vector<ChainDecompositionIsland>
+split_chain_decomposition_into_islands(VerticesView vertices, const ChainDecomposition& chain_decomposition,
+                           ArrayView<const VerticalExtensionContactPoint> contact_points)
+{
+  PolygonRange full_range{
+      static_cast<size_t>(chain_decomposition.first_node->vertex_it - vertices.begin()),
+      distance_cyclic(vertices, chain_decomposition.first_node->vertex_it, chain_decomposition.last_node->vertex_it),
+      chain_decomposition.first_node->vertex_it->x(),
+      chain_decomposition.last_node->vertex_it->x(),
+  };
+  std::vector<ChainDecompositionIsland> result;
+  split_chain_decomposition_into_islands_rec(vertices, chain_decomposition, contact_points, full_range, result);
+  return result;
 }
 
 bool validate_node_opp_edges(VerticesView vertices, const PolygonRange& range, const Node* node)
@@ -371,7 +501,8 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
 namespace
 {
 
-/// Validates whether the edge range between @c start_vertex_it and @c end_vertex_it is monotone in the given direction.
+/// Validates whether the edge range between @c start_vertex_it and @c end_vertex_it is monotone in the given
+/// direction.
 ///
 /// @tparam direction The direction.
 /// @param vertices The vertices of the polygon the edge range belongs to.
@@ -405,8 +536,8 @@ bool validate_neighboring_nodes_pair(VerticesView vertices, const Node* left_nod
   DIDA_ASSERT(left_node->neighbors[left_node_branch_index] == right_node);
   DIDA_ASSERT(right_node->neighbors[right_node_branch_index] == left_node);
 
-  // Verify that the outgoing direction of the branch of 'left_node' is 'right' and the outgoing direction of the branch
-  // of 'right_node' is 'left'.
+  // Verify that the outgoing direction of the branch of 'left_node' is 'right' and the outgoing direction of the
+  // branch of 'right_node' is 'left'.
   //
   // Note that if a branch index is 0, then the outgoing direction is opposite to direction of the node, if a branch
   // index is 1 or 2, then the outgoing direction is equal to the direction of the node.
@@ -521,8 +652,8 @@ bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& ch
       }
 
       // To avoid calling 'validate_neighboring_nodes_pair' twice. we only call it when 'node' is the left node and
-      // 'neighbor' the right node. If it's the other way around, then 'validate_neighboring_nodes_pair' will be called
-      // when the current function is called with 'neighbor'.
+      // 'neighbor' the right node. If it's the other way around, then 'validate_neighboring_nodes_pair' will be
+      // called when the current function is called with 'neighbor'.
       if (lex_less_than(*node->vertex_it, *neighbor->vertex_it))
       {
         NodeBranchBoundaryVertices neighbor_boundary_vertices =
