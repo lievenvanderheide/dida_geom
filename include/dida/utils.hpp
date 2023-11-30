@@ -31,13 +31,17 @@ IntType pred_modulo(IntType a, IntType m);
 template <class IntType>
 IntType succ_modulo(IntType a, IntType m);
 
-/// Computes <tt>a + b</tt> modulo m. Operand @c a must already be in the range <tt>0 <= a < m</tt>, and operand @c b
-/// in the range <tt>0 <= b <= m</tt> (note that @c b is allowed to be equal to @c m).
+/// Computes <tt>a + b</tt> modulo m.
+///
+/// @pre @c a must already be in the range <tt>0 <= a < m</tt>, and operand @c b in the range <tt>0 <= b <= m</tt> (note
+/// that @c b is allowed to be equal to @c m).
 template <class IntType>
 IntType add_modulo(IntType a, IntType b, IntType m);
 
-/// Computes <tt>a - b</tt> modulo m. Operand @c a must already be in the range <tt>0 <= a < m</tt>, and operand @c b
-/// in the range <tt>0 <= b <= m</tt> (note that @c b is allowed to be equal to @c m).
+/// Computes <tt>a - b</tt> modulo m.
+///
+/// @pre @c a must already be in the range <tt>0 <= a < m</tt>, and operand @c b in the range <tt>0 <= b <= m</tt> (note
+/// that @c b is allowed to be equal to @c m).
 template <class IntType>
 IntType sub_modulo(IntType a, IntType b, IntType m);
 
