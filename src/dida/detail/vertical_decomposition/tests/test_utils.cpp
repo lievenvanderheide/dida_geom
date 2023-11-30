@@ -1,91 +1,12 @@
 #include "dida/detail/vertical_decomposition/tests/test_utils.hpp"
 
 #include <catch2/catch_test_macros.hpp>
-#include <iostream>
 
+#include "dida/detail/vertical_decomposition/tests/vertical_extension_validation.hpp"
 #include "dida/utils.hpp"
 
 namespace dida::detail::vertical_decomposition
 {
-
-bool PolygonLocationLessThan::operator()(const PolygonLocation& a, const PolygonLocation& b) const
-{
-  if (a.edge_index != b.edge_index)
-  {
-    return a.edge_index < b.edge_index;
-  }
-
-  if (lex_less_than(vertices[a.edge_index], vertices[succ_modulo(a.edge_index, vertices.size())]))
-  {
-    return a.x < b.x;
-  }
-  else
-  {
-    return a.x > b.x;
-  }
-}
-
-Edge ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_origin)
-{
-  YOnEdge result_y = YOnEdge::infinity();
-  Edge result = Edge::invalid();
-
-  VertexIt edge_start_it = vertices.begin() + range.first_edge_index;
-  for (size_t i = 0; i < range.num_edges; i++)
-  {
-    VertexIt edge_end_it = next_cyclic(vertices, edge_start_it);
-
-    ScalarDeg1 edge_start_x = i == 0 ? range.start_point_x : edge_start_it->x();
-    ScalarDeg1 edge_end_x = i == range.num_edges - 1 ? range.end_point_x : edge_end_it->x();
-
-    bool edge_start_on_left = edge_start_x < ray_origin.x();
-    bool edge_end_on_left = edge_end_x < ray_origin.x();
-    if (edge_start_on_left != edge_end_on_left)
-    {
-      YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
-      if (cur_y > ray_origin.y() && cur_y < result_y)
-      {
-        result = edge_end_on_left ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
-        result_y = cur_y;
-      }
-    }
-
-    edge_start_it = edge_end_it;
-  }
-
-  return result;
-}
-
-Edge ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_origin)
-{
-  YOnEdge result_y = YOnEdge::negative_infinity();
-  Edge result = Edge::invalid();
-
-  VertexIt edge_start_it = vertices.begin() + range.first_edge_index;
-  for (size_t i = 0; i < range.num_edges; i++)
-  {
-    VertexIt edge_end_it = next_cyclic(vertices, edge_start_it);
-
-    ScalarDeg1 edge_start_x = i == 0 ? range.start_point_x : edge_start_it->x();
-    ScalarDeg1 edge_end_x = i == range.num_edges - 1 ? range.end_point_x : edge_end_it->x();
-
-    bool edge_start_on_left = edge_start_x <= ray_origin.x();
-    bool edge_end_on_left = edge_end_x <= ray_origin.x();
-    if (edge_start_on_left != edge_end_on_left)
-    {
-      YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
-      if (cur_y < ray_origin.y() && cur_y > result_y)
-      {
-        result = edge_start_on_left ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
-        result_y = cur_y;
-      }
-    }
-
-    edge_start_it = edge_end_it;
-  }
-
-  return result;
-}
 
 namespace
 {
@@ -114,28 +35,6 @@ std::set<const Node*> gather_nodes(const Node* node)
   return result;
 }
 
-bool validate_node_opp_edges(VerticesView vertices, const PolygonRange& range, const Node* node)
-{
-  if (node->type == NodeType::leaf)
-  {
-    Edge incoming_edge{prev_cyclic(vertices, node->vertex_it), node->vertex_it};
-    Edge outgoing_edge{node->vertex_it, next_cyclic(vertices, node->vertex_it)};
-    if (node->direction == HorizontalDirection::right)
-    {
-      return node->lower_opp_edge == incoming_edge && node->upper_opp_edge == outgoing_edge;
-    }
-    else
-    {
-      return node->lower_opp_edge == outgoing_edge && node->upper_opp_edge == incoming_edge;
-    }
-  }
-  else
-  {
-    return node->lower_opp_edge == ray_cast_down(vertices, range, *node->vertex_it) &&
-           node->upper_opp_edge == ray_cast_up(vertices, range, *node->vertex_it);
-  }
-}
-
 NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecomposition& chain_decomposition,
                                                          const Node* node, uint8_t branch_index)
 {
@@ -158,11 +57,13 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
     case 1:
     {
       bool has_upper_boundary = true;
-      if (node == chain_decomposition.first_node && node->direction == HorizontalDirection::right)
+      if (node == chain_decomposition.first_node && node->direction == HorizontalDirection::right ||
+          node->type == NodeType::outer_branch)
       {
         has_upper_boundary = false;
       }
-      else if (node == chain_decomposition.last_node && node->direction == HorizontalDirection::left)
+      else if (node == chain_decomposition.last_node && node->direction == HorizontalDirection::left ||
+               node->type == NodeType::outer_branch)
       {
         has_upper_boundary = false;
       }
@@ -177,11 +78,13 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
     case 2:
     {
       bool has_lower_boundary = true;
-      if (node == chain_decomposition.first_node && node->direction == HorizontalDirection::left)
+      if (node == chain_decomposition.first_node && node->direction == HorizontalDirection::left ||
+          node->type == NodeType::outer_branch)
       {
         has_lower_boundary = false;
       }
-      else if (node == chain_decomposition.last_node && node->direction == HorizontalDirection::right)
+      else if (node == chain_decomposition.last_node && node->direction == HorizontalDirection::right ||
+               node->type == NodeType::outer_branch)
       {
         has_lower_boundary = false;
       }
@@ -203,7 +106,8 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
 namespace
 {
 
-/// Validates whether the edge range between @c start_vertex_it and @c end_vertex_it is monotone in the given direction.
+/// Validates whether the edge range between @c start_vertex_it and @c end_vertex_it is monotone in the given
+/// direction.
 ///
 /// @tparam direction The direction.
 /// @param vertices The vertices of the polygon the edge range belongs to.
@@ -237,8 +141,8 @@ bool validate_neighboring_nodes_pair(VerticesView vertices, const Node* left_nod
   DIDA_ASSERT(left_node->neighbors[left_node_branch_index] == right_node);
   DIDA_ASSERT(right_node->neighbors[right_node_branch_index] == left_node);
 
-  // Verify that the outgoing direction of the branch of 'left_node' is 'right' and the outgoing direction of the branch
-  // of 'right_node' is 'left'.
+  // Verify that the outgoing direction of the branch of 'left_node' is 'right' and the outgoing direction of the
+  // branch of 'right_node' is 'left'.
   //
   // Note that if a branch index is 0, then the outgoing direction is opposite to direction of the node, if a branch
   // index is 1 or 2, then the outgoing direction is equal to the direction of the node.
@@ -353,8 +257,8 @@ bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& ch
       }
 
       // To avoid calling 'validate_neighboring_nodes_pair' twice. we only call it when 'node' is the left node and
-      // 'neighbor' the right node. If it's the other way around, then 'validate_neighboring_nodes_pair' will be called
-      // when the current function is called with 'neighbor'.
+      // 'neighbor' the right node. If it's the other way around, then 'validate_neighboring_nodes_pair' will be
+      // called when the current function is called with 'neighbor'.
       if (lex_less_than(*node->vertex_it, *neighbor->vertex_it))
       {
         NodeBranchBoundaryVertices neighbor_boundary_vertices =
@@ -391,9 +295,11 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
 
   std::set<const Node*> nodes = gather_nodes(chain_decomposition.first_node);
 
-  for (const Node* node : nodes)
   {
-    if (!validate_node_opp_edges(vertices, range, node))
+    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    std::vector<ChainDecompositionIsland> islands =
+        split_chain_decomposition_into_islands(vertices, chain_decomposition, contact_points);
+    if (!validate_vertical_extensions(vertices, islands))
     {
       return false;
     }
@@ -412,16 +318,11 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
 
 bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node)
 {
-  PolygonRange full_range{0, vertices.size(), vertices[0].x(), vertices[0].x()};
-
   std::set<const Node*> nodes = gather_nodes(root_node);
 
-  for (const Node* node : nodes)
+  if (!validate_vertical_extensions(vertices, nodes))
   {
-    if (!validate_node_opp_edges(vertices, full_range, node))
-    {
-      return false;
-    }
+    return false;
   }
 
   for (const Node* node : nodes)
@@ -435,6 +336,24 @@ bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node
   return true;
 }
 
+std::string_view node_type_to_string(NodeType node_type)
+{
+  using namespace std::literals;
+
+  switch (node_type)
+  {
+  case NodeType::leaf:
+    return "NodeType::leaf"sv;
+  case NodeType::branch:
+    return "NodeType::branch"sv;
+  case NodeType::outer_branch:
+    return "NodeType::outer_branch"sv;
+  default:
+    DIDA_ASSERT(!"Invalid node type");
+    return "<invalid>"sv;
+  }
+}
+
 void print_nodes(VerticesView vertices, ArrayView<const Node> nodes)
 {
   std::cout << "std::vector<Node> nodes(" << nodes.size() << ");" << std::endl;
@@ -444,20 +363,7 @@ void print_nodes(VerticesView vertices, ArrayView<const Node> nodes)
               << (nodes[i].direction == HorizontalDirection::left ? "HorizontalDirection::left;"
                                                                   : "HorizontalDirection::right;")
               << std::endl;
-    std::cout << "nodes[" << i << "].type = ";
-    switch (nodes[i].type)
-    {
-    case NodeType::branch:
-      std::cout << "NodeType::branch;" << std::endl;
-      break;
-    case NodeType::leaf:
-      std::cout << "NodeType::leaf;" << std::endl;
-      break;
-    case NodeType::outer_branch:
-      std::cout << "NodeType::outer_branch;" << std::endl;
-      break;
-    }
-
+    std::cout << "nodes[" << i << "].type = " << node_type_to_string(nodes[i].type) << ";" << std::endl;
     std::cout << "nodes[" << i << "].vertex_it = vertices.begin() + " << (nodes[i].vertex_it - vertices.begin()) << ";"
               << std::endl;
 

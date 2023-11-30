@@ -15,7 +15,7 @@ template <class Container, class Iterator>
 Iterator next_cyclic(Container& container, Iterator it);
 
 /// Returns the distance from @c a to @c b in a cyclically ordered set. The result is the number of times @c next_cyclic
-/// has to be called to go from @c a to @c b.
+/// has to be called to get from @c a to @c b.
 template <class Container, class Iterator>
 size_t distance_cyclic(const Container& container, Iterator a, Iterator b);
 
