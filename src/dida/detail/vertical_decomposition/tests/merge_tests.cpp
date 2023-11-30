@@ -361,9 +361,7 @@ TEST_CASE("vertical_decomposition_merge")
         ChainDecomposition b = chain_decompositions[0];
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-
-        // Requires island based validation.
-        // CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, merged));
       }
 
       SECTION("Towards right, on chain B")
@@ -387,9 +385,7 @@ TEST_CASE("vertical_decomposition_merge")
         REQUIRE(validate_chain_decomposition(vertices, b));
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-
-        // Requires island based validation.
-        // CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, merged));
       }
 
       SECTION("Towards left, on chain A")
@@ -414,9 +410,7 @@ TEST_CASE("vertical_decomposition_merge")
         ChainDecomposition b = chain_decompositions[3];
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-
-        // Requires island based validation.
-        // CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, merged));
       }
 
       SECTION("Towards left, on chain B")
@@ -439,9 +433,7 @@ TEST_CASE("vertical_decomposition_merge")
             chain_decompositions[3]);
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-
-        // Requires island based validation.
-        // CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, merged));
       }
     }
 
@@ -474,9 +466,7 @@ TEST_CASE("vertical_decomposition_merge")
         REQUIRE(validate_chain_decomposition(vertices, b));
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-
-        // Requires island based validation.
-        // CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, merged));
       }
 
       SECTION("Around leftward branch of chain B")
@@ -505,9 +495,7 @@ TEST_CASE("vertical_decomposition_merge")
         REQUIRE(validate_chain_decomposition(vertices, b));
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-
-        // Requires island based validation.
-        // CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, merged));
       }
 
       SECTION("Around rightward branch of chain A")
@@ -537,9 +525,7 @@ TEST_CASE("vertical_decomposition_merge")
         REQUIRE(validate_chain_decomposition(vertices, b));
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-
-        // Requires island based validation.
-        // CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, merged));
       }
 
       SECTION("Around rightward branch of chain B")
@@ -568,9 +554,7 @@ TEST_CASE("vertical_decomposition_merge")
         REQUIRE(validate_chain_decomposition(vertices, b));
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-
-        // Requires island based validation.
-        // CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, merged));
       }
     }
 
@@ -600,9 +584,7 @@ TEST_CASE("vertical_decomposition_merge")
         REQUIRE(validate_chain_decomposition(vertices, b));
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-
-        // Requires island based validation.
-        // CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, merged));
       }
 
       SECTION("Towards left")
@@ -629,9 +611,7 @@ TEST_CASE("vertical_decomposition_merge")
         REQUIRE(validate_chain_decomposition(vertices, b));
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-
-        // Requires island based validation.
-        // CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, merged));
       }
     }
 
@@ -658,9 +638,7 @@ TEST_CASE("vertical_decomposition_merge")
         REQUIRE(validate_chain_decomposition(vertices, b));
 
         ChainDecomposition result = merge_chain_decompositions(vertices, node_pool, a, b);
-
-        // Requires island based validation.
-        // CHECK(validate_chain_decomposition(vertices, result));
+        CHECK(validate_chain_decomposition(vertices, result));
       }
 
       SECTION("Towards right, tail is upper chain")
@@ -684,9 +662,7 @@ TEST_CASE("vertical_decomposition_merge")
         ChainDecomposition b = chain_decompositions[4];
 
         ChainDecomposition result = merge_chain_decompositions(vertices, node_pool, a, b);
-
-        // Requires island based validation.
-        // CHECK(validate_chain_decomposition(vertices, result));
+        CHECK(validate_chain_decomposition(vertices, result));
       }
 
       SECTION("Towards right, tail is lower chain")
@@ -713,9 +689,7 @@ TEST_CASE("vertical_decomposition_merge")
         ChainDecomposition b = chain_decompositions[5];
 
         ChainDecomposition result = merge_chain_decompositions(vertices, node_pool, a, b);
-
-        // Requires island based validation.
-        // CHECK(validate_chain_decomposition(vertices, result));
+        CHECK(validate_chain_decomposition(vertices, result));
       }
 
       SECTION("Towards right, tail is upper chain")
@@ -739,9 +713,7 @@ TEST_CASE("vertical_decomposition_merge")
         REQUIRE(validate_chain_decomposition(vertices, b));
 
         ChainDecomposition result = merge_chain_decompositions(vertices, node_pool, a, b);
-
-        // Requires island based validation.
-        // CHECK(validate_chain_decomposition(vertices, result));
+        CHECK(validate_chain_decomposition(vertices, result));
       }
     }
 
@@ -766,9 +738,7 @@ TEST_CASE("vertical_decomposition_merge")
             vertices, node_pool,
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]),
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[2], chain_decompositions[3]));
-
-        // Requires island based validation.
-        // REQUIRE(validate_chain_decomposition(vertices, chain_with_outer_branch));
+        REQUIRE(validate_chain_decomposition(vertices, chain_with_outer_branch));
 
         SECTION("From upper branch")
         {
@@ -812,9 +782,7 @@ TEST_CASE("vertical_decomposition_merge")
             vertices, node_pool,
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]),
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[2], chain_decompositions[3]));
-
-        // Requires island based validation.
-        // REQUIRE(validate_chain_decomposition(vertices, chain_with_outer_branch));
+        REQUIRE(validate_chain_decomposition(vertices, chain_with_outer_branch));
 
         SECTION("From upper branch")
         {

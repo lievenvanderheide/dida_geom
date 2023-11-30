@@ -8,6 +8,9 @@ add_executable(dida_detail_vertical_decomposition_tests
     test_utils.hpp
     triangulate_tests.cpp
     vertical_decomposition_tests.cpp
+    vertical_extension_validation_tests.cpp
+    vertical_extension_validation.cpp
+    vertical_extension_validation.hpp
     zigzag_phase_tests.cpp)
 
 target_link_libraries(dida_detail_vertical_decomposition_tests PRIVATE dida Catch2::Catch2WithMain)
