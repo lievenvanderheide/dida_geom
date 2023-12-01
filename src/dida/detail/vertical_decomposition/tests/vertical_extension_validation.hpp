@@ -106,7 +106,7 @@ std::string_view contact_point_type_to_string(VerticalExtensionContactPoint::Typ
 /// Returns the @c VerticalExtensionContactPoint of the given chain decomposition, in the order they're encountered when
 /// following the chain from beginning to end.
 std::vector<VerticalExtensionContactPoint>
-vertical_extension_contact_points(const ChainDecomposition& chain_decomposition);
+vertical_extension_contact_points(const ChainDecomposition& chain_decomposition, Winding windig);
 
 /// An island of a chain decomposition consists of a subset of the chain's boundary, such that for a valid
 /// decomposition, the following conditions must hold:

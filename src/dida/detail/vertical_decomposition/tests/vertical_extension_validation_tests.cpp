@@ -1,6 +1,7 @@
 #include "dida/detail/vertical_decomposition/tests/vertical_extension_validation.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators_all.hpp>
 
 #include "dida/detail/vertical_decomposition/sweep_line_builder.hpp"
 #include "dida/detail/vertical_decomposition/tests/test_utils.hpp"
@@ -8,6 +9,24 @@
 
 namespace dida::detail::vertical_decomposition
 {
+
+namespace
+{
+
+void flip_horizontally(ArrayView<Point2> vertices, ArrayView<Node> nodes)
+{
+  for (Point2& v : vertices)
+  {
+    v = Point2(-v.x(), v.y());
+  }
+
+  for (Node& node : nodes)
+  {
+    node.direction = other_direction(node.direction);
+  }
+}
+
+} // namespace
 
 TEST_CASE("PolygonLocationLessThan")
 {
@@ -447,12 +466,11 @@ TEST_CASE("vertical_extension_contact_points")
 {
   SECTION("Chain 1")
   {
-    Polygon2 polygon{
+    std::vector<Point2> vertices_storage{
         {-3.00, 2.64}, {-0.30, 3.64}, {-3.12, 5.62}, {-5.92, 3.10}, {-2.76, 0.64}, {0.78, 2.34}, {-0.02, 0.62},
         {2.88, 0.70},  {2.06, 2.08},  {5.34, 1.70},  {6.74, 3.64},  {4.40, 6.00},  {3.20, 4.00}, {4.68, 3.20},
     };
-
-    VerticesView vertices(polygon);
+    VerticesView vertices(vertices_storage);
 
     std::vector<Node> nodes(10);
     nodes[0].direction = HorizontalDirection::left;
@@ -533,9 +551,17 @@ TEST_CASE("vertical_extension_contact_points")
     nodes[9].upper_opp_edge = Edge::edge_from_index(vertices, 10);
     nodes[9].neighbors[0] = &nodes[8];
 
+    Winding winding = GENERATE(Winding::ccw, Winding::cw);
+
+    if (winding == Winding::cw)
+    {
+      flip_horizontally(vertices_storage, nodes);
+    }
+
     ChainDecomposition chain_decomposition{&nodes[1], &nodes[8]};
 
-    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    std::vector<VerticalExtensionContactPoint> contact_points =
+        vertical_extension_contact_points(chain_decomposition, winding);
 
     REQUIRE(contact_points.size() == 18);
 
@@ -598,12 +624,11 @@ TEST_CASE("vertical_extension_contact_points")
   {
     // The same chain as in the previous section, rotated by 180 degrees. This way, we're covering all the cases.
 
-    Polygon2 polygon{
+    std::vector<Point2> vertices_storage{
         {3.00, -2.64},  {0.30, -3.64},  {3.12, -5.62},  {5.92, -3.10},  {2.76, -0.64},  {-0.78, -2.34}, {0.02, -0.62},
         {-2.88, -0.70}, {-2.06, -2.08}, {-5.34, -1.70}, {-6.74, -3.64}, {-4.40, -6.00}, {-3.20, -4.00}, {-4.68, -3.20},
     };
-
-    VerticesView vertices(polygon);
+    VerticesView vertices(vertices_storage);
 
     std::vector<Node> nodes(10);
     nodes[0].direction = HorizontalDirection::right;
@@ -686,7 +711,14 @@ TEST_CASE("vertical_extension_contact_points")
 
     ChainDecomposition chain_decomposition{&nodes[1], &nodes[8]};
 
-    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    Winding winding = GENERATE(Winding::ccw, Winding::cw);
+    if (winding == Winding::cw)
+    {
+      flip_horizontally(vertices_storage, nodes);
+    }
+
+    std::vector<VerticalExtensionContactPoint> contact_points =
+        vertical_extension_contact_points(chain_decomposition, winding);
 
     REQUIRE(contact_points.size() == 18);
 
@@ -807,7 +839,8 @@ TEST_CASE("split_chain_decomposition_into_islands")
 
     ChainDecomposition chain_decomposition{&nodes[4], &nodes[1]};
 
-    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    std::vector<VerticalExtensionContactPoint> contact_points =
+        vertical_extension_contact_points(chain_decomposition, Winding::ccw);
     REQUIRE(contact_points.size() == 10);
 
     std::vector<ChainDecompositionIsland> islands =
@@ -889,7 +922,8 @@ TEST_CASE("split_chain_decomposition_into_islands")
 
     ChainDecomposition chain_decomposition{&nodes[1], &nodes[4]};
 
-    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    std::vector<VerticalExtensionContactPoint> contact_points =
+        vertical_extension_contact_points(chain_decomposition, Winding::ccw);
     REQUIRE(contact_points.size() == 10);
 
     std::vector<ChainDecompositionIsland> islands =
@@ -963,7 +997,8 @@ TEST_CASE("split_chain_decomposition_into_islands")
 
     ChainDecomposition chain_decomposition{&nodes[1], &nodes[3]};
 
-    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    std::vector<VerticalExtensionContactPoint> contact_points =
+        vertical_extension_contact_points(chain_decomposition, Winding::ccw);
     REQUIRE(contact_points.size() == 8);
 
     std::vector<ChainDecompositionIsland> islands =
@@ -1045,7 +1080,8 @@ TEST_CASE("split_chain_decomposition_into_islands")
 
     ChainDecomposition chain_decomposition{&nodes[4], &nodes[0]};
 
-    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    std::vector<VerticalExtensionContactPoint> contact_points =
+        vertical_extension_contact_points(chain_decomposition, Winding::ccw);
     REQUIRE(contact_points.size() == 10);
 
     std::vector<ChainDecompositionIsland> islands =
@@ -1130,7 +1166,7 @@ TEST_CASE("split_chain_decomposition_into_islands")
       ChainDecomposition chain_decomposition{&nodes[2], &nodes[3]};
 
       std::vector<VerticalExtensionContactPoint> contact_points =
-          vertical_extension_contact_points(chain_decomposition);
+          vertical_extension_contact_points(chain_decomposition, Winding::ccw);
       REQUIRE(contact_points.size() == 11);
 
       std::vector<ChainDecompositionIsland> islands =
@@ -1204,7 +1240,7 @@ TEST_CASE("split_chain_decomposition_into_islands")
       ChainDecomposition chain_decomposition{&nodes[3], &nodes[2]};
 
       std::vector<VerticalExtensionContactPoint> contact_points =
-          vertical_extension_contact_points(chain_decomposition);
+          vertical_extension_contact_points(chain_decomposition, Winding::ccw);
       REQUIRE(contact_points.size() == 11);
 
       std::vector<ChainDecompositionIsland> islands =
@@ -1295,7 +1331,7 @@ TEST_CASE("split_chain_decomposition_into_islands")
       ChainDecomposition chain_decomposition{&nodes[2], &nodes[0]};
 
       std::vector<VerticalExtensionContactPoint> contact_points =
-          vertical_extension_contact_points(chain_decomposition);
+          vertical_extension_contact_points(chain_decomposition, Winding::ccw);
       REQUIRE(contact_points.size() == 14);
 
       std::vector<ChainDecompositionIsland> islands =
@@ -1382,7 +1418,8 @@ TEST_CASE("split_chain_decomposition_into_islands")
 
     ChainDecomposition chain_decomposition{&nodes[1], &nodes[6]};
 
-    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    std::vector<VerticalExtensionContactPoint> contact_points =
+        vertical_extension_contact_points(chain_decomposition, Winding::ccw);
     REQUIRE(contact_points.size() == 14);
 
     std::vector<ChainDecompositionIsland> islands =
@@ -1487,7 +1524,8 @@ TEST_CASE("split_chain_decomposition_into_islands")
 
     ChainDecomposition chain_decomposition{&nodes[0], &nodes[5]};
 
-    std::vector<VerticalExtensionContactPoint> contact_points = vertical_extension_contact_points(chain_decomposition);
+    std::vector<VerticalExtensionContactPoint> contact_points =
+        vertical_extension_contact_points(chain_decomposition, Winding::ccw);
     REQUIRE(contact_points.size() == 12);
 
     std::vector<ChainDecompositionIsland> islands =

@@ -150,15 +150,19 @@ std::string_view contact_point_type_to_string(VerticalExtensionContactPoint::Typ
 };
 
 std::vector<VerticalExtensionContactPoint>
-vertical_extension_contact_points(const ChainDecomposition& chain_decomposition)
+vertical_extension_contact_points(const ChainDecomposition& chain_decomposition, Winding winding)
 {
+  /// The horizontal direction of a boundary which has the interior above it.
+  HorizontalDirection lower_boundary_direction =
+      winding == Winding::ccw ? HorizontalDirection::right : HorizontalDirection::left;
+
   std::vector<VerticalExtensionContactPoint> contact_points;
 
   const Node* prev;
   const Node* node;
 
   const Node* first_node = chain_decomposition.first_node;
-  if (first_node->direction == HorizontalDirection::right)
+  if (first_node->direction == lower_boundary_direction)
   {
     contact_points.push_back(VerticalExtensionContactPoint{
         VerticalExtensionContactPoint::Type::vertex_upwards,
@@ -192,13 +196,13 @@ vertical_extension_contact_points(const ChainDecomposition& chain_decomposition)
     }
     else
     {
-      if (node->direction == HorizontalDirection::right)
+      if (node->direction == lower_boundary_direction)
       {
         if (node->neighbors[0] == prev)
         {
           // Note: in a valid vertical decomposition, this branch is always taken, because if lower_opp_edge is not
           // valid, then there's no boundary to traverse either, however, since the purpose of this function is
-          // validation, we should should handle invalid decompositions as gracefully as possible.
+          // validation, we should handle invalid decompositions as gracefully as possible.
           if (node->lower_opp_edge.is_valid())
           {
             contact_points.push_back(VerticalExtensionContactPoint{
