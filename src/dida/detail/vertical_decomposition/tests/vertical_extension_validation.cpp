@@ -53,7 +53,7 @@ std::pair<PolygonRange, PolygonRange> PolygonRange::split(VerticesView vertices,
       });
 }
 
-Edge ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_origin)
+Edge ray_cast_up(VerticesView vertices, Winding winding, const PolygonRange& range, Point2 ray_origin)
 {
   YOnEdge result_y = YOnEdge::infinity();
   Edge result = Edge::invalid();
@@ -73,7 +73,8 @@ Edge ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_or
       YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
       if (cur_y > ray_origin.y() && cur_y < result_y)
       {
-        result = edge_end_on_left ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
+        bool on_interior_side = edge_end_on_left == (winding == Winding::ccw);
+        result = on_interior_side ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
         result_y = cur_y;
       }
     }
@@ -84,7 +85,7 @@ Edge ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_or
   return result;
 }
 
-Edge ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_origin)
+Edge ray_cast_down(VerticesView vertices, Winding winding, const PolygonRange& range, Point2 ray_origin)
 {
   YOnEdge result_y = YOnEdge::negative_infinity();
   Edge result = Edge::invalid();
@@ -104,7 +105,8 @@ Edge ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_
       YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
       if (cur_y < ray_origin.y() && cur_y > result_y)
       {
-        result = edge_start_on_left ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
+        bool on_interior_side = edge_start_on_left == (winding == Winding::ccw);
+        result = on_interior_side ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
         result_y = cur_y;
       }
     }
@@ -324,7 +326,7 @@ void split_chain_decomposition_into_islands_rec(VerticesView vertices, const Cha
     case VerticalExtensionContactPoint::Type::vertex_downwards:
       if (!node->lower_opp_edge.is_valid())
       {
-        should_split = ray_cast_down(vertices, range, *node->vertex_it) == Edge::invalid();
+        should_split = ray_cast_down(vertices, Winding::ccw, range, *node->vertex_it) == Edge::invalid();
         split_location = PolygonLocation{
             static_cast<size_t>(node->vertex_it - vertices.begin()),
             node->vertex_it->x(),
@@ -334,7 +336,7 @@ void split_chain_decomposition_into_islands_rec(VerticesView vertices, const Cha
     case VerticalExtensionContactPoint::Type::vertex_upwards:
       if (!node->upper_opp_edge.is_valid())
       {
-        should_split = ray_cast_up(vertices, range, *node->vertex_it) == Edge::invalid();
+        should_split = ray_cast_up(vertices, Winding::ccw, range, *node->vertex_it) == Edge::invalid();
         split_location = PolygonLocation{
             static_cast<size_t>(node->vertex_it - vertices.begin()),
             node->vertex_it->x(),
@@ -347,7 +349,7 @@ void split_chain_decomposition_into_islands_rec(VerticesView vertices, const Cha
           (node == chain_decomposition.last_node && node->direction == HorizontalDirection::left) ||
           node->type == NodeType::outer_branch)
       {
-        should_split = ray_cast_down(vertices, range, *node->vertex_it) == node->lower_opp_edge;
+        should_split = ray_cast_down(vertices, Winding::ccw, range, *node->vertex_it) == node->lower_opp_edge;
         split_location = PolygonLocation{
             static_cast<size_t>(node->lower_opp_edge.start_vertex_it - vertices.begin()),
             node->vertex_it->x(),
@@ -360,7 +362,7 @@ void split_chain_decomposition_into_islands_rec(VerticesView vertices, const Cha
           (node == chain_decomposition.last_node && node->direction == HorizontalDirection::right) ||
           node->type == NodeType::outer_branch)
       {
-        should_split = ray_cast_up(vertices, range, *node->vertex_it) == node->upper_opp_edge;
+        should_split = ray_cast_up(vertices, Winding::ccw, range, *node->vertex_it) == node->upper_opp_edge;
         split_location = PolygonLocation{
             static_cast<size_t>(node->upper_opp_edge.start_vertex_it - vertices.begin()),
             node->vertex_it->x(),
@@ -432,7 +434,8 @@ bool validate_vertical_extension_island(VerticesView vertices, const ChainDecomp
     {
     case VerticalExtensionContactPoint::Type::vertex_downwards:
     {
-      Edge expected_lower_opp_edge = ray_cast_down(vertices, island.range, *contact_point.node->vertex_it);
+      Edge expected_lower_opp_edge =
+          ray_cast_down(vertices, Winding::ccw, island.range, *contact_point.node->vertex_it);
       if (expected_lower_opp_edge != contact_point.node->lower_opp_edge)
       {
         UNSCOPED_INFO("Node{vertex: " << *contact_point.node->vertex_it << "}.lower_opp_edge should be "
@@ -450,7 +453,7 @@ bool validate_vertical_extension_island(VerticesView vertices, const ChainDecomp
 
     case VerticalExtensionContactPoint::Type::vertex_upwards:
     {
-      Edge expected_upper_opp_edge = ray_cast_up(vertices, island.range, *contact_point.node->vertex_it);
+      Edge expected_upper_opp_edge = ray_cast_up(vertices, Winding::ccw, island.range, *contact_point.node->vertex_it);
       if (expected_upper_opp_edge != contact_point.node->upper_opp_edge)
       {
         UNSCOPED_INFO("Node{vertex: " << *contact_point.node->vertex_it << "}.upper_opp_edge should be "
@@ -470,8 +473,8 @@ bool validate_vertical_extension_island(VerticesView vertices, const ChainDecomp
       if (contact_point.node->type == NodeType::outer_branch)
 
       {
-        Edge lower_opp_edge = ray_cast_down(vertices, island.range, *contact_point.node->vertex_it);
-        Edge upper_opp_edge = ray_cast_up(vertices, island.range, *contact_point.node->vertex_it);
+        Edge lower_opp_edge = ray_cast_down(vertices, Winding::ccw, island.range, *contact_point.node->vertex_it);
+        Edge upper_opp_edge = ray_cast_up(vertices, Winding::ccw, island.range, *contact_point.node->vertex_it);
 
         expected_opp_contact_points.insert(contact_point);
         expected_opp_contact_points.insert(VerticalExtensionContactPoint{
@@ -600,8 +603,8 @@ bool validate_vertical_extensions(VerticesView vertices, const std::set<const No
     }
     else
     {
-      expected_lower_opp_edge = ray_cast_down(vertices, full_range, *node->vertex_it);
-      expected_upper_opp_edge = ray_cast_up(vertices, full_range, *node->vertex_it);
+      expected_lower_opp_edge = ray_cast_down(vertices, Winding::ccw, full_range, *node->vertex_it);
+      expected_upper_opp_edge = ray_cast_up(vertices, Winding::ccw, full_range, *node->vertex_it);
     }
 
     if (node->lower_opp_edge != expected_lower_opp_edge)

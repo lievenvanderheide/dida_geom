@@ -6,8 +6,6 @@
 namespace dida::detail::vertical_decomposition
 {
 
-bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition);
-
 ChainDecomposition merge_chain_decompositions_rec(VerticesView vertices, NodePool& node_pool,
                                                   ChainDecomposition* chain_decompositions,
                                                   size_t num_chain_decompositions)

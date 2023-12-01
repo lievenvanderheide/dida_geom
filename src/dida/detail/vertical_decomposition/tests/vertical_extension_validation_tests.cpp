@@ -131,8 +131,8 @@ TEST_CASE("ray_cast_up")
   {
     for (size_t i = 0; i < vertices.size(); i++)
     {
-      Edge edge =
-          ray_cast_up(vertices, PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {4.06, -0.64});
+      Edge edge = ray_cast_up(vertices, Winding::ccw,
+                              PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {4.06, -0.64});
       REQUIRE(edge.is_valid());
       CHECK(*edge.start_vertex_it == Point2(5.06, 0.68));
       CHECK(*edge.end_vertex_it == Point2(2.26, -0.92));
@@ -143,8 +143,8 @@ TEST_CASE("ray_cast_up")
   {
     for (size_t i = 0; i < vertices.size(); i++)
     {
-      Edge edge =
-          ray_cast_up(vertices, PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {3.26, 1.16});
+      Edge edge = ray_cast_up(vertices, Winding::ccw,
+                              PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {3.26, 1.16});
       CHECK(!edge.is_valid());
     }
   }
@@ -153,8 +153,8 @@ TEST_CASE("ray_cast_up")
   {
     for (size_t i = 0; i < vertices.size(); i++)
     {
-      Edge edge =
-          ray_cast_up(vertices, PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {6.36, 3.32});
+      Edge edge = ray_cast_up(vertices, Winding::ccw,
+                              PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {6.36, 3.32});
       CHECK(!edge.is_valid());
     }
   }
@@ -163,8 +163,8 @@ TEST_CASE("ray_cast_up")
   {
     for (size_t i = 0; i < vertices.size(); i++)
     {
-      Edge edge =
-          ray_cast_up(vertices, PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {2.26, -1.52});
+      Edge edge = ray_cast_up(vertices, Winding::ccw,
+                              PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {2.26, -1.52});
       REQUIRE(edge.is_valid());
       CHECK(*edge.start_vertex_it == Point2(2.26, -0.92));
       CHECK(*edge.end_vertex_it == Point2(0.26, 3.38));
@@ -175,15 +175,15 @@ TEST_CASE("ray_cast_up")
   {
     for (size_t i = 0; i < vertices.size(); i++)
     {
-      Edge edge =
-          ray_cast_up(vertices, PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {2.26, -0.92});
+      Edge edge = ray_cast_up(vertices, Winding::ccw,
+                              PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {2.26, -0.92});
       CHECK(!edge.is_valid());
     }
   }
 
   SECTION("Open range, hits edge from inside")
   {
-    Edge edge = ray_cast_up(vertices, PolygonRange{1, 3, vertices[1].x(), vertices[4].x()}, {4.93, 1.26});
+    Edge edge = ray_cast_up(vertices, Winding::ccw, PolygonRange{1, 3, vertices[1].x(), vertices[4].x()}, {4.93, 1.26});
     REQUIRE(edge.is_valid());
     CHECK(*edge.start_vertex_it == Point2(7.44, 0.74));
     CHECK(*edge.end_vertex_it == Point2(2.38, 2.48));
@@ -191,13 +191,14 @@ TEST_CASE("ray_cast_up")
 
   SECTION("Open range, ignore closing edge")
   {
-    Edge edge = ray_cast_up(vertices, PolygonRange{0, 3, vertices[0].x(), vertices[3].x()}, {4.45, -0.62});
+    Edge edge =
+        ray_cast_up(vertices, Winding::ccw, PolygonRange{0, 3, vertices[0].x(), vertices[3].x()}, {4.45, -0.62});
     REQUIRE(!edge.is_valid());
   }
 
   SECTION("Hits partial first edge")
   {
-    Edge edge = ray_cast_up(vertices, PolygonRange{3, 3, ScalarDeg1(4), vertices[6].x()}, {3.27, -0.82});
+    Edge edge = ray_cast_up(vertices, Winding::ccw, PolygonRange{3, 3, ScalarDeg1(4), vertices[6].x()}, {3.27, -0.82});
     REQUIRE(edge.is_valid());
     CHECK(*edge.start_vertex_it == Point2(5.06, 0.68));
     CHECK(*edge.end_vertex_it == Point2(2.26, -0.92));
@@ -205,13 +206,13 @@ TEST_CASE("ray_cast_up")
 
   SECTION("Misses partial first edge")
   {
-    Edge edge = ray_cast_up(vertices, PolygonRange{3, 3, ScalarDeg1(3), vertices[6].x()}, {3.27, -0.82});
+    Edge edge = ray_cast_up(vertices, Winding::ccw, PolygonRange{3, 3, ScalarDeg1(3), vertices[6].x()}, {3.27, -0.82});
     CHECK(!edge.is_valid());
   }
 
   SECTION("Hits partial last edge")
   {
-    Edge edge = ray_cast_up(vertices, PolygonRange{0, 4, vertices[0].x(), ScalarDeg1(3)}, {3.27, -0.82});
+    Edge edge = ray_cast_up(vertices, Winding::ccw, PolygonRange{0, 4, vertices[0].x(), ScalarDeg1(3)}, {3.27, -0.82});
     REQUIRE(edge.is_valid());
     CHECK(*edge.start_vertex_it == Point2(5.06, 0.68));
     CHECK(*edge.end_vertex_it == Point2(2.26, -0.92));
@@ -219,16 +220,41 @@ TEST_CASE("ray_cast_up")
 
   SECTION("Misses partial last edge")
   {
-    Edge edge = ray_cast_up(vertices, PolygonRange{0, 4, vertices[0].x(), ScalarDeg1(4)}, {3.27, -0.82});
+    Edge edge = ray_cast_up(vertices, Winding::ccw, PolygonRange{0, 4, vertices[0].x(), ScalarDeg1(4)}, {3.27, -0.82});
     CHECK(!edge.is_valid());
   }
 
   SECTION("Open range, with wrap")
   {
-    Edge edge = ray_cast_up(vertices, PolygonRange{6, 6, vertices[6].x(), vertices[4].x()}, {3.48, -0.40});
+    Edge edge =
+        ray_cast_up(vertices, Winding::ccw, PolygonRange{6, 6, vertices[6].x(), vertices[4].x()}, {3.48, -0.40});
     REQUIRE(edge.is_valid());
     CHECK(*edge.start_vertex_it == Point2(5.06, 0.68));
     CHECK(*edge.end_vertex_it == Point2(2.26, -0.92));
+  }
+
+  SECTION("Clockwise winding")
+  {
+    std::vector<Point2> vertices_storage{
+        {-2.88, 2.24}, {-6.10, 3.46}, {-1.32, 4.30}, {-4.96, 6.12}, {-3.60, 7.16},
+        {-0.62, 6.90}, {1.52, 3.80},  {-3.82, 3.44}, {-2.44, 2.76}, {-2.36, 2.36},
+    };
+    VerticesView vertices(vertices_storage);
+    PolygonRange full_range{0, vertices.size(), vertices[0].x(), vertices[0].x()};
+
+    SECTION("Hit")
+    {
+      Edge edge = ray_cast_up(vertices, Winding::cw, full_range, {-2.74, 3.76});
+      REQUIRE(edge.is_valid());
+      CHECK(*edge.start_vertex_it == Point2(-6.10, 3.46));
+      CHECK(*edge.end_vertex_it == Point2(-1.32, 4.30));
+    }
+
+    SECTION("No hit")
+    {
+      Edge edge = ray_cast_up(vertices, Winding::cw, full_range, {-3.14, 3.30});
+      CHECK(!edge.is_valid());
+    }
   }
 }
 
@@ -245,8 +271,8 @@ TEST_CASE("ray_cast_down")
   {
     for (size_t i = 0; i < vertices.size(); i++)
     {
-      Edge edge =
-          ray_cast_down(vertices, PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {0.47, 1.12});
+      Edge edge = ray_cast_down(vertices, Winding::ccw,
+                                PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {0.47, 1.12});
       REQUIRE(edge.is_valid());
       CHECK(*edge.start_vertex_it == Point2(-4.93, 1.68));
       CHECK(*edge.end_vertex_it == Point2(1.45, -0.08));
@@ -257,8 +283,8 @@ TEST_CASE("ray_cast_down")
   {
     for (size_t i = 0; i < vertices.size(); i++)
     {
-      Edge edge =
-          ray_cast_down(vertices, PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {-1.29, 2.38});
+      Edge edge = ray_cast_down(vertices, Winding::ccw,
+                                PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {-1.29, 2.38});
       CHECK(!edge.is_valid());
     }
   }
@@ -267,8 +293,8 @@ TEST_CASE("ray_cast_down")
   {
     for (size_t i = 0; i < vertices.size(); i++)
     {
-      Edge edge =
-          ray_cast_down(vertices, PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {-3.63, -0.68});
+      Edge edge = ray_cast_down(vertices, Winding::ccw,
+                                PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {-3.63, -0.68});
       CHECK(!edge.is_valid());
     }
   }
@@ -277,8 +303,8 @@ TEST_CASE("ray_cast_down")
   {
     for (size_t i = 0; i < vertices.size(); i++)
     {
-      Edge edge =
-          ray_cast_down(vertices, PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {1.81, -0.98});
+      Edge edge = ray_cast_down(vertices, Winding::ccw,
+                                PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {1.81, -0.98});
       REQUIRE(edge.is_valid());
       CHECK(*edge.start_vertex_it == Point2(1.81, -2.16));
       CHECK(*edge.end_vertex_it == Point2(5.21, -1.82));
@@ -289,8 +315,8 @@ TEST_CASE("ray_cast_down")
   {
     for (size_t i = 0; i < vertices.size(); i++)
     {
-      Edge edge =
-          ray_cast_down(vertices, PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {2.65, 2.3});
+      Edge edge = ray_cast_down(vertices, Winding::ccw,
+                                PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {2.65, 2.3});
       REQUIRE(edge.is_valid());
       CHECK(*edge.start_vertex_it == Point2(1.81, -2.16));
       CHECK(*edge.end_vertex_it == Point2(5.21, -1.82));
@@ -299,7 +325,8 @@ TEST_CASE("ray_cast_down")
 
   SECTION("Open range, hits edge from inside")
   {
-    Edge edge = ray_cast_down(vertices, PolygonRange{2, 4, vertices[2].x(), vertices[6].x()}, {0.42, -1.22});
+    Edge edge =
+        ray_cast_down(vertices, Winding::ccw, PolygonRange{2, 4, vertices[2].x(), vertices[6].x()}, {0.42, -1.22});
     REQUIRE(edge.is_valid());
     CHECK(*edge.start_vertex_it == Point2(-2.47, -0.96));
     CHECK(*edge.end_vertex_it == Point2(1.81, -2.16));
@@ -307,13 +334,14 @@ TEST_CASE("ray_cast_down")
 
   SECTION("Open range, ignore closing edge")
   {
-    Edge edge = ray_cast_down(vertices, PolygonRange{2, 5, vertices[2].x(), vertices[7].x()}, {-0.55, 1.58});
+    Edge edge =
+        ray_cast_down(vertices, Winding::ccw, PolygonRange{2, 5, vertices[2].x(), vertices[7].x()}, {-0.55, 1.58});
     CHECK(!edge.is_valid());
   }
 
   SECTION("Hits partial first edge")
   {
-    Edge edge = ray_cast_down(vertices, PolygonRange{1, 3, ScalarDeg1(-4), ScalarDeg1(1)}, {-1.36, 1.41});
+    Edge edge = ray_cast_down(vertices, Winding::ccw, PolygonRange{1, 3, ScalarDeg1(-4), ScalarDeg1(1)}, {-1.36, 1.41});
     REQUIRE(edge.is_valid());
     CHECK(*edge.start_vertex_it == Point2(-4.93, 1.68));
     CHECK(*edge.end_vertex_it == Point2(1.45, -0.08));
@@ -321,7 +349,8 @@ TEST_CASE("ray_cast_down")
 
   SECTION("Misses partial first edge")
   {
-    Edge edge = ray_cast_down(vertices, PolygonRange{2, 4, ScalarDeg1(-2), ScalarDeg1(3.5)}, {-1.20, -0.24});
+    Edge edge =
+        ray_cast_down(vertices, Winding::ccw, PolygonRange{2, 4, ScalarDeg1(-2), ScalarDeg1(3.5)}, {-1.20, -0.24});
     REQUIRE(edge.is_valid());
     CHECK(*edge.start_vertex_it == Point2(-2.47, -0.96));
     CHECK(*edge.end_vertex_it == Point2(1.81, -2.16));
@@ -329,7 +358,8 @@ TEST_CASE("ray_cast_down")
 
   SECTION("Hits partial last edge")
   {
-    Edge edge = ray_cast_down(vertices, PolygonRange{1, 3, ScalarDeg1(-4), ScalarDeg1(1)}, {-0.88, -1.08});
+    Edge edge =
+        ray_cast_down(vertices, Winding::ccw, PolygonRange{1, 3, ScalarDeg1(-4), ScalarDeg1(1)}, {-0.88, -1.08});
     REQUIRE(edge.is_valid());
     CHECK(*edge.start_vertex_it == Point2(-2.47, -0.96));
     CHECK(*edge.end_vertex_it == Point2(1.81, -2.16));
@@ -337,7 +367,8 @@ TEST_CASE("ray_cast_down")
 
   SECTION("Misses partial last edge")
   {
-    Edge edge = ray_cast_down(vertices, PolygonRange{1, 6, ScalarDeg1(-2.5), ScalarDeg1(1.8)}, {0.36, 3.30});
+    Edge edge =
+        ray_cast_down(vertices, Winding::ccw, PolygonRange{1, 6, ScalarDeg1(-2.5), ScalarDeg1(1.8)}, {0.36, 3.30});
     REQUIRE(edge.is_valid());
     CHECK(*edge.start_vertex_it == Point2(-4.93, 1.68));
     CHECK(*edge.end_vertex_it == Point2(1.45, -0.08));
@@ -345,10 +376,35 @@ TEST_CASE("ray_cast_down")
 
   SECTION("Open range, with wrap")
   {
-    Edge edge = ray_cast_down(vertices, PolygonRange{6, 4, vertices[6].x(), vertices[2].x()}, {-4.26, 1.94});
+    Edge edge =
+        ray_cast_down(vertices, Winding::ccw, PolygonRange{6, 4, vertices[6].x(), vertices[2].x()}, {-4.26, 1.94});
     REQUIRE(edge.is_valid());
     CHECK(*edge.start_vertex_it == Point2(-4.93, 1.68));
     CHECK(*edge.end_vertex_it == Point2(1.45, -0.08));
+  }
+
+  SECTION("Clockwise winding")
+  {
+    std::vector<Point2> vertices_storage{
+        {-2.88, 2.24}, {-6.10, 3.46}, {-1.32, 4.30}, {-4.96, 6.12}, {-3.60, 7.16},
+        {-0.62, 6.90}, {1.52, 3.80},  {-3.82, 3.44}, {-2.44, 2.76}, {-2.36, 2.36},
+    };
+    VerticesView vertices(vertices_storage);
+    PolygonRange full_range{0, vertices.size(), vertices[0].x(), vertices[0].x()};
+
+    SECTION("Hit")
+    {
+      Edge edge = ray_cast_down(vertices, Winding::cw, full_range, {-2.74, 3.76});
+      REQUIRE(edge.is_valid());
+      CHECK(*edge.start_vertex_it == Point2(1.52, 3.80));
+      CHECK(*edge.end_vertex_it == Point2(-3.82, 3.44));
+    }
+
+    SECTION("No hit")
+    {
+      Edge edge = ray_cast_down(vertices, Winding::cw, full_range, {-3.14, 3.30});
+      CHECK(!edge.is_valid());
+    }
   }
 }
 

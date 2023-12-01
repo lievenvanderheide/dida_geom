@@ -34,6 +34,16 @@ enum class HorizontalDirection : uint8_t
   right,
 };
 
+/// The winding of a polygonal region's boundary around its interior.
+enum class Winding : uint8_t
+{
+  /// The boundary has counter clockwise winding, which means the interior is on the left side of the boundary.
+  ccw,
+
+  /// The boundary has clockwise winding, which means the interior is on the right side of the boundary.
+  cw
+};
+
 /// The type of a node.
 enum class NodeType : uint8_t
 {

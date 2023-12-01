@@ -53,7 +53,7 @@ struct PolygonRange
 ///
 /// The special case where the ray hits the boundary on a vertex is resolved by shifting that vertex an infinitisemal
 /// offset to the right.
-Edge ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_origin);
+Edge ray_cast_up(VerticesView vertices, Winding winding, const PolygonRange& range, Point2 ray_origin);
 
 /// Casts a ray downwards from @c ray_origin, until it hits an edge in the given polygon range. If it hits an edge from
 /// the interior side, then that edge is returned, if it hits an edge from the exterior side, or if no edge is hit, then
@@ -61,7 +61,7 @@ Edge ray_cast_up(VerticesView vertices, const PolygonRange& range, Point2 ray_or
 ///
 /// The special case where the ray hits the boundary on a vertex is resolved by shifting that vertex an infinitisemal
 /// offset to the left.
-Edge ray_cast_down(VerticesView vertices, const PolygonRange& range, Point2 ray_origin);
+Edge ray_cast_down(VerticesView vertices, Winding winding, const PolygonRange& range, Point2 ray_origin);
 
 /// A contact point where a vertical extension meets its chain.
 struct VerticalExtensionContactPoint
