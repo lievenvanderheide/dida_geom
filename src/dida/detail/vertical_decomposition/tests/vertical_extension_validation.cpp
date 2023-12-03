@@ -310,27 +310,34 @@ vertical_extension_contact_points(const ChainDecomposition& chain_decomposition,
 namespace
 {
 
-void split_chain_decomposition_into_islands_rec(VerticesView vertices, const ChainDecomposition& chain_decomposition,
+void split_chain_decomposition_into_islands_rec(VerticesView vertices, Winding winding,
+                                                const ChainDecomposition& chain_decomposition,
                                                 ArrayView<const VerticalExtensionContactPoint> contact_points,
                                                 PolygonRange range, std::vector<ChainDecompositionIsland>& result)
 {
   using ContactPointsIt = ArrayView<const VerticalExtensionContactPoint>::iterator;
 
-  ContactPointsIt island_begin = contact_points.begin();
+  /// The horizontal direction of a boundary which has the interior above it.
+  HorizontalDirection lower_boundary_direction =
+      winding == Winding::ccw ? HorizontalDirection::right : HorizontalDirection::left;
 
-  for (ContactPointsIt it = contact_points.begin(); it != contact_points.end(); ++it)
+  size_t island_begin = 0;
+
+  for (size_t i = 0; i < contact_points.size(); i++)
   {
-    const Node* node = it->node;
+    VerticalExtensionContactPoint contact_point =
+        winding == Winding::ccw ? contact_points[i] : contact_points[contact_points.size() - i - 1];
+    const Node* node = contact_point.node;
 
     bool should_split = false;
     PolygonLocation split_location;
 
-    switch (it->type)
+    switch (contact_point.type)
     {
     case VerticalExtensionContactPoint::Type::vertex_downwards:
       if (!node->lower_opp_edge.is_valid())
       {
-        should_split = ray_cast_down(vertices, Winding::ccw, range, *node->vertex_it) == Edge::invalid();
+        should_split = ray_cast_down(vertices, winding, range, *node->vertex_it) == Edge::invalid();
         split_location = PolygonLocation{
             static_cast<size_t>(node->vertex_it - vertices.begin()),
             node->vertex_it->x(),
@@ -340,7 +347,7 @@ void split_chain_decomposition_into_islands_rec(VerticesView vertices, const Cha
     case VerticalExtensionContactPoint::Type::vertex_upwards:
       if (!node->upper_opp_edge.is_valid())
       {
-        should_split = ray_cast_up(vertices, Winding::ccw, range, *node->vertex_it) == Edge::invalid();
+        should_split = ray_cast_up(vertices, winding, range, *node->vertex_it) == Edge::invalid();
         split_location = PolygonLocation{
             static_cast<size_t>(node->vertex_it - vertices.begin()),
             node->vertex_it->x(),
@@ -349,11 +356,11 @@ void split_chain_decomposition_into_islands_rec(VerticesView vertices, const Cha
       break;
 
     case VerticalExtensionContactPoint::Type::lower_opp_edge:
-      if ((node == chain_decomposition.first_node && node->direction == HorizontalDirection::right) ||
-          (node == chain_decomposition.last_node && node->direction == HorizontalDirection::left) ||
+      if ((node == chain_decomposition.first_node && node->direction == lower_boundary_direction) ||
+          (node == chain_decomposition.last_node && node->direction != lower_boundary_direction) ||
           node->type == NodeType::outer_branch)
       {
-        should_split = ray_cast_down(vertices, Winding::ccw, range, *node->vertex_it) == node->lower_opp_edge;
+        should_split = ray_cast_down(vertices, winding, range, *node->vertex_it) == node->lower_opp_edge;
         split_location = PolygonLocation{
             static_cast<size_t>(node->lower_opp_edge.start_vertex_it - vertices.begin()),
             node->vertex_it->x(),
@@ -362,11 +369,11 @@ void split_chain_decomposition_into_islands_rec(VerticesView vertices, const Cha
       break;
 
     case VerticalExtensionContactPoint::Type::upper_opp_edge:
-      if ((node == chain_decomposition.first_node && node->direction == HorizontalDirection::left) ||
-          (node == chain_decomposition.last_node && node->direction == HorizontalDirection::right) ||
+      if ((node == chain_decomposition.first_node && node->direction != lower_boundary_direction) ||
+          (node == chain_decomposition.last_node && node->direction == lower_boundary_direction) ||
           node->type == NodeType::outer_branch)
       {
-        should_split = ray_cast_up(vertices, Winding::ccw, range, *node->vertex_it) == node->upper_opp_edge;
+        should_split = ray_cast_up(vertices, winding, range, *node->vertex_it) == node->upper_opp_edge;
         split_location = PolygonLocation{
             static_cast<size_t>(node->upper_opp_edge.start_vertex_it - vertices.begin()),
             node->vertex_it->x(),
@@ -382,33 +389,60 @@ void split_chain_decomposition_into_islands_rec(VerticesView vertices, const Cha
     {
       std::pair<PolygonRange, PolygonRange> sub_ranges = range.split(vertices, split_location);
 
-      if (it != island_begin)
+      if (winding == Winding::ccw)
       {
-        split_chain_decomposition_into_islands_rec(
-            vertices, chain_decomposition,
-            ArrayView<const VerticalExtensionContactPoint>(island_begin, static_cast<size_t>(it - island_begin)),
-            sub_ranges.first, result);
-      }
+        if (i != island_begin)
+        {
+          ArrayView<const VerticalExtensionContactPoint> rec_contact_points(contact_points.begin() + island_begin,
+                                                                            i - island_begin);
+          split_chain_decomposition_into_islands_rec(vertices, winding, chain_decomposition, rec_contact_points,
+                                                     sub_ranges.first, result);
+        }
 
-      range = sub_ranges.second;
-      island_begin = it + 1;
+        range = sub_ranges.second;
+        island_begin = i + 1;
+      }
+      else
+      {
+        if (i != island_begin)
+        {
+          ArrayView<const VerticalExtensionContactPoint> rec_contact_points(
+              contact_points.begin() + contact_points.size() - i, i - island_begin);
+          split_chain_decomposition_into_islands_rec(vertices, winding, chain_decomposition, rec_contact_points,
+                                                     sub_ranges.second, result);
+        }
+
+        range = sub_ranges.first;
+        island_begin = i + 1;
+      }
     }
   }
 
-  if (island_begin != contact_points.end())
+  if (island_begin != contact_points.size())
   {
-    result.push_back({
-        ArrayView<const VerticalExtensionContactPoint>(island_begin,
-                                                       static_cast<size_t>(contact_points.end() - island_begin)),
-        range,
-    });
+    if (winding == Winding::ccw)
+    {
+      result.push_back({
+          ArrayView<const VerticalExtensionContactPoint>(contact_points.begin() + island_begin,
+                                                         contact_points.size() - island_begin),
+          range,
+      });
+    }
+    else
+    {
+      result.push_back({
+          ArrayView<const VerticalExtensionContactPoint>(contact_points.begin(), contact_points.size() - island_begin),
+          range,
+      });
+    }
   }
 }
 
 } // namespace
 
 std::vector<ChainDecompositionIsland>
-split_chain_decomposition_into_islands(VerticesView vertices, const ChainDecomposition& chain_decomposition,
+split_chain_decomposition_into_islands(VerticesView vertices, Winding winding,
+                                       const ChainDecomposition& chain_decomposition,
                                        ArrayView<const VerticalExtensionContactPoint> contact_points)
 {
   PolygonRange full_range{
@@ -418,7 +452,14 @@ split_chain_decomposition_into_islands(VerticesView vertices, const ChainDecompo
       chain_decomposition.last_node->vertex_it->x(),
   };
   std::vector<ChainDecompositionIsland> result;
-  split_chain_decomposition_into_islands_rec(vertices, chain_decomposition, contact_points, full_range, result);
+  split_chain_decomposition_into_islands_rec(vertices, winding, chain_decomposition, contact_points, full_range,
+                                             result);
+
+  if (winding == Winding::cw)
+  {
+    std::reverse(result.begin(), result.end());
+  }
+
   return result;
 }
 

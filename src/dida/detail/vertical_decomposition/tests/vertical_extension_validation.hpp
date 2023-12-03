@@ -126,7 +126,8 @@ struct ChainDecompositionIsland
 
 /// Splits a chain decomposition into its set of islands.
 std::vector<ChainDecompositionIsland>
-split_chain_decomposition_into_islands(VerticesView vertices, const ChainDecomposition& chain_decomposition,
+split_chain_decomposition_into_islands(VerticesView vertices, Winding winding,
+                                       const ChainDecomposition& chain_decomposition,
                                        ArrayView<const VerticalExtensionContactPoint> contact_points);
 
 /// Validates the vertical extensions in the given islands.

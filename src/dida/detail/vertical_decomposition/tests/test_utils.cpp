@@ -299,7 +299,7 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
     std::vector<VerticalExtensionContactPoint> contact_points =
         vertical_extension_contact_points(chain_decomposition, Winding::ccw);
     std::vector<ChainDecompositionIsland> islands =
-        split_chain_decomposition_into_islands(vertices, chain_decomposition, contact_points);
+        split_chain_decomposition_into_islands(vertices, Winding::ccw, chain_decomposition, contact_points);
     if (!validate_vertical_extensions(vertices, islands))
     {
       return false;
