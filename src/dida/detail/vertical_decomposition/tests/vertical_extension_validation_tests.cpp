@@ -10,24 +10,6 @@
 namespace dida::detail::vertical_decomposition
 {
 
-namespace
-{
-
-void flip_horizontally(ArrayView<Point2> vertices, ArrayView<Node> nodes)
-{
-  for (Point2& v : vertices)
-  {
-    v = Point2(-v.x(), v.y());
-  }
-
-  for (Node& node : nodes)
-  {
-    node.direction = other_direction(node.direction);
-  }
-}
-
-} // namespace
-
 TEST_CASE("PolygonLocationLessThan")
 {
   Polygon2 polygon{{2.44, 4.02}, {5.94, 6.58}, {2.58, 7.52}, {-1.32, 5.42}};

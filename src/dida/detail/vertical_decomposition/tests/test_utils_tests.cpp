@@ -1,6 +1,7 @@
 #include "dida/detail/vertical_decomposition/tests/test_utils.hpp"
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators_all.hpp>
 
 #include "dida/detail/vertical_decomposition/sweep_line_builder.hpp"
 #include "dida/polygon2.hpp"
@@ -161,13 +162,13 @@ TEST_CASE("gather_nodes")
 
 TEST_CASE("node_branch_boundary_vertices")
 {
-  SECTION("Node towards left")
+  SECTION("Node towards left for CCW, towards right for CW")
   {
-    Polygon2 polygon{
+    std::vector<Point2> vertices_storage{
         {-4.48, 0.66}, {-2.42, 2.48}, {2.14, 1.86}, {5.92, 3.28}, {5.06, 5.14}, {1.16, 6.80},  {-1.66, 7.48},
         {-3.96, 6.54}, {-1.30, 5.66}, {1.08, 5.74}, {2.38, 4.48}, {0.90, 3.60}, {-1.04, 4.34}, {-3.04, 3.46},
     };
-    VerticesView vertices(polygon);
+    VerticesView vertices(vertices_storage);
 
     Node node;
     node.direction = HorizontalDirection::left;
@@ -179,63 +180,94 @@ TEST_CASE("node_branch_boundary_vertices")
     node.neighbors[1] = nullptr;
     node.neighbors[2] = nullptr;
 
+    Winding winding = GENERATE(Winding::ccw, Winding::cw);
+    if (winding == Winding::cw)
+    {
+      flip_horizontally(vertices_storage, ArrayView<Node>(&node, 1));
+    }
+
     SECTION("Branch 0")
     {
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, &node, 0);
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, winding, &node, 0);
       CHECK(result.lower_boundary_vertex_it == vertices.begin() + 2);
       CHECK(result.upper_boundary_vertex_it == vertices.begin() + 5);
     }
 
     SECTION("Branch 1")
     {
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, &node, 1);
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, winding, &node, 1);
       CHECK(result.lower_boundary_vertex_it == vertices.begin() + 3);
       CHECK(result.upper_boundary_vertex_it == vertices.begin() + 10);
     }
 
     SECTION("Branch 2")
     {
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, &node, 2);
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, winding, &node, 2);
       CHECK(result.lower_boundary_vertex_it == vertices.begin() + 10);
       CHECK(result.upper_boundary_vertex_it == vertices.begin() + 4);
     }
 
     SECTION("Node is chain fist node, branch 1")
     {
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{&node, nullptr}, &node, 1);
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{&node, nullptr}, winding, &node, 1);
       CHECK(result.lower_boundary_vertex_it == vertices.begin() + 3);
       CHECK(result.upper_boundary_vertex_it == vertices.begin() + 10);
     }
 
     SECTION("Node is chain first node, branch 2")
     {
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{&node, nullptr}, &node, 2);
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{&node, nullptr}, winding, &node, 2);
       CHECK(result.lower_boundary_vertex_it == nullptr);
       CHECK(result.upper_boundary_vertex_it == vertices.begin() + 4);
     }
 
     SECTION("Node is chain last node, branch 1")
     {
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{nullptr, &node}, &node, 1);
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, &node}, winding, &node, 1);
       CHECK(result.lower_boundary_vertex_it == vertices.begin() + 3);
       CHECK(result.upper_boundary_vertex_it == nullptr);
     }
 
     SECTION("Node is chain last node, branch 2")
     {
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{nullptr, &node}, &node, 2);
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, &node}, winding, &node, 2);
       CHECK(result.lower_boundary_vertex_it == vertices.begin() + 10);
       CHECK(result.upper_boundary_vertex_it == vertices.begin() + 4);
     }
-  }
 
-  SECTION("Node towards right")
+    SECTION("Node type is outer_branch, branch 1")
+    {
+      node.type = NodeType::outer_branch;
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, winding, &node, 1);
+      CHECK(result.lower_boundary_vertex_it == vertices.begin() + 3);
+      CHECK(result.upper_boundary_vertex_it == nullptr);
+    }
+
+    SECTION("Node type is outer_branch, branch 2")
+    {
+      node.type = NodeType::outer_branch;
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, winding, &node, 2);
+      CHECK(result.lower_boundary_vertex_it == nullptr);
+      CHECK(result.upper_boundary_vertex_it == vertices.begin() + 4);
+    }
+  } // namespace dida::detail::vertical_decomposition
+
+  SECTION("Node towards right for CCW, towards left for CW")
   {
-    Polygon2 polygon{
+    std::vector<Point2> vertices_storage{
         {-4.64, 2.18}, {-0.92, 2.84}, {1.36, 1.44}, {6.34, 0.32}, {4.24, 2.96},  {0.70, 4.32},
         {3.88, 6.22},  {5.10, 6.12},  {3.48, 7.76}, {1.92, 6.46}, {-0.72, 7.66}, {-4.28, 5.32},
     };
-    VerticesView vertices(polygon);
+    VerticesView vertices(vertices_storage);
 
     Node node;
     node.direction = HorizontalDirection::right;
@@ -247,51 +279,82 @@ TEST_CASE("node_branch_boundary_vertices")
     node.neighbors[1] = nullptr;
     node.neighbors[2] = nullptr;
 
+    Winding winding = GENERATE(Winding::ccw, Winding::cw);
+    if (winding == Winding::cw)
+    {
+      flip_horizontally(vertices_storage, ArrayView<Node>(&node, 1));
+    }
+
     SECTION("Branch 0")
     {
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, &node, 0);
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, winding, &node, 0);
       CHECK(result.lower_boundary_vertex_it == vertices.begin() + 2);
       CHECK(result.upper_boundary_vertex_it == vertices.begin() + 9);
     }
 
     SECTION("Branch 1")
     {
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, &node, 1);
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, winding, &node, 1);
       CHECK(result.lower_boundary_vertex_it == vertices.begin() + 1);
       CHECK(result.upper_boundary_vertex_it == vertices.begin() + 5);
     }
 
     SECTION("Branch 2")
     {
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, &node, 2);
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, winding, &node, 2);
       CHECK(result.lower_boundary_vertex_it == vertices.begin() + 5);
       CHECK(result.upper_boundary_vertex_it == vertices.begin() + 10);
     }
 
     SECTION("Node is chain fist node, branch 1")
     {
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{&node, nullptr}, &node, 1);
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{&node, nullptr}, winding, &node, 1);
       CHECK(result.lower_boundary_vertex_it == vertices.begin() + 1);
       CHECK(result.upper_boundary_vertex_it == nullptr);
     }
 
     SECTION("Node is chain first node, branch 2")
     {
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{&node, nullptr}, &node, 2);
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{&node, nullptr}, winding, &node, 2);
       CHECK(result.lower_boundary_vertex_it == vertices.begin() + 5);
       CHECK(result.upper_boundary_vertex_it == vertices.begin() + 10);
     }
 
     SECTION("Node is chain last node, branch 1")
     {
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{nullptr, &node}, &node, 1);
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, &node}, winding, &node, 1);
       CHECK(result.lower_boundary_vertex_it == vertices.begin() + 1);
       CHECK(result.upper_boundary_vertex_it == vertices.begin() + 5);
     }
 
     SECTION("Node is chain last node, branch 2")
     {
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{nullptr, &node}, &node, 2);
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, &node}, winding, &node, 2);
+      CHECK(result.lower_boundary_vertex_it == nullptr);
+      CHECK(result.upper_boundary_vertex_it == vertices.begin() + 10);
+    }
+
+    SECTION("Node type is outer_branch, branch 1")
+    {
+      node.type = NodeType::outer_branch;
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, winding, &node, 1);
+      CHECK(result.lower_boundary_vertex_it == vertices.begin() + 1);
+      CHECK(result.upper_boundary_vertex_it == nullptr);
+    }
+
+    SECTION("Node type is outer_branch, branch 2")
+    {
+      node.type = NodeType::outer_branch;
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, winding, &node, 2);
       CHECK(result.lower_boundary_vertex_it == nullptr);
       CHECK(result.upper_boundary_vertex_it == vertices.begin() + 10);
     }
@@ -299,11 +362,11 @@ TEST_CASE("node_branch_boundary_vertices")
 
   SECTION("Leaf nodes")
   {
-    Polygon2 polygon{
+    std::vector<Point2> vertices_storage{
         {-5.26, 1.80}, {-3.14, 1.56}, {-0.74, 2.54}, {1.46, 1.12},
         {3.94, 2.90},  {-0.58, 5.86}, {-2.92, 3.84}, {-4.32, 4.22},
     };
-    VerticesView vertices(polygon);
+    VerticesView vertices(vertices_storage);
 
     SECTION("Towards left")
     {
@@ -317,7 +380,14 @@ TEST_CASE("node_branch_boundary_vertices")
       node.neighbors[1] = nullptr;
       node.neighbors[2] = nullptr;
 
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, &node, 0);
+      Winding winding = GENERATE(Winding::ccw, Winding::cw);
+      if (winding == Winding::cw)
+      {
+        flip_horizontally(vertices_storage, ArrayView<Node>(&node, 1));
+      }
+
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, winding, &node, 0);
       CHECK(result.lower_boundary_vertex_it == vertices.begin());
       CHECK(result.upper_boundary_vertex_it == vertices.begin());
     }
@@ -334,7 +404,14 @@ TEST_CASE("node_branch_boundary_vertices")
       node.neighbors[1] = nullptr;
       node.neighbors[2] = nullptr;
 
-      NodeBranchBoundaryVertices result = node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, &node, 0);
+      Winding winding = GENERATE(Winding::ccw, Winding::cw);
+      if (winding == Winding::cw)
+      {
+        flip_horizontally(vertices_storage, ArrayView<Node>(&node, 1));
+      }
+
+      NodeBranchBoundaryVertices result =
+          node_branch_boundary_vertices(ChainDecomposition{nullptr, nullptr}, winding, &node, 0);
       CHECK(result.lower_boundary_vertex_it == vertices.begin() + 4);
       CHECK(result.upper_boundary_vertex_it == vertices.begin() + 4);
     }
@@ -613,6 +690,40 @@ TEST_CASE("node_type_to_string")
   CHECK(node_type_to_string(NodeType::leaf) == "NodeType::leaf");
   CHECK(node_type_to_string(NodeType::branch) == "NodeType::branch");
   CHECK(node_type_to_string(NodeType::outer_branch) == "NodeType::outer_branch");
+}
+
+TEST_CASE("flip_horizontally")
+{
+  std::vector<Point2> vertices_storage{{-2.76, 5.60}, {0.08, 5.42}, {-1.48, 3.20}};
+  VerticesView vertices(vertices_storage);
+
+  std::vector<Node> nodes(2);
+  nodes[0].direction = HorizontalDirection::right;
+  nodes[0].type = NodeType::branch;
+  nodes[0].vertex_it = vertices.begin() + 0;
+  nodes[0].lower_opp_edge = Edge::invalid();
+  nodes[0].upper_opp_edge = Edge::invalid();
+  nodes[0].neighbors[0] = nullptr;
+  nodes[0].neighbors[1] = &nodes[1];
+  nodes[0].neighbors[2] = &nodes[1];
+
+  nodes[1].direction = HorizontalDirection::left;
+  nodes[1].type = NodeType::branch;
+  nodes[1].vertex_it = vertices.begin() + 1;
+  nodes[1].lower_opp_edge = Edge::invalid();
+  nodes[1].upper_opp_edge = Edge::invalid();
+  nodes[1].neighbors[0] = nullptr;
+  nodes[1].neighbors[1] = &nodes[0];
+  nodes[1].neighbors[2] = &nodes[0];
+
+  flip_horizontally(vertices_storage, nodes);
+
+  CHECK(vertices[0] == Point2(2.76, 5.60));
+  CHECK(vertices[1] == Point2(-0.08, 5.42));
+  CHECK(vertices[2] == Point2(1.48, 3.20));
+
+  CHECK(nodes[0].direction == HorizontalDirection::left);
+  CHECK(nodes[1].direction == HorizontalDirection::right);
 }
 
 } // namespace dida::detail::vertical_decomposition

@@ -31,7 +31,7 @@ struct NodeBranchBoundaryVertices
 /// The @c chain_decomposition parameter is used to check whether @c node is the first or last node of its chain, and is
 /// not otherwise used. If @c node can't be the first or last node, then this can be set to
 /// <tt>ChainDecomposition{nullptr, nullptr}</tt>.
-NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecomposition& chain_decomposition,
+NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecomposition& chain_decomposition, Winding winding,
                                                          const Node* node, uint8_t branch_index);
 
 /// Validates the neighbors of @c node. This function validates whether
@@ -60,6 +60,12 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
 /// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about
 /// these errors was logged using @c UNSCOPED_INFO.
 bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node);
+
+/// Inverts the x-coordinate of the given vertices, and inverts the direction of each of the given nodes.
+///
+/// This function can be used to turn a decomposition of a chain with a given winding into an equivalent decomposition
+/// for a chain with the opposite winding.
+void flip_horizontally(ArrayView<Point2> vertices, ArrayView<Node> nodes);
 
 /// Returns the given node type as a string.
 std::string_view node_type_to_string(NodeType node_type);

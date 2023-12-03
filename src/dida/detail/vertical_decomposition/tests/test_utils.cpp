@@ -35,9 +35,13 @@ std::set<const Node*> gather_nodes(const Node* node)
   return result;
 }
 
-NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecomposition& chain_decomposition,
+NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecomposition& chain_decomposition, Winding winding,
                                                          const Node* node, uint8_t branch_index)
 {
+  /// The horizontal direction of a boundary which has the interior above it.
+  HorizontalDirection lower_boundary_direction =
+      winding == Winding::ccw ? HorizontalDirection::right : HorizontalDirection::left;
+
   NodeBranchBoundaryVertices result;
 
   if (node->type == NodeType::leaf)
@@ -50,27 +54,27 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
     switch (branch_index)
     {
     case 0:
-      return node->direction == HorizontalDirection::right
+      return node->direction == lower_boundary_direction
                  ? NodeBranchBoundaryVertices{node->lower_opp_edge.end_vertex_it, node->upper_opp_edge.start_vertex_it}
                  : NodeBranchBoundaryVertices{node->lower_opp_edge.start_vertex_it, node->upper_opp_edge.end_vertex_it};
 
     case 1:
     {
       bool has_upper_boundary = true;
-      if (node == chain_decomposition.first_node && node->direction == HorizontalDirection::right ||
+      if (node == chain_decomposition.first_node && node->direction == lower_boundary_direction ||
           node->type == NodeType::outer_branch)
       {
         has_upper_boundary = false;
       }
-      else if (node == chain_decomposition.last_node && node->direction == HorizontalDirection::left ||
+      else if (node == chain_decomposition.last_node && node->direction != lower_boundary_direction ||
                node->type == NodeType::outer_branch)
       {
         has_upper_boundary = false;
       }
 
       return NodeBranchBoundaryVertices{
-          node->direction == HorizontalDirection::right ? node->lower_opp_edge.start_vertex_it
-                                                        : node->lower_opp_edge.end_vertex_it,
+          node->direction == lower_boundary_direction ? node->lower_opp_edge.start_vertex_it
+                                                      : node->lower_opp_edge.end_vertex_it,
           has_upper_boundary ? node->vertex_it : nullptr,
       };
     }
@@ -78,12 +82,12 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
     case 2:
     {
       bool has_lower_boundary = true;
-      if (node == chain_decomposition.first_node && node->direction == HorizontalDirection::left ||
+      if (node == chain_decomposition.first_node && node->direction != lower_boundary_direction ||
           node->type == NodeType::outer_branch)
       {
         has_lower_boundary = false;
       }
-      else if (node == chain_decomposition.last_node && node->direction == HorizontalDirection::right ||
+      else if (node == chain_decomposition.last_node && node->direction == lower_boundary_direction ||
                node->type == NodeType::outer_branch)
       {
         has_lower_boundary = false;
@@ -91,8 +95,8 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
 
       return NodeBranchBoundaryVertices{
           has_lower_boundary ? node->vertex_it : nullptr,
-          node->direction == HorizontalDirection::right ? node->upper_opp_edge.end_vertex_it
-                                                        : node->upper_opp_edge.start_vertex_it,
+          node->direction == lower_boundary_direction ? node->upper_opp_edge.end_vertex_it
+                                                      : node->upper_opp_edge.start_vertex_it,
       };
     }
 
@@ -224,7 +228,8 @@ bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& ch
   uint8_t num_branches = node->type == NodeType::leaf ? 1 : 3;
   for (uint8_t i = 0; i < num_branches; i++)
   {
-    NodeBranchBoundaryVertices boundary_vertices = node_branch_boundary_vertices(chain_decomposition, node, i);
+    NodeBranchBoundaryVertices boundary_vertices =
+        node_branch_boundary_vertices(chain_decomposition, Winding::ccw, node, i);
     if (boundary_vertices.lower_boundary_vertex_it || boundary_vertices.upper_boundary_vertex_it)
     {
       // The current branch has at least one of the two boundaries, so there should be a neighbor.
@@ -262,7 +267,7 @@ bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& ch
       if (lex_less_than(*node->vertex_it, *neighbor->vertex_it))
       {
         NodeBranchBoundaryVertices neighbor_boundary_vertices =
-            node_branch_boundary_vertices(chain_decomposition, neighbor, neighbor_to_node_branch_index);
+            node_branch_boundary_vertices(chain_decomposition, Winding::ccw, neighbor, neighbor_to_node_branch_index);
         if (!validate_neighboring_nodes_pair(vertices, node, i, boundary_vertices, neighbor,
                                              neighbor_to_node_branch_index, neighbor_boundary_vertices))
         {
@@ -352,6 +357,19 @@ std::string_view node_type_to_string(NodeType node_type)
   default:
     DIDA_ASSERT(!"Invalid node type");
     return "<invalid>"sv;
+  }
+}
+
+void flip_horizontally(ArrayView<Point2> vertices, ArrayView<Node> nodes)
+{
+  for (Point2& v : vertices)
+  {
+    v = Point2(-v.x(), v.y());
+  }
+
+  for (Node& node : nodes)
+  {
+    node.direction = other_direction(node.direction);
   }
 }
 
