@@ -420,11 +420,11 @@ TEST_CASE("node_branch_boundary_vertices")
 
 TEST_CASE("validate_node_neighbors")
 {
-  Polygon2 polygon{
+  std::vector<Point2> vertices_storage{
       {-3.12, 5.96}, {-1.92, 4.82}, {-4.46, 3.42}, {-3.00, 2.24}, {-0.18, 2.98}, {0.90, 1.86},
       {3.92, 2.42},  {6.46, 4.36},  {0.42, 8.30},  {1.92, 5.60},  {-0.18, 6.60}, {-0.96, 5.84},
   };
-  VerticesView vertices(polygon);
+  VerticesView vertices(vertices_storage);
 
   std::vector<Node> nodes(6);
   nodes[0].direction = HorizontalDirection::left;
@@ -475,7 +475,7 @@ TEST_CASE("validate_node_neighbors")
 
   SECTION("Valid, with upper and lower boundary")
   {
-    CHECK(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
+    CHECK(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
   }
 
   SECTION("Left node has incorrect outgoing direction")
@@ -483,13 +483,13 @@ TEST_CASE("validate_node_neighbors")
     SECTION("Branch 0")
     {
       nodes[2].direction = HorizontalDirection::right;
-      CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
+      CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
     }
 
     SECTION("Branch 2")
     {
       std::swap(nodes[2].neighbors[0], nodes[2].neighbors[2]);
-      CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
+      CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
     }
   }
 
@@ -498,37 +498,37 @@ TEST_CASE("validate_node_neighbors")
     SECTION("Branch 0")
     {
       std::swap(nodes[4].neighbors[0], nodes[4].neighbors[1]);
-      CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
+      CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
     }
 
     SECTION("Branch 1")
     {
       nodes[4].direction = HorizontalDirection::right;
-      CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
+      CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
     }
   }
 
   SECTION("Missing neighbor, with upper and lower boundary")
   {
     nodes[2].neighbors[0] = nullptr;
-    CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
+    CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
 
     nodes[4].neighbors[1] = nullptr;
-    CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[4]));
+    CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[4]));
   }
 
   SECTION("Inconsistent lower boundary")
   {
     nodes[2].lower_opp_edge = Edge::invalid();
-    CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
-    CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[0]));
+    CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
+    CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[0]));
   }
 
   SECTION("Inconsistent upper boundary")
   {
     nodes[2].upper_opp_edge = Edge::invalid();
-    CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
-    CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[1]));
+    CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
+    CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[1]));
   }
 
   SECTION("Valid, no upper boundary")
@@ -536,7 +536,7 @@ TEST_CASE("validate_node_neighbors")
     nodes[2].upper_opp_edge = Edge::invalid();
     nodes[2].neighbors[2] = nullptr;
 
-    CHECK(validate_node_neighbors(vertices, ChainDecomposition{&nodes[2], &nodes[4]}, &nodes[2]));
+    CHECK(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{&nodes[2], &nodes[4]}, &nodes[2]));
   }
 
   SECTION("Missing neighbor, no upper boundary")
@@ -545,7 +545,7 @@ TEST_CASE("validate_node_neighbors")
     nodes[2].neighbors[0] = nullptr;
     nodes[2].neighbors[2] = nullptr;
 
-    CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{&nodes[2], &nodes[4]}, &nodes[2]));
+    CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{&nodes[2], &nodes[4]}, &nodes[2]));
   }
 
   SECTION("Neighbor should be nullptr but is set")
@@ -562,7 +562,7 @@ TEST_CASE("validate_node_neighbors")
     nodes[5].neighbors[1] = nullptr;
     nodes[5].neighbors[2] = &nodes[4];
 
-    CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{&nodes[4], &nodes[5]}, &nodes[4]));
+    CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{&nodes[4], &nodes[5]}, &nodes[4]));
   }
 
   SECTION("Valid, no lower boundary")
@@ -574,7 +574,7 @@ TEST_CASE("validate_node_neighbors")
     nodes[4].neighbors[0] = nullptr;
     nodes[4].neighbors[2] = nullptr;
 
-    CHECK(validate_node_neighbors(vertices, ChainDecomposition{&nodes[4], &nodes[2]}, &nodes[2]));
+    CHECK(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{&nodes[4], &nodes[2]}, &nodes[2]));
   }
 
   SECTION("Missing neighbor, no lower boundary")
@@ -587,40 +587,58 @@ TEST_CASE("validate_node_neighbors")
     nodes[4].neighbors[0] = nullptr;
     nodes[4].neighbors[2] = nullptr;
 
-    CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{&nodes[4], &nodes[2]}, &nodes[2]));
+    CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{&nodes[4], &nodes[2]}, &nodes[2]));
   }
 
   SECTION("Neighbor doesn't link back")
   {
     nodes[4].neighbors[1] = nullptr;
-    CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
+    CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
   }
 
   SECTION("Lower boundary not monotone")
   {
-    std::vector<Point2>& vertices_mut = polygon.unsafe_mutable_vertices();
-    std::swap(vertices_mut[4], vertices_mut[5]);
-
-    CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
+    std::swap(vertices_storage[4], vertices_storage[5]);
+    CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
   }
 
   SECTION("Upper boundary not monotone")
   {
-    std::vector<Point2>& vertices_mut = polygon.unsafe_mutable_vertices();
-    std::swap(vertices_mut[10], vertices_mut[11]);
-
-    CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
+    std::swap(vertices_storage[10], vertices_storage[11]);
+    CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[2]));
   }
 
   SECTION("Leaf, valid")
   {
-    CHECK(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[0]));
+    CHECK(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[0]));
   }
 
   SECTION("Leaf, neighbor doesn't link back")
   {
     nodes[2].neighbors[1] = nullptr;
-    CHECK_FALSE(validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, &nodes[0]));
+    CHECK_FALSE(validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, &nodes[0]));
+  }
+
+  SECTION("With clockwise winding")
+  {
+    flip_horizontally(vertices_storage, nodes);
+
+    SECTION("Valid, with upper and lower boundary")
+    {
+      CHECK(validate_node_neighbors(vertices, Winding::cw, ChainDecomposition{nullptr, nullptr}, &nodes[4]));
+    }
+
+    SECTION("Lower boundary not monotone")
+    {
+      std::swap(vertices_storage[4], vertices_storage[5]);
+      CHECK_FALSE(validate_node_neighbors(vertices, Winding::cw, ChainDecomposition{nullptr, nullptr}, &nodes[4]));
+    }
+
+    SECTION("Upper boundary not monotone")
+  {
+    std::swap(vertices_storage[10], vertices_storage[11]);
+    CHECK_FALSE(validate_node_neighbors(vertices, Winding::cw, ChainDecomposition{nullptr, nullptr}, &nodes[4]));
+  }
   }
 }
 

@@ -136,7 +136,8 @@ bool validate_boundary_is_monotone(VerticesView vertices, VertexIt start_vertex_
   return true;
 }
 
-bool validate_neighboring_nodes_pair(VerticesView vertices, const Node* left_node, uint8_t left_node_branch_index,
+bool validate_neighboring_nodes_pair(VerticesView vertices, Winding winding, const Node* left_node,
+                                     uint8_t left_node_branch_index,
                                      const NodeBranchBoundaryVertices left_node_boundary_vertices,
                                      const Node* right_node, uint8_t right_node_branch_index,
                                      NodeBranchBoundaryVertices right_node_boundary_vertices)
@@ -181,14 +182,29 @@ bool validate_neighboring_nodes_pair(VerticesView vertices, const Node* left_nod
   // If there's a lower boundary, then validate that it's monotone.
   if (left_node_boundary_vertices.lower_boundary_vertex_it)
   {
-    if (!validate_boundary_is_monotone<HorizontalDirection::right>(
-            vertices, left_node_boundary_vertices.lower_boundary_vertex_it,
-            right_node_boundary_vertices.lower_boundary_vertex_it))
+    if (winding == Winding::ccw)
     {
-      UNSCOPED_INFO("The lower boundary between left_node{vertex: "
-                    << *left_node->vertex_it << "} and right_node{vertex: " << *right_node->vertex_it
-                    << "} is not monotone.");
-      return false;
+      if (!validate_boundary_is_monotone<HorizontalDirection::right>(
+              vertices, left_node_boundary_vertices.lower_boundary_vertex_it,
+              right_node_boundary_vertices.lower_boundary_vertex_it))
+      {
+        UNSCOPED_INFO("The lower boundary between left_node{vertex: "
+                      << *left_node->vertex_it << "} and right_node{vertex: " << *right_node->vertex_it
+                      << "} is not monotone.");
+        return false;
+      }
+    }
+    else
+    {
+      if (!validate_boundary_is_monotone<HorizontalDirection::left>(
+              vertices, right_node_boundary_vertices.lower_boundary_vertex_it,
+              left_node_boundary_vertices.lower_boundary_vertex_it))
+      {
+        UNSCOPED_INFO("The lower boundary between left_node{vertex: "
+                      << *left_node->vertex_it << "} and right_node{vertex: " << *right_node->vertex_it
+                      << "} is not monotone.");
+        return false;
+      }
     }
   }
 
@@ -207,14 +223,29 @@ bool validate_neighboring_nodes_pair(VerticesView vertices, const Node* left_nod
   // If there's an upper boundary, then validate that it's monotone.
   if (left_node_boundary_vertices.upper_boundary_vertex_it)
   {
-    if (!validate_boundary_is_monotone<HorizontalDirection::left>(vertices,
-                                                                  right_node_boundary_vertices.upper_boundary_vertex_it,
-                                                                  left_node_boundary_vertices.upper_boundary_vertex_it))
+    if (winding == Winding::ccw)
     {
-      UNSCOPED_INFO("The upper boundary between left_node{vertex: "
-                    << *left_node->vertex_it << "} and right_node{vertex: " << *right_node->vertex_it
-                    << "} is not monotone.");
-      return false;
+      if (!validate_boundary_is_monotone<HorizontalDirection::left>(
+              vertices, right_node_boundary_vertices.upper_boundary_vertex_it,
+              left_node_boundary_vertices.upper_boundary_vertex_it))
+      {
+        UNSCOPED_INFO("The upper boundary between left_node{vertex: "
+                      << *left_node->vertex_it << "} and right_node{vertex: " << *right_node->vertex_it
+                      << "} is not monotone.");
+        return false;
+      }
+    }
+    else
+    {
+      if (!validate_boundary_is_monotone<HorizontalDirection::right>(
+              vertices, left_node_boundary_vertices.upper_boundary_vertex_it,
+              right_node_boundary_vertices.upper_boundary_vertex_it))
+      {
+        UNSCOPED_INFO("The upper boundary between left_node{vertex: "
+                      << *left_node->vertex_it << "} and right_node{vertex: " << *right_node->vertex_it
+                      << "} is not monotone.");
+        return false;
+      }
     }
   }
 
@@ -223,13 +254,13 @@ bool validate_neighboring_nodes_pair(VerticesView vertices, const Node* left_nod
 
 } // namespace
 
-bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& chain_decomposition, const Node* node)
+bool validate_node_neighbors(VerticesView vertices, Winding winding, const ChainDecomposition& chain_decomposition,
+                             const Node* node)
 {
   uint8_t num_branches = node->type == NodeType::leaf ? 1 : 3;
   for (uint8_t i = 0; i < num_branches; i++)
   {
-    NodeBranchBoundaryVertices boundary_vertices =
-        node_branch_boundary_vertices(chain_decomposition, Winding::ccw, node, i);
+    NodeBranchBoundaryVertices boundary_vertices = node_branch_boundary_vertices(chain_decomposition, winding, node, i);
     if (boundary_vertices.lower_boundary_vertex_it || boundary_vertices.upper_boundary_vertex_it)
     {
       // The current branch has at least one of the two boundaries, so there should be a neighbor.
@@ -267,8 +298,8 @@ bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& ch
       if (lex_less_than(*node->vertex_it, *neighbor->vertex_it))
       {
         NodeBranchBoundaryVertices neighbor_boundary_vertices =
-            node_branch_boundary_vertices(chain_decomposition, Winding::ccw, neighbor, neighbor_to_node_branch_index);
-        if (!validate_neighboring_nodes_pair(vertices, node, i, boundary_vertices, neighbor,
+            node_branch_boundary_vertices(chain_decomposition, winding, neighbor, neighbor_to_node_branch_index);
+        if (!validate_neighboring_nodes_pair(vertices, winding, node, i, boundary_vertices, neighbor,
                                              neighbor_to_node_branch_index, neighbor_boundary_vertices))
         {
           return false;
@@ -313,7 +344,7 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
 
   for (const Node* node : nodes)
   {
-    if (!validate_node_neighbors(vertices, chain_decomposition, node))
+    if (!validate_node_neighbors(vertices, Winding::ccw, chain_decomposition, node))
     {
       return false;
     }
@@ -333,7 +364,7 @@ bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node
 
   for (const Node* node : nodes)
   {
-    if (!validate_node_neighbors(vertices, ChainDecomposition{nullptr, nullptr}, node))
+    if (!validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, node))
     {
       return false;
     }

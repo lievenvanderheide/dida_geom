@@ -44,7 +44,7 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
 ///
 /// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about
 /// these errors was logged using @c UNSCOPED_INFO.
-bool validate_node_neighbors(VerticesView vertices, const ChainDecomposition& chain_decomposition, const Node* node);
+bool validate_node_neighbors(VerticesView vertices, Winding winding, const ChainDecomposition& chain_decomposition, const Node* node);
 
 /// Validates a chain decomposition.
 ///
