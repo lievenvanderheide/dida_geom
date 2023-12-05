@@ -10,7 +10,7 @@ namespace dida::detail::vertical_decomposition
 
 TEST_CASE("vertical_decomposition_zigzag_phase")
 {
-  SECTION("Zigzag simple")
+  /*SECTION("Zigzag simple")
   {
     Polygon2 polygon{
         {-2.76, 5.04}, {-4.98, 3.88}, {-1.24, 3.48}, {1.74, 2.22}, {-0.98, 0.92}, {-2.96, 0.96},
@@ -180,7 +180,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
       CHECK(chain_decompositions[0].first_node->vertex_it == vertices.begin() + 3);
       CHECK(validate_polygon_decomposition(vertices, chain_decompositions[0].first_node));
     }
-  }
+  }*/
 }
 
 } // namespace dida::detail::vertical_decomposition

@@ -50,7 +50,7 @@ bool validate_node_neighbors(VerticesView vertices, Winding winding, const Chain
 ///
 /// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about
 /// these errors was logged using @c UNSCOPED_INFO.
-bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition);
+bool validate_chain_decomposition(VerticesView vertices, Winding winding, const ChainDecomposition& chain_decomposition);
 
 /// Validates the vertical decomposition of a polygon.
 ///

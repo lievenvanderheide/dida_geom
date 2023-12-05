@@ -28,28 +28,28 @@ TEST_CASE("vertical_decomposition_merge")
     {
       ChainDecomposition merged =
           merge_chain_decompositions(vertices, node_pool, chain_decompositions[7], chain_decompositions[0]);
-      CHECK(validate_chain_decomposition(vertices, merged));
+      CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
     }
 
     SECTION("Right facing, upper chain longer")
     {
       ChainDecomposition merged =
           merge_chain_decompositions(vertices, node_pool, chain_decompositions[4], chain_decompositions[5]);
-      CHECK(validate_chain_decomposition(vertices, merged));
+      CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
     }
 
     SECTION("Left facing, lower chain longer")
     {
       ChainDecomposition merged =
           merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]);
-      CHECK(validate_chain_decomposition(vertices, merged));
+      CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
     }
 
     SECTION("Left facing, upper chain longer")
     {
       ChainDecomposition merged =
           merge_chain_decompositions(vertices, node_pool, chain_decompositions[3], chain_decompositions[4]);
-      CHECK(validate_chain_decomposition(vertices, merged));
+      CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
     }
   }
 
@@ -71,21 +71,21 @@ TEST_CASE("vertical_decomposition_merge")
 
       ChainDecomposition branches =
           merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       branches = merge_chain_decompositions(vertices, node_pool, branches, chain_decompositions[2]);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       SECTION("Chain A enters branch")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, chain_decompositions[5], branches);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Chain B enters branch")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, branches, chain_decompositions[3]);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
     }
 
@@ -106,21 +106,21 @@ TEST_CASE("vertical_decomposition_merge")
 
       ChainDecomposition branches =
           merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       branches = merge_chain_decompositions(vertices, node_pool, branches, chain_decompositions[2]);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       SECTION("Chain A enters branch")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, chain_decompositions[5], branches);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Chain B enters branch")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, branches, chain_decompositions[3]);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
     }
 
@@ -140,21 +140,21 @@ TEST_CASE("vertical_decomposition_merge")
 
       ChainDecomposition branches =
           merge_chain_decompositions(vertices, node_pool, chain_decompositions[4], chain_decompositions[5]);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       branches = merge_chain_decompositions(vertices, node_pool, branches, chain_decompositions[0]);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       SECTION("Chain A enters branch")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, chain_decompositions[3], branches);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Chain B enters branch")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, branches, chain_decompositions[1]);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
     }
 
@@ -174,21 +174,21 @@ TEST_CASE("vertical_decomposition_merge")
 
       ChainDecomposition branches =
           merge_chain_decompositions(vertices, node_pool, chain_decompositions[4], chain_decompositions[5]);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       branches = merge_chain_decompositions(vertices, node_pool, branches, chain_decompositions[0]);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       SECTION("Chain A enters branch")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, chain_decompositions[3], branches);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Chain B enters branch")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, branches, chain_decompositions[1]);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
     }
   }
@@ -211,21 +211,21 @@ TEST_CASE("vertical_decomposition_merge")
 
       ChainDecomposition branches =
           merge_chain_decompositions(vertices, node_pool, chain_decompositions[4], chain_decompositions[5]);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       branches = merge_chain_decompositions(vertices, node_pool, chain_decompositions[3], branches);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       SECTION("Branch vertex visible from other chain")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, branches, chain_decompositions[0]);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Branch vertex not visible from other chain")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, chain_decompositions[2], branches);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
     }
 
@@ -246,21 +246,21 @@ TEST_CASE("vertical_decomposition_merge")
 
       ChainDecomposition branches =
           merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       branches = merge_chain_decompositions(vertices, node_pool, branches, chain_decompositions[2]);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       SECTION("Branch vertex visible from other chain")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, chain_decompositions[5], branches);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Branch vertex not visible from other chain")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, branches, chain_decompositions[3]);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
     }
 
@@ -282,21 +282,21 @@ TEST_CASE("vertical_decomposition_merge")
 
       ChainDecomposition branches =
           merge_chain_decompositions(vertices, node_pool, chain_decompositions[4], chain_decompositions[5]);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       branches = merge_chain_decompositions(vertices, node_pool, branches, chain_decompositions[0]);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       SECTION("Branch vertex visible from other chain")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, chain_decompositions[3], branches);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Branch vertex not visible from other chain")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, branches, chain_decompositions[1]);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
     }
 
@@ -316,21 +316,21 @@ TEST_CASE("vertical_decomposition_merge")
 
       ChainDecomposition branches =
           merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       branches = merge_chain_decompositions(vertices, node_pool, chain_decompositions[5], branches);
-      REQUIRE(validate_chain_decomposition(vertices, branches));
+      REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, branches));
 
       SECTION("Branch vertex visible from other chain")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, branches, chain_decompositions[2]);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Branch vertex not visible from other chain")
       {
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, chain_decompositions[4], branches);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
     }
   }
@@ -356,12 +356,12 @@ TEST_CASE("vertical_decomposition_merge")
             vertices, node_pool,
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[2], chain_decompositions[3]),
             chain_decompositions[4]);
-        REQUIRE(validate_chain_decomposition(vertices, a));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, a));
 
         ChainDecomposition b = chain_decompositions[0];
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Towards right, on chain B")
@@ -382,10 +382,10 @@ TEST_CASE("vertical_decomposition_merge")
             vertices, node_pool,
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[1], chain_decompositions[2]),
             chain_decompositions[3]);
-        REQUIRE(validate_chain_decomposition(vertices, b));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, b));
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Towards left, on chain A")
@@ -405,12 +405,12 @@ TEST_CASE("vertical_decomposition_merge")
             vertices, node_pool,
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]),
             chain_decompositions[2]);
-        REQUIRE(validate_chain_decomposition(vertices, a));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, a));
 
         ChainDecomposition b = chain_decompositions[3];
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Towards left, on chain B")
@@ -433,7 +433,7 @@ TEST_CASE("vertical_decomposition_merge")
             chain_decompositions[3]);
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
     }
 
@@ -459,14 +459,14 @@ TEST_CASE("vertical_decomposition_merge")
             vertices, node_pool,
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[3], chain_decompositions[4]),
             chain_decompositions[5]);
-        REQUIRE(validate_chain_decomposition(vertices, a));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, a));
 
         ChainDecomposition b =
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]);
-        REQUIRE(validate_chain_decomposition(vertices, b));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, b));
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Around leftward branch of chain B")
@@ -492,10 +492,10 @@ TEST_CASE("vertical_decomposition_merge")
             vertices, node_pool,
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]),
             chain_decompositions[2]);
-        REQUIRE(validate_chain_decomposition(vertices, b));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, b));
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Around rightward branch of chain A")
@@ -518,14 +518,14 @@ TEST_CASE("vertical_decomposition_merge")
             vertices, node_pool,
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[3], chain_decompositions[4]),
             chain_decompositions[5]);
-        REQUIRE(validate_chain_decomposition(vertices, a));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, a));
 
         ChainDecomposition b =
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]);
-        REQUIRE(validate_chain_decomposition(vertices, b));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, b));
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Around rightward branch of chain B")
@@ -545,16 +545,16 @@ TEST_CASE("vertical_decomposition_merge")
 
         ChainDecomposition a =
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[4], chain_decompositions[5]);
-        REQUIRE(validate_chain_decomposition(vertices, a));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, a));
 
         ChainDecomposition b = merge_chain_decompositions(
             vertices, node_pool,
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]),
             chain_decompositions[2]);
-        REQUIRE(validate_chain_decomposition(vertices, b));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, b));
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
     }
 
@@ -577,14 +577,14 @@ TEST_CASE("vertical_decomposition_merge")
 
         ChainDecomposition a =
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]);
-        REQUIRE(validate_chain_decomposition(vertices, a));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, a));
 
         ChainDecomposition b =
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[2], chain_decompositions[3]);
-        REQUIRE(validate_chain_decomposition(vertices, b));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, b));
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Towards left")
@@ -604,14 +604,14 @@ TEST_CASE("vertical_decomposition_merge")
 
         ChainDecomposition a =
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]);
-        REQUIRE(validate_chain_decomposition(vertices, a));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, a));
 
         ChainDecomposition b =
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[2], chain_decompositions[3]);
-        REQUIRE(validate_chain_decomposition(vertices, b));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, b));
 
         ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, merged));
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
     }
 
@@ -635,10 +635,10 @@ TEST_CASE("vertical_decomposition_merge")
         ChainDecomposition b = merge_chain_decompositions(
             vertices, node_pool, chain_decompositions[1],
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[2], chain_decompositions[3]));
-        REQUIRE(validate_chain_decomposition(vertices, b));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, b));
 
-        ChainDecomposition result = merge_chain_decompositions(vertices, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, result));
+        ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Towards right, tail is upper chain")
@@ -657,12 +657,12 @@ TEST_CASE("vertical_decomposition_merge")
         ChainDecomposition a = merge_chain_decompositions(
             vertices, node_pool, chain_decompositions[1],
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[2], chain_decompositions[3]));
-        REQUIRE(validate_chain_decomposition(vertices, a));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, a));
 
         ChainDecomposition b = chain_decompositions[4];
 
-        ChainDecomposition result = merge_chain_decompositions(vertices, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, result));
+        ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Towards right, tail is lower chain")
@@ -684,12 +684,12 @@ TEST_CASE("vertical_decomposition_merge")
             vertices, node_pool,
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[2], chain_decompositions[3]),
             chain_decompositions[4]);
-        REQUIRE(validate_chain_decomposition(vertices, a));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, a));
 
         ChainDecomposition b = chain_decompositions[5];
 
-        ChainDecomposition result = merge_chain_decompositions(vertices, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, result));
+        ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
 
       SECTION("Towards right, tail is upper chain")
@@ -710,10 +710,10 @@ TEST_CASE("vertical_decomposition_merge")
         ChainDecomposition b = merge_chain_decompositions(
             vertices, node_pool, chain_decompositions[1],
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[2], chain_decompositions[3]));
-        REQUIRE(validate_chain_decomposition(vertices, b));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, b));
 
-        ChainDecomposition result = merge_chain_decompositions(vertices, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, result));
+        ChainDecomposition merged = merge_chain_decompositions(vertices, node_pool, a, b);
+        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
       }
     }
 
@@ -738,28 +738,28 @@ TEST_CASE("vertical_decomposition_merge")
             vertices, node_pool,
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]),
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[2], chain_decompositions[3]));
-        REQUIRE(validate_chain_decomposition(vertices, chain_with_outer_branch));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, chain_with_outer_branch));
 
         SECTION("From upper branch")
         {
           ChainDecomposition other_chain =
               merge_chain_decompositions(vertices, node_pool, chain_decompositions[5], chain_decompositions[6]);
-          REQUIRE(validate_chain_decomposition(vertices, other_chain));
+          REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, other_chain));
 
           ChainDecomposition merged =
               merge_chain_decompositions(vertices, node_pool, other_chain, chain_with_outer_branch);
-          CHECK(validate_chain_decomposition(vertices, merged));
+          CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
         }
 
         SECTION("From lower branch")
         {
           ChainDecomposition other_chain =
               merge_chain_decompositions(vertices, node_pool, chain_decompositions[4], chain_decompositions[5]);
-          REQUIRE(validate_chain_decomposition(vertices, other_chain));
+          REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, other_chain));
 
           ChainDecomposition merged =
               merge_chain_decompositions(vertices, node_pool, chain_with_outer_branch, other_chain);
-          CHECK(validate_chain_decomposition(vertices, merged));
+          CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
         }
       }
 
@@ -782,28 +782,28 @@ TEST_CASE("vertical_decomposition_merge")
             vertices, node_pool,
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[0], chain_decompositions[1]),
             merge_chain_decompositions(vertices, node_pool, chain_decompositions[2], chain_decompositions[3]));
-        REQUIRE(validate_chain_decomposition(vertices, chain_with_outer_branch));
+        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, chain_with_outer_branch));
 
         SECTION("From upper branch")
         {
           ChainDecomposition other_chain =
               merge_chain_decompositions(vertices, node_pool, chain_decompositions[5], chain_decompositions[6]);
-          REQUIRE(validate_chain_decomposition(vertices, other_chain));
+          REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, other_chain));
 
           ChainDecomposition merged =
               merge_chain_decompositions(vertices, node_pool, other_chain, chain_with_outer_branch);
-          CHECK(validate_chain_decomposition(vertices, merged));
+          CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
         }
 
         SECTION("From lower branch")
         {
           ChainDecomposition other_chain =
               merge_chain_decompositions(vertices, node_pool, chain_decompositions[4], chain_decompositions[5]);
-          REQUIRE(validate_chain_decomposition(vertices, other_chain));
+          REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, other_chain));
 
           ChainDecomposition merged =
               merge_chain_decompositions(vertices, node_pool, chain_with_outer_branch, other_chain);
-          CHECK(validate_chain_decomposition(vertices, merged));
+          CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
         }
       }
     }

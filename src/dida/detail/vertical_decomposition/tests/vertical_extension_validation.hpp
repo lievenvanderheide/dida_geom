@@ -51,7 +51,7 @@ struct VerticalExtensionContactPoint
     vertex_upwards,
     outer_branch_lower_opp_edge,
     leaf,
-    
+
     vertex_downwards_to_infinity,
     vertex_upwards_to_infinity,
     lower_opp_edge_to_infinity,
@@ -106,12 +106,13 @@ split_chain_decomposition_into_islands(VerticesView vertices, Winding winding,
                                        ArrayView<const VerticalExtensionContactPoint> contact_points);
 
 /// Validates the vertical extensions in the given islands.
-bool validate_vertical_extensions(VerticesView vertices, ArrayView<const ChainDecompositionIsland> islands);
+bool validate_vertical_extensions(VerticesView vertices, Winding winding,
+                                  ArrayView<const ChainDecompositionIsland> islands);
 
 /// Validates the vertical extensions in the decomposition of the full polygon formed by @c vertices.
 ///
 /// This function assumes there are no infinite vertical extensions, so can't be used to validate chain decompositions.
 /// To validate chain decompositions, use the above overload of @c validate_vertical_extensions.
-bool validate_vertical_extensions(VerticesView vertices, const std::set<const Node*>& nodes);
+bool validate_vertical_extensions(VerticesView vertices, Winding winding, const std::set<const Node*>& nodes);
 
 } // namespace dida::detail::vertical_decomposition

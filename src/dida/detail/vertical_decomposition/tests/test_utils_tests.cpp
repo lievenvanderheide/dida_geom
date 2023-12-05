@@ -660,19 +660,19 @@ TEST_CASE("initial_chain_decompositions")
 
     CHECK(result[0].first_node->vertex_it == vertices.begin());
     CHECK(result[0].last_node->vertex_it == vertices.begin() + 4);
-    CHECK(validate_chain_decomposition(vertices, result[0]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, result[0]));
 
     CHECK(result[1].first_node->vertex_it == vertices.begin() + 4);
     CHECK(result[1].last_node->vertex_it == vertices.begin() + 7);
-    CHECK(validate_chain_decomposition(vertices, result[1]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, result[1]));
 
     CHECK(result[2].first_node->vertex_it == vertices.begin() + 7);
     CHECK(result[2].last_node->vertex_it == vertices.begin() + 11);
-    CHECK(validate_chain_decomposition(vertices, result[2]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, result[2]));
 
     CHECK(result[3].first_node->vertex_it == vertices.begin() + 11);
     CHECK(result[3].last_node->vertex_it == vertices.begin());
-    CHECK(validate_chain_decomposition(vertices, result[3]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, result[3]));
   }
 
   SECTION("First chain doens't start at vertex 0")
@@ -687,19 +687,19 @@ TEST_CASE("initial_chain_decompositions")
 
     CHECK(result[0].first_node->vertex_it == vertices.begin() + 3);
     CHECK(result[0].last_node->vertex_it == vertices.begin() + 6);
-    CHECK(validate_chain_decomposition(vertices, result[0]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, result[0]));
 
     CHECK(result[1].first_node->vertex_it == vertices.begin() + 6);
     CHECK(result[1].last_node->vertex_it == vertices.begin() + 10);
-    CHECK(validate_chain_decomposition(vertices, result[1]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, result[1]));
 
     CHECK(result[2].first_node->vertex_it == vertices.begin() + 10);
     CHECK(result[2].last_node->vertex_it == vertices.begin() + 16);
-    CHECK(validate_chain_decomposition(vertices, result[2]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, result[2]));
 
     CHECK(result[3].first_node->vertex_it == vertices.begin() + 16);
     CHECK(result[3].last_node->vertex_it == vertices.begin() + 3);
-    CHECK(validate_chain_decomposition(vertices, result[3]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, result[3]));
   }
 }
 

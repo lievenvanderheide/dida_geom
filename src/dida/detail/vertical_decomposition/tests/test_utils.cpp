@@ -320,16 +320,16 @@ bool validate_node_neighbors(VerticesView vertices, Winding winding, const Chain
   return true;
 }
 
-bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition)
+bool validate_chain_decomposition(VerticesView vertices, Winding winding, const ChainDecomposition& chain_decomposition)
 {
   std::set<const Node*> nodes = gather_nodes(chain_decomposition.first_node);
 
   {
     std::vector<VerticalExtensionContactPoint> contact_points =
-        vertical_extension_contact_points(chain_decomposition, Winding::ccw);
+        vertical_extension_contact_points(chain_decomposition, winding);
     std::vector<ChainDecompositionIsland> islands =
-        split_chain_decomposition_into_islands(vertices, Winding::ccw, chain_decomposition, contact_points);
-    if (!validate_vertical_extensions(vertices, islands))
+        split_chain_decomposition_into_islands(vertices, winding, chain_decomposition, contact_points);
+    if (!validate_vertical_extensions(vertices, winding, islands))
     {
       return false;
     }
@@ -337,7 +337,7 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
 
   for (const Node* node : nodes)
   {
-    if (!validate_node_neighbors(vertices, Winding::ccw, chain_decomposition, node))
+    if (!validate_node_neighbors(vertices, winding, chain_decomposition, node))
     {
       return false;
     }
@@ -350,7 +350,7 @@ bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node
 {
   std::set<const Node*> nodes = gather_nodes(root_node);
 
-  if (!validate_vertical_extensions(vertices, nodes))
+  if (!validate_vertical_extensions(vertices, Winding::ccw, nodes))
   {
     return false;
   }

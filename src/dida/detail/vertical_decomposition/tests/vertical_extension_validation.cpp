@@ -49,7 +49,7 @@ Edge ray_cast_up(VerticesView vertices, Winding winding, std::optional<PolygonRa
       YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
       if (cur_y > ray_origin.y() && cur_y < result_y)
       {
-        bool on_interior_side = edge_end_on_left == (winding == Winding::ccw);
+        bool on_interior_side = edge_end_on_left == (winding == winding);
         result = on_interior_side ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
         result_y = cur_y;
       }
@@ -103,7 +103,7 @@ Edge ray_cast_down(VerticesView vertices, Winding winding, std::optional<Polygon
       YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
       if (cur_y < ray_origin.y() && cur_y > result_y)
       {
-        bool on_interior_side = edge_start_on_left == (winding == Winding::ccw);
+        bool on_interior_side = edge_start_on_left == (winding == winding);
         result = on_interior_side ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
         result_y = cur_y;
       }
@@ -129,30 +129,41 @@ std::string_view contact_point_type_to_string(VerticalExtensionContactPoint::Typ
 {
   using namespace std::literals;
 
-  /*switch (type)
+  switch (type)
   {
   case VerticalExtensionContactPoint::Type::vertex_downwards:
     return "vertex_downwards"sv;
   case VerticalExtensionContactPoint::Type::vertex_upwards:
     return "vertex_upwards"sv;
-  case VerticalExtensionContactPoint::Type::lower_opp_edge:
-    return "lower_opp_edge"sv;
-  case VerticalExtensionContactPoint::Type::upper_opp_edge:
-    return "upper_opp_edge"sv;
+  case VerticalExtensionContactPoint::Type::outer_branch_lower_opp_edge:
+    return "outer_branch_lower_opp_edge"sv;
   case VerticalExtensionContactPoint::Type::leaf:
     return "leaf"sv;
+  case VerticalExtensionContactPoint::Type::vertex_downwards_to_infinity:
+    return "vertex_downwards_to_infinity"sv;
+  case VerticalExtensionContactPoint::Type::vertex_upwards_to_infinity:
+    return "vertex_upwards_to_infinity"sv;
+  case VerticalExtensionContactPoint::Type::lower_opp_edge_to_infinity:
+    return "lower_opp_edge_to_infinity"sv;
+  case VerticalExtensionContactPoint::Type::lower_opp_edge_to_vertex_exterior_side:
+    return "lower_opp_edge_to_vertex_exterior_side"sv;
+  case VerticalExtensionContactPoint::Type::upper_opp_edge_to_infinity:
+    return "upper_opp_edge_to_infinity"sv;
+  case VerticalExtensionContactPoint::Type::upper_opp_edge_to_vertex_exterior_side:
+    return "upper_opp_edge_to_vertex_exterior_side"sv;
+
   default:
-    DIDA_ASSERT(!"Invalid type");*/
-  return "<invalid>"sv;
-  //}
-};
+    DIDA_ASSERT(!"Invalid type");
+    return "<invalid>"sv;
+  }
+}
 
 std::vector<VerticalExtensionContactPoint>
 vertical_extension_contact_points(const ChainDecomposition& chain_decomposition, Winding winding)
 {
   /// The horizontal direction of a boundary which has the interior above it.
   HorizontalDirection lower_boundary_direction =
-      winding == Winding::ccw ? HorizontalDirection::right : HorizontalDirection::left;
+      winding == winding ? HorizontalDirection::right : HorizontalDirection::left;
 
   std::vector<VerticalExtensionContactPoint> contact_points;
 
@@ -488,15 +499,14 @@ split_chain_decomposition_into_islands(VerticesView vertices, Winding winding,
 namespace
 {
 
-bool validate_vertical_extension_island(VerticesView vertices, const ChainDecompositionIsland& island)
+bool validate_vertical_extension_island(VerticesView vertices, Winding winding, const ChainDecompositionIsland& island)
 {
   for (const VerticalExtensionContactPoint& contact_point : island.contact_points)
   {
     if (contact_point.type == VerticalExtensionContactPoint::Type::vertex_downwards ||
         contact_point.type == VerticalExtensionContactPoint::Type::outer_branch_lower_opp_edge)
     {
-      Edge expected_lower_opp_edge =
-          ray_cast_down(vertices, Winding::ccw, island.range, *contact_point.node->vertex_it);
+      Edge expected_lower_opp_edge = ray_cast_down(vertices, winding, island.range, *contact_point.node->vertex_it);
       if (expected_lower_opp_edge != contact_point.node->lower_opp_edge)
       {
         UNSCOPED_INFO("Node{vertex: " << *contact_point.node->vertex_it << "}.lower_opp_edge should be "
@@ -509,7 +519,7 @@ bool validate_vertical_extension_island(VerticesView vertices, const ChainDecomp
     if (contact_point.type == VerticalExtensionContactPoint::Type::vertex_upwards ||
         contact_point.type == VerticalExtensionContactPoint::Type::outer_branch_lower_opp_edge)
     {
-      Edge expected_upper_opp_edge = ray_cast_up(vertices, Winding::ccw, island.range, *contact_point.node->vertex_it);
+      Edge expected_upper_opp_edge = ray_cast_up(vertices, winding, island.range, *contact_point.node->vertex_it);
       if (expected_upper_opp_edge != contact_point.node->upper_opp_edge)
       {
         UNSCOPED_INFO("Node{vertex: " << *contact_point.node->vertex_it << "}.upper_opp_edge should be "
@@ -561,11 +571,12 @@ bool validate_vertical_extension_island(VerticesView vertices, const ChainDecomp
 
 } // namespace
 
-bool validate_vertical_extensions(VerticesView vertices, ArrayView<const ChainDecompositionIsland> islands)
+bool validate_vertical_extensions(VerticesView vertices, Winding winding,
+                                  ArrayView<const ChainDecompositionIsland> islands)
 {
   for (const ChainDecompositionIsland& island : islands)
   {
-    if (!validate_vertical_extension_island(vertices, island))
+    if (!validate_vertical_extension_island(vertices, winding, island))
     {
       return false;
     }
@@ -574,7 +585,7 @@ bool validate_vertical_extensions(VerticesView vertices, ArrayView<const ChainDe
   return true;
 }
 
-bool validate_vertical_extensions(VerticesView vertices, const std::set<const Node*>& nodes)
+bool validate_vertical_extensions(VerticesView vertices, Winding winding, const std::set<const Node*>& nodes)
 {
   for (const Node* node : nodes)
   {
@@ -597,8 +608,8 @@ bool validate_vertical_extensions(VerticesView vertices, const std::set<const No
     }
     else
     {
-      expected_lower_opp_edge = ray_cast_down(vertices, Winding::ccw, std::nullopt, *node->vertex_it);
-      expected_upper_opp_edge = ray_cast_up(vertices, Winding::ccw, std::nullopt, *node->vertex_it);
+      expected_lower_opp_edge = ray_cast_down(vertices, winding, std::nullopt, *node->vertex_it);
+      expected_upper_opp_edge = ray_cast_up(vertices, winding, std::nullopt, *node->vertex_it);
     }
 
     if (node->lower_opp_edge != expected_lower_opp_edge)
