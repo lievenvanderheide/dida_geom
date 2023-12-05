@@ -346,18 +346,18 @@ bool validate_chain_decomposition(VerticesView vertices, Winding winding, const 
   return true;
 }
 
-bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node)
+bool validate_polygon_decomposition(VerticesView vertices, Winding winding, const Node* root_node)
 {
   std::set<const Node*> nodes = gather_nodes(root_node);
 
-  if (!validate_vertical_extensions(vertices, Winding::ccw, nodes))
+  if (!validate_vertical_extensions(vertices, winding, nodes))
   {
     return false;
   }
 
   for (const Node* node : nodes)
   {
-    if (!validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, node))
+    if (!validate_node_neighbors(vertices, winding, ChainDecomposition{nullptr, nullptr}, node))
     {
       return false;
     }
@@ -384,13 +384,16 @@ std::string_view node_type_to_string(NodeType node_type)
   }
 }
 
-void flip_horizontally(ArrayView<Point2> vertices, ArrayView<Node> nodes)
+void flip_horizontally(ArrayView<Point2> vertices)
 {
   for (Point2& v : vertices)
   {
     v = Point2(-v.x(), v.y());
   }
+}
 
+void flip_horizontally(ArrayView<Node> nodes)
+{
   for (Node& node : nodes)
   {
     node.direction = other_direction(node.direction);

@@ -183,7 +183,8 @@ TEST_CASE("node_branch_boundary_vertices")
     Winding winding = GENERATE(Winding::ccw, Winding::cw);
     if (winding == Winding::cw)
     {
-      flip_horizontally(vertices_storage, ArrayView<Node>(&node, 1));
+      flip_horizontally(vertices_storage);
+      flip_horizontally(ArrayView<Node>(&node, 1));
     }
 
     SECTION("Branch 0")
@@ -282,7 +283,8 @@ TEST_CASE("node_branch_boundary_vertices")
     Winding winding = GENERATE(Winding::ccw, Winding::cw);
     if (winding == Winding::cw)
     {
-      flip_horizontally(vertices_storage, ArrayView<Node>(&node, 1));
+      flip_horizontally(vertices_storage);
+      flip_horizontally(ArrayView<Node>(&node, 1));
     }
 
     SECTION("Branch 0")
@@ -383,7 +385,8 @@ TEST_CASE("node_branch_boundary_vertices")
       Winding winding = GENERATE(Winding::ccw, Winding::cw);
       if (winding == Winding::cw)
       {
-        flip_horizontally(vertices_storage, ArrayView<Node>(&node, 1));
+        flip_horizontally(vertices_storage);
+        flip_horizontally(ArrayView<Node>(&node, 1));
       }
 
       NodeBranchBoundaryVertices result =
@@ -407,7 +410,8 @@ TEST_CASE("node_branch_boundary_vertices")
       Winding winding = GENERATE(Winding::ccw, Winding::cw);
       if (winding == Winding::cw)
       {
-        flip_horizontally(vertices_storage, ArrayView<Node>(&node, 1));
+        flip_horizontally(vertices_storage);
+        flip_horizontally(ArrayView<Node>(&node, 1));
       }
 
       NodeBranchBoundaryVertices result =
@@ -621,7 +625,8 @@ TEST_CASE("validate_node_neighbors")
 
   SECTION("With clockwise winding")
   {
-    flip_horizontally(vertices_storage, nodes);
+    flip_horizontally(vertices_storage);
+    flip_horizontally(nodes);
 
     SECTION("Valid, with upper and lower boundary")
     {
@@ -635,10 +640,10 @@ TEST_CASE("validate_node_neighbors")
     }
 
     SECTION("Upper boundary not monotone")
-  {
-    std::swap(vertices_storage[10], vertices_storage[11]);
-    CHECK_FALSE(validate_node_neighbors(vertices, Winding::cw, ChainDecomposition{nullptr, nullptr}, &nodes[4]));
-  }
+    {
+      std::swap(vertices_storage[10], vertices_storage[11]);
+      CHECK_FALSE(validate_node_neighbors(vertices, Winding::cw, ChainDecomposition{nullptr, nullptr}, &nodes[4]));
+    }
   }
 }
 
@@ -734,7 +739,8 @@ TEST_CASE("flip_horizontally")
   nodes[1].neighbors[1] = &nodes[0];
   nodes[1].neighbors[2] = &nodes[0];
 
-  flip_horizontally(vertices_storage, nodes);
+  flip_horizontally(vertices_storage);
+  flip_horizontally(nodes);
 
   CHECK(vertices[0] == Point2(2.76, 5.60));
   CHECK(vertices[1] == Point2(-0.08, 5.42));
