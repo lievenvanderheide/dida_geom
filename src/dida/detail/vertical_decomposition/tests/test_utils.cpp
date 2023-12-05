@@ -322,13 +322,6 @@ bool validate_node_neighbors(VerticesView vertices, Winding winding, const Chain
 
 bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition)
 {
-  PolygonRange range{
-      static_cast<size_t>(chain_decomposition.first_node->vertex_it - vertices.begin()),
-      distance_cyclic(vertices, chain_decomposition.first_node->vertex_it, chain_decomposition.last_node->vertex_it),
-      chain_decomposition.first_node->vertex_it->x(),
-      chain_decomposition.last_node->vertex_it->x(),
-  };
-
   std::set<const Node*> nodes = gather_nodes(chain_decomposition.first_node);
 
   {
