@@ -17,7 +17,11 @@ Edge ray_cast_up(VerticesView vertices, Winding winding, std::optional<PolygonRa
   if (range)
   {
     edge_start_it = vertices.begin() + range->begin.edge_index;
-    num_edges = sub_modulo(range->end.edge_index, range->begin.edge_index, vertices.size()) + 1;
+    num_edges = sub_modulo(range->end.edge_index, range->begin.edge_index, vertices.size());
+    if(range->end.x != vertices[range->end.edge_index].x())
+    {
+      num_edges++;
+    }
   }
   else
   {
@@ -71,7 +75,11 @@ Edge ray_cast_down(VerticesView vertices, Winding winding, std::optional<Polygon
   if (range)
   {
     edge_start_it = vertices.begin() + range->begin.edge_index;
-    num_edges = sub_modulo(range->end.edge_index, range->begin.edge_index, vertices.size()) + 1;
+    num_edges = sub_modulo(range->end.edge_index, range->begin.edge_index, vertices.size());
+    if(range->end.x != vertices[range->end.edge_index].x())
+    {
+      num_edges++;
+    }
   }
   else
   {
