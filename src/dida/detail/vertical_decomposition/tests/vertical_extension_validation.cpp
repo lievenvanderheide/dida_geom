@@ -18,7 +18,7 @@ Edge ray_cast_up(VerticesView vertices, Winding winding, std::optional<PolygonRa
   {
     edge_start_it = vertices.begin() + range->begin.edge_index;
     num_edges = sub_modulo(range->end.edge_index, range->begin.edge_index, vertices.size());
-    if(range->end.x != vertices[range->end.edge_index].x())
+    if (range->end.x != vertices[range->end.edge_index].x())
     {
       num_edges++;
     }
@@ -33,27 +33,15 @@ Edge ray_cast_up(VerticesView vertices, Winding winding, std::optional<PolygonRa
   {
     VertexIt edge_end_it = next_cyclic(vertices, edge_start_it);
 
-    ScalarDeg1 edge_start_x = range && i == 0 ? range->begin.x : edge_start_it->x();
-
-    ScalarDeg1 edge_end_x;
-    if (range && i == num_edges - 1)
-    {
-      edge_end_x = edge_start_it->x() < edge_end_it->x() ? range->end.x + ScalarDeg1::from_numerator(1)
-                                                         : range->end.x - ScalarDeg1::from_numerator(1);
-    }
-    else
-    {
-      edge_end_x = edge_end_it->x();
-    }
-
-    bool edge_start_on_left = edge_start_x < ray_origin.x();
-    bool edge_end_on_left = edge_end_x < ray_origin.x();
-    if (edge_start_on_left != edge_end_on_left)
+    bool edge_start_on_left = edge_start_it->x() < ray_origin.x();
+    bool edge_end_on_left = edge_end_it->x() < ray_origin.x();
+    if (edge_start_on_left != edge_end_on_left || (range && i == 0 && ray_origin.x() == range->begin.x) ||
+        (range && i == num_edges - 1 && ray_origin.x() == range->end.x))
     {
       YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
       if (cur_y > ray_origin.y() && cur_y < result_y)
       {
-        bool on_interior_side = edge_end_on_left == (winding == winding);
+        bool on_interior_side = edge_end_on_left == (winding == Winding::ccw);
         result = on_interior_side ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
         result_y = cur_y;
       }
@@ -76,7 +64,7 @@ Edge ray_cast_down(VerticesView vertices, Winding winding, std::optional<Polygon
   {
     edge_start_it = vertices.begin() + range->begin.edge_index;
     num_edges = sub_modulo(range->end.edge_index, range->begin.edge_index, vertices.size());
-    if(range->end.x != vertices[range->end.edge_index].x())
+    if (range->end.x != vertices[range->end.edge_index].x())
     {
       num_edges++;
     }
@@ -91,27 +79,15 @@ Edge ray_cast_down(VerticesView vertices, Winding winding, std::optional<Polygon
   {
     VertexIt edge_end_it = next_cyclic(vertices, edge_start_it);
 
-    ScalarDeg1 edge_start_x = range && i == 0 ? range->begin.x : edge_start_it->x();
-
-    ScalarDeg1 edge_end_x;
-    if (range && i == num_edges - 1)
-    {
-      edge_end_x = edge_start_it->x() < edge_end_it->x() ? range->end.x + ScalarDeg1::from_numerator(1)
-                                                         : range->end.x - ScalarDeg1::from_numerator(1);
-    }
-    else
-    {
-      edge_end_x = edge_end_it->x();
-    }
-
-    bool edge_start_on_left = edge_start_x <= ray_origin.x();
-    bool edge_end_on_left = edge_end_x <= ray_origin.x();
-    if (edge_start_on_left != edge_end_on_left)
+    bool edge_start_on_left = edge_start_it->x() <= ray_origin.x();
+    bool edge_end_on_left = edge_end_it->x() <= ray_origin.x();
+    if (edge_start_on_left != edge_end_on_left || (range && i == 0 && ray_origin.x() == range->begin.x) ||
+        (range && i == num_edges - 1 && ray_origin.x() == range->end.x))
     {
       YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
       if (cur_y < ray_origin.y() && cur_y > result_y)
       {
-        bool on_interior_side = edge_start_on_left == (winding == winding);
+        bool on_interior_side = edge_start_on_left == (winding == Winding::ccw);
         result = on_interior_side ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
         result_y = cur_y;
       }
