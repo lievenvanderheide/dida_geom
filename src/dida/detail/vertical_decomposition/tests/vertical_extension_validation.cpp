@@ -47,7 +47,7 @@ Edge ray_cast_up(VerticesView vertices, Winding winding, std::optional<PolygonRa
       YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
       if (cur_y > ray_origin.y() && cur_y < result_y)
       {
-        bool on_interior_side = edge_end_on_left == (winding == Winding::ccw);
+        bool on_interior_side = (edge_end_it->x() < edge_start_it->x()) == (winding == Winding::ccw);
         result = on_interior_side ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
         result_y = cur_y;
       }
@@ -99,7 +99,7 @@ Edge ray_cast_down(VerticesView vertices, Winding winding, std::optional<Polygon
       YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
       if (cur_y < ray_origin.y() && cur_y > result_y)
       {
-        bool on_interior_side = edge_start_on_left == (winding == Winding::ccw);
+        bool on_interior_side = (edge_start_it->x() < edge_end_it->x()) == (winding == Winding::ccw);
         result = on_interior_side ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
         result_y = cur_y;
       }
