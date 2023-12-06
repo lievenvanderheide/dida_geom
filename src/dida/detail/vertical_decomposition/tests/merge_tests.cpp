@@ -22,7 +22,8 @@ TEST_CASE("vertical_decomposition_merge")
     VerticesView vertices(polygon);
     NodePool node_pool;
 
-    std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+    std::vector<ChainDecomposition> chain_decompositions =
+        initial_chain_decompositions(vertices, Winding::ccw, node_pool);
 
     SECTION("Right facing, lower chain longer")
     {
@@ -66,7 +67,8 @@ TEST_CASE("vertical_decomposition_merge")
       VerticesView vertices(polygon);
       NodePool node_pool;
 
-      std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+      std::vector<ChainDecomposition> chain_decompositions =
+          initial_chain_decompositions(vertices, Winding::ccw, node_pool);
       REQUIRE(chain_decompositions.size() == 6);
 
       ChainDecomposition branches =
@@ -101,7 +103,8 @@ TEST_CASE("vertical_decomposition_merge")
       VerticesView vertices(polygon);
       NodePool node_pool;
 
-      std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+      std::vector<ChainDecomposition> chain_decompositions =
+          initial_chain_decompositions(vertices, Winding::ccw, node_pool);
       REQUIRE(chain_decompositions.size() == 6);
 
       ChainDecomposition branches =
@@ -135,7 +138,8 @@ TEST_CASE("vertical_decomposition_merge")
       VerticesView vertices(polygon);
       NodePool node_pool;
 
-      std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+      std::vector<ChainDecomposition> chain_decompositions =
+          initial_chain_decompositions(vertices, Winding::ccw, node_pool);
       REQUIRE(chain_decompositions.size() == 6);
 
       ChainDecomposition branches =
@@ -169,7 +173,8 @@ TEST_CASE("vertical_decomposition_merge")
       VerticesView vertices(polygon);
       NodePool node_pool;
 
-      std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+      std::vector<ChainDecomposition> chain_decompositions =
+          initial_chain_decompositions(vertices, Winding::ccw, node_pool);
       REQUIRE(chain_decompositions.size() == 6);
 
       ChainDecomposition branches =
@@ -206,7 +211,8 @@ TEST_CASE("vertical_decomposition_merge")
       VerticesView vertices(polygon);
       NodePool node_pool;
 
-      std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+      std::vector<ChainDecomposition> chain_decompositions =
+          initial_chain_decompositions(vertices, Winding::ccw, node_pool);
       REQUIRE(chain_decompositions.size() == 6);
 
       ChainDecomposition branches =
@@ -241,7 +247,8 @@ TEST_CASE("vertical_decomposition_merge")
       VerticesView vertices(polygon);
       NodePool node_pool;
 
-      std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+      std::vector<ChainDecomposition> chain_decompositions =
+          initial_chain_decompositions(vertices, Winding::ccw, node_pool);
       REQUIRE(chain_decompositions.size() == 6);
 
       ChainDecomposition branches =
@@ -277,7 +284,8 @@ TEST_CASE("vertical_decomposition_merge")
       VerticesView vertices(polygon);
       NodePool node_pool;
 
-      std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+      std::vector<ChainDecomposition> chain_decompositions =
+          initial_chain_decompositions(vertices, Winding::ccw, node_pool);
       REQUIRE(chain_decompositions.size() == 6);
 
       ChainDecomposition branches =
@@ -311,7 +319,8 @@ TEST_CASE("vertical_decomposition_merge")
       VerticesView vertices(polygon);
       NodePool node_pool;
 
-      std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+      std::vector<ChainDecomposition> chain_decompositions =
+          initial_chain_decompositions(vertices, Winding::ccw, node_pool);
       REQUIRE(chain_decompositions.size() == 6);
 
       ChainDecomposition branches =
@@ -349,7 +358,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 5);
 
         ChainDecomposition a = merge_chain_decompositions(
@@ -374,7 +384,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 5);
 
         ChainDecomposition a = chain_decompositions[0];
@@ -398,7 +409,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 5);
 
         ChainDecomposition a = merge_chain_decompositions(
@@ -423,7 +435,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 5);
 
         ChainDecomposition a = chain_decompositions[0];
@@ -452,7 +465,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 6);
 
         ChainDecomposition a = merge_chain_decompositions(
@@ -482,7 +496,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 6);
 
         ChainDecomposition a =
@@ -511,7 +526,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 6);
 
         ChainDecomposition a = merge_chain_decompositions(
@@ -540,7 +556,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 6);
 
         ChainDecomposition a =
@@ -572,7 +589,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 5);
 
         ChainDecomposition a =
@@ -599,7 +617,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 5);
 
         ChainDecomposition a =
@@ -628,7 +647,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 5);
 
         ChainDecomposition a = chain_decompositions[0];
@@ -651,7 +671,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 5);
 
         ChainDecomposition a = merge_chain_decompositions(
@@ -677,7 +698,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 6);
 
         ChainDecomposition a = merge_chain_decompositions(
@@ -703,7 +725,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 5);
 
         ChainDecomposition a = chain_decompositions[0];
@@ -731,7 +754,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 7);
 
         ChainDecomposition chain_with_outer_branch = merge_chain_decompositions(
@@ -775,7 +799,8 @@ TEST_CASE("vertical_decomposition_merge")
         VerticesView vertices(polygon);
         NodePool node_pool;
 
-        std::vector<ChainDecomposition> chain_decompositions = initial_chain_decompositions(vertices, node_pool);
+        std::vector<ChainDecomposition> chain_decompositions =
+            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
         REQUIRE(chain_decompositions.size() == 7);
 
         ChainDecomposition chain_with_outer_branch = merge_chain_decompositions(

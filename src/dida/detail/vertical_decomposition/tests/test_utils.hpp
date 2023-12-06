@@ -44,13 +44,15 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
 ///
 /// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about
 /// these errors was logged using @c UNSCOPED_INFO.
-bool validate_node_neighbors(VerticesView vertices, Winding winding, const ChainDecomposition& chain_decomposition, const Node* node);
+bool validate_node_neighbors(VerticesView vertices, Winding winding, const ChainDecomposition& chain_decomposition,
+                             const Node* node);
 
 /// Validates a chain decomposition.
 ///
 /// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about
 /// these errors was logged using @c UNSCOPED_INFO.
-bool validate_chain_decomposition(VerticesView vertices, Winding winding, const ChainDecomposition& chain_decomposition);
+bool validate_chain_decomposition(VerticesView vertices, Winding winding,
+                                  const ChainDecomposition& chain_decomposition);
 
 /// Validates the vertical decomposition of a polygon.
 ///
@@ -76,6 +78,7 @@ void print_nodes(VerticesView vertices, ArrayView<const Node> nodes);
 
 /// Decomposes the polygon formed by @c vertices into a set of chain decompositions, by starting a new chain
 /// decomposition at each convex side vertex.
-std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertices, NodePool& node_pool);
+std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertices, Winding winding,
+                                                             NodePool& node_pool);
 
 } // namespace dida::detail::vertical_decomposition

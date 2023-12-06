@@ -159,7 +159,7 @@ vertical_extension_contact_points(const ChainDecomposition& chain_decomposition,
 {
   /// The horizontal direction of a boundary which has the interior above it.
   HorizontalDirection lower_boundary_direction =
-      winding == winding ? HorizontalDirection::right : HorizontalDirection::left;
+      winding == Winding::ccw ? HorizontalDirection::right : HorizontalDirection::left;
 
   std::vector<VerticalExtensionContactPoint> contact_points;
 
