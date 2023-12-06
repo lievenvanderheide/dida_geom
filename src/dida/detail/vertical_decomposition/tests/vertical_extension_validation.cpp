@@ -571,6 +571,10 @@ bool validate_vertical_extensions(VerticesView vertices, Winding winding,
 
 bool validate_vertical_extensions(VerticesView vertices, Winding winding, const std::set<const Node*>& nodes)
 {
+  /// The horizontal direction of a boundary which has the interior above it.
+  HorizontalDirection lower_boundary_direction =
+      winding == Winding::ccw ? HorizontalDirection::right : HorizontalDirection::left;
+
   for (const Node* node : nodes)
   {
     Edge expected_lower_opp_edge, expected_upper_opp_edge;
@@ -579,7 +583,7 @@ bool validate_vertical_extensions(VerticesView vertices, Winding winding, const 
       Edge incoming_edge{prev_cyclic(vertices, node->vertex_it), node->vertex_it};
       Edge outgoing_edge{node->vertex_it, next_cyclic(vertices, node->vertex_it)};
 
-      if (node->direction == HorizontalDirection::right)
+      if (node->direction == lower_boundary_direction)
       {
         expected_lower_opp_edge = incoming_edge;
         expected_upper_opp_edge = outgoing_edge;
