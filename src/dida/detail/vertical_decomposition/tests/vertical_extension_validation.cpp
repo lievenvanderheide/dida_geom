@@ -33,10 +33,16 @@ Edge ray_cast_up(VerticesView vertices, Winding winding, std::optional<PolygonRa
   {
     VertexIt edge_end_it = next_cyclic(vertices, edge_start_it);
 
-    bool edge_start_on_left = edge_start_it->x() < ray_origin.x();
-    bool edge_end_on_left = edge_end_it->x() < ray_origin.x();
-    if (edge_start_on_left != edge_end_on_left || (range && i == 0 && ray_origin.x() == range->begin.x) ||
-        (range && i == num_edges - 1 && ray_origin.x() == range->end.x))
+    bool is_range_start_edge = range && i == 0;
+    bool is_range_end_edge = range && i == num_edges - 1;
+
+    ScalarDeg1 edge_start_x = is_range_start_edge ? range->begin.x : edge_start_it->x();
+    ScalarDeg1 edge_end_x = is_range_end_edge ? range->end.x : edge_end_it->x();
+
+    bool edge_start_on_left = edge_start_x < ray_origin.x();
+    bool edge_end_on_left = edge_end_x < ray_origin.x();
+    if (edge_start_on_left != edge_end_on_left || (is_range_start_edge && ray_origin.x() == range->begin.x) ||
+        (is_range_end_edge && ray_origin.x() == range->end.x))
     {
       YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
       if (cur_y > ray_origin.y() && cur_y < result_y)
@@ -79,10 +85,16 @@ Edge ray_cast_down(VerticesView vertices, Winding winding, std::optional<Polygon
   {
     VertexIt edge_end_it = next_cyclic(vertices, edge_start_it);
 
-    bool edge_start_on_left = edge_start_it->x() <= ray_origin.x();
-    bool edge_end_on_left = edge_end_it->x() <= ray_origin.x();
-    if (edge_start_on_left != edge_end_on_left || (range && i == 0 && ray_origin.x() == range->begin.x) ||
-        (range && i == num_edges - 1 && ray_origin.x() == range->end.x))
+    bool is_range_start_edge = range && i == 0;
+    bool is_range_end_edge = range && i == num_edges - 1;
+
+    ScalarDeg1 edge_start_x = is_range_start_edge ? range->begin.x : edge_start_it->x();
+    ScalarDeg1 edge_end_x = is_range_end_edge ? range->end.x : edge_end_it->x();
+
+    bool edge_start_on_left = edge_start_x <= ray_origin.x();
+    bool edge_end_on_left = edge_end_x <= ray_origin.x();
+    if (edge_start_on_left != edge_end_on_left || (is_range_start_edge && ray_origin.x() == range->begin.x) ||
+        (is_range_end_edge && ray_origin.x() == range->end.x))
     {
       YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
       if (cur_y < ray_origin.y() && cur_y > result_y)
