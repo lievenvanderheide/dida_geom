@@ -497,6 +497,10 @@ namespace
 
 bool validate_vertical_extension_island(VerticesView vertices, Winding winding, const ChainDecompositionIsland& island)
 {
+  /// The horizontal direction of a boundary which has the interior above it.
+  HorizontalDirection lower_boundary_direction =
+      winding == Winding::ccw ? HorizontalDirection::right : HorizontalDirection::left;
+
   for (const VerticalExtensionContactPoint& contact_point : island.contact_points)
   {
     if (contact_point.type == VerticalExtensionContactPoint::Type::vertex_downwards ||
@@ -533,7 +537,7 @@ bool validate_vertical_extension_island(VerticesView vertices, Winding winding, 
       Edge outgoing_edge{node->vertex_it, next_cyclic(vertices, node->vertex_it)};
 
       Edge expected_lower_opp_edge, expected_upper_opp_edge;
-      if (node->direction == HorizontalDirection::right)
+      if (node->direction == lower_boundary_direction)
       {
         expected_lower_opp_edge = incoming_edge;
         expected_upper_opp_edge = outgoing_edge;
