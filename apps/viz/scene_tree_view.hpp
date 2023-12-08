@@ -4,6 +4,7 @@
 #include <QtWidgets/QTreeView>
 
 #include "scene.hpp"
+#include "scene_selection.hpp"
 
 namespace dida::viz
 {
@@ -17,7 +18,7 @@ public:
   /// Constructs a @c SceneTreeView with the given scene.
   ///
   /// @param scene The @c VizScene to show in the tree view.
-  SceneTreeView(std::shared_ptr<VizScene> scene);
+  SceneTreeView(std::shared_ptr<VizScene> scene, std::shared_ptr<VizSceneSelection> selection);
 };
 
 /// A @c QAbstractItemModel wrapper around @c VizScene.
@@ -33,7 +34,7 @@ public:
 
   /// Implements the @c index function of @c QAbstractItemModel.
   QModelIndex index(int row, int column, const QModelIndex& parent = QModelIndex()) const override;
-  
+
   /// Implements the @c data function of @c QAbstractItemModel.
   ///
   /// If role == SceneTreeModel, then the return value is
@@ -61,6 +62,23 @@ private:
   void on_primitive_added(size_t index);
 
   std::shared_ptr<VizScene> scene_;
+};
+
+class SceneSelectionModel : public QItemSelectionModel
+{
+  Q_OBJECT
+
+public:
+  SceneSelectionModel(SceneTreeModel* model, std::shared_ptr<VizSceneSelection> selection)
+      : QItemSelectionModel(model), selection_(std::move(selection))
+  {
+    QObject::connect(this, &QItemSelectionModel::selectionChanged, this, &SceneSelectionModel::on_selection_changed);
+  }
+
+private:
+  void on_selection_changed(const QItemSelection& selected, const QItemSelection& deselected);
+
+  std::shared_ptr<VizSceneSelection> selection_;
 };
 
 } // namespace dida::viz

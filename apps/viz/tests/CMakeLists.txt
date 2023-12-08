@@ -1,6 +1,7 @@
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 
 add_executable(dida_viz_tests
+    scene_selection_tests.cpp
     scene_tests.cpp
     scene_tree_view_tests.cpp)
 

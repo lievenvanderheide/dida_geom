@@ -25,50 +25,35 @@ class VizPolygon : public QObject
 
 public:
   /// Constructs a @c VizPolygon with the given values.
-  ///
-  /// @param name The name of the polygon. See @c name().
-  /// @param vertices The vertices of the polygon. See @c vertices().
-  /// @param should_be_convex Whether the polygon should be convex. See @c should_be_convex().
   inline VizPolygon(std::string name, std::vector<Point2> vertices, bool should_be_convex);
 
   /// Returns the name of this @c VizPolygon.
-  ///
-  /// @return The name.
   inline const std::string& name() const;
 
   /// Returns the vertices of this @c VizPolygon.
-  ///
-  /// @return The vertices.
   inline const std::vector<Point2>& vertices() const;
 
   /// Adds a vertex to this @c VizPolygon.
   ///
   /// The @c will_add_vertex signal is emitted before the change is made, the @c vertex_added and @c data_changed
   /// signals are emitted after the change is made
-  ///
-  /// @param add_vertex The vertex to add.
   void add_vertex(Point2 vertex);
 
   /// Returns whether this @c VizPolygon should be convex.
   ///
-  /// This flag affects the result of the @c is_valid function, but convexity is not otherwise enforced.
+  /// This flag affects the result of the @c is_valid function, but it's not considered a violation of the class
+  /// invariant when this condition is not met.
   inline bool should_be_convex() const;
 
   /// Returns whether the vertices of this @c VizPolygon form a valid @c Polygon2 or @c ConvexPolygon2 (depending on
   /// whether @c should_be_convex() is true).
-  ///
-  /// @return True iff the vertices form a valid polygon of the expected type.
   inline bool is_polygon_valid() const;
 
 Q_SIGNALS:
   /// This signal is emitted when a new vertex is about to be added to this @c VizPolygon.
-  ///
-  /// @param index The index the new vertex will have.
   void will_add_vertex(size_t index);
 
   /// This signal is emitted after a new vertex is added to this @c VizPolygon.
-  ///
-  /// @param index The index of the newly added vertex.
   void vertex_added(size_t index);
 
   /// This signal is emitted when this polygon changes.

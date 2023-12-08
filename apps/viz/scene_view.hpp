@@ -1,10 +1,13 @@
 #pragma once
 
-#include "scene.hpp"
 #include "zoom_pan_view.hpp"
 
 namespace dida::viz
 {
+
+class VizPolygon;
+class VizScene;
+class VizSceneSelection;
 
 /// The main view of the visualization tool, which shows the scene's geometry, and allows the user to edit it.
 class SceneView : public ZoomPanView
@@ -13,9 +16,7 @@ class SceneView : public ZoomPanView
 
 public:
   /// Constructs a @c SceneView with the given scene.
-  ///
-  /// @param scene The scene.
-  SceneView(std::shared_ptr<VizScene> scene);
+  SceneView(std::shared_ptr<VizScene> scene, std::shared_ptr<VizSceneSelection> selection);
 
   /// Changes the active tool to the "Select/Move tool.
   void switch_to_select_move_tool();
@@ -34,6 +35,7 @@ protected:
 
 private Q_SLOTS:
   void on_scene_data_changed();
+  void on_selection_changed();
 
 private:
   struct SelectMoveTool
@@ -57,6 +59,7 @@ private:
   bool is_polygon_being_drawn(const std::shared_ptr<VizPolygon>& polygon);
 
   std::shared_ptr<VizScene> scene_;
+  std::shared_ptr<VizSceneSelection> selection_;
 
   std::variant<SelectMoveTool, AddPolygonTool> tool_;
 };

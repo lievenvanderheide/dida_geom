@@ -7,9 +7,10 @@
 namespace dida::viz
 {
 
-SceneTreeView::SceneTreeView(std::shared_ptr<VizScene> scene)
+SceneTreeView::SceneTreeView(std::shared_ptr<VizScene> scene, std::shared_ptr<VizSceneSelection> selection)
 {
   setHeaderHidden(true);
+  setSelectionMode(QTreeView::ExtendedSelection);
 
   SceneTreeModel* model = new SceneTreeModel(std::move(scene));
   setModel(model);
@@ -22,6 +23,9 @@ SceneTreeView::SceneTreeView(std::shared_ptr<VizScene> scene)
                        expand(model->index(i, 0, parent));
                      }
                    });
+
+  SceneSelectionModel* selection_model = new SceneSelectionModel(model, std::move(selection));
+  setSelectionModel(selection_model);
 }
 
 namespace
@@ -29,7 +33,7 @@ namespace
 
 #if UINTPTR_MAX == 0xffffffffffffffffu
 constexpr int primitive_index_shift = 32;
-constexpr quintptr element_index_mask = (static_cast<quintptr>(1) << primitive_index_shift) - 1;
+constexpr quintptr vertex_index_mask = (static_cast<quintptr>(1) << primitive_index_shift) - 1;
 #else
 #error Only 64-bit platforms currently supported
 #endif
@@ -39,42 +43,27 @@ class ItemIndex
 {
 public:
   /// Constructs an @c ItemIndex from an item index packed in a @c quintptr.
-  ///
-  /// @param packed_index The packed index.
-  /// @return The @c ItemIndex.
   static inline ItemIndex from_packed_index(quintptr packed_index);
 
   /// Returns this @c ItemIndex packed into a @c quintptr.
-  ///
-  /// @return The packed index.
   inline quintptr to_packed_index() const;
 
   /// Constructs a @c ItemIndex which refers to a primitive.
-  ///
-  /// @param primitive_idnex The index of the primitive.
   inline explicit ItemIndex(size_t primitive_index);
 
-  /// Constructs a @c ItemIndex which refers to an element of a primitive.
-  ///
-  /// @param primitive_index The index of the primitive.
-  /// @param element_index The index of the element within the primitive.
-  inline ItemIndex(size_t primitive_index, size_t element_index);
+  /// Constructs a @c ItemIndex which refers to a vertex of a primitive.
+  inline ItemIndex(size_t primitive_index, size_t vertex_index);
 
-  /// Returns whether this @c ItemIndex refers to a primitive or an element.
-  ///
-  /// @return True if the index refers to a primitive, false if it returns to an element.
+  /// Returns whether this @c ItemIndex refers to a primitive or a vertex.
   inline bool is_primitive() const;
 
   /// Returns the primitive index of this @c ItemIndex.
-  ///
-  /// @return The primitive index.
   inline size_t primitive_index() const;
 
-  /// Returns the element index of this @c ItemIndex.
+  /// Returns the vertex index of this @c ItemIndex.
   ///
-  /// @pre is_primitive() must return false.
-  /// @return The element index.
-  inline size_t element_index() const;
+  /// @pre @c is_primitive() is false.
+  inline size_t vertex_index() const;
 
 private:
   ItemIndex() = default;
@@ -96,18 +85,18 @@ quintptr ItemIndex::to_packed_index() const
 
 ItemIndex::ItemIndex(size_t primitive_index)
 {
-  packed_index_ = (static_cast<quintptr>(primitive_index) << primitive_index_shift) + element_index_mask;
+  packed_index_ = (static_cast<quintptr>(primitive_index) << primitive_index_shift) + vertex_index_mask;
 }
 
-ItemIndex::ItemIndex(size_t primitive_index, size_t element_index)
+ItemIndex::ItemIndex(size_t primitive_index, size_t vertex_index)
 {
   packed_index_ =
-      (static_cast<quintptr>(primitive_index) << primitive_index_shift) + static_cast<quintptr>(element_index);
+      (static_cast<quintptr>(primitive_index) << primitive_index_shift) + static_cast<quintptr>(vertex_index);
 }
 
 bool ItemIndex::is_primitive() const
 {
-  return (packed_index_ & element_index_mask) == element_index_mask;
+  return (packed_index_ & vertex_index_mask) == vertex_index_mask;
 }
 
 size_t ItemIndex::primitive_index() const
@@ -115,10 +104,10 @@ size_t ItemIndex::primitive_index() const
   return static_cast<size_t>(packed_index_ >> primitive_index_shift);
 }
 
-size_t ItemIndex::element_index() const
+size_t ItemIndex::vertex_index() const
 {
-  quintptr result = (packed_index_ & element_index_mask);
-  DIDA_ASSERT(result != element_index_mask);
+  quintptr result = (packed_index_ & vertex_index_mask);
+  DIDA_ASSERT(result != vertex_index_mask);
   return static_cast<size_t>(result);
 }
 
@@ -161,11 +150,11 @@ QVariant SceneTreeModel::data(const QModelIndex& index, int role) const
     }
     else
     {
-      Point2 vertex = polygon.vertices()[item_index.element_index()];
+      Point2 vertex = polygon.vertices()[item_index.vertex_index()];
 
       std::stringstream s;
       s << std::fixed << std::setprecision(2);
-      s << vertex;
+      s << item_index.vertex_index() << ": " << vertex;
       return QString::fromUtf8(s.str().c_str());
     }
 
@@ -227,6 +216,27 @@ void SceneTreeModel::on_primitive_added(size_t primitive_index)
                      beginInsertRows(parent_index, vertex_index, vertex_index);
                    });
   QObject::connect(polygon, &VizPolygon::will_add_vertex, this, &SceneTreeModel::endInsertRows);
+}
+
+void SceneSelectionModel::on_selection_changed(const QItemSelection& selected, const QItemSelection& deselected)
+{
+  for(QModelIndex index : selected.indexes())
+  {
+    if(index.parent().isValid())
+    {
+      ItemIndex item_index = ItemIndex::from_packed_index(index.internalId());
+      selection_->select_vertex(item_index.primitive_index(), item_index.vertex_index());
+    }
+  }
+
+  for(QModelIndex index : deselected.indexes())
+  {
+    if(index.parent().isValid())
+    {
+      ItemIndex item_index = ItemIndex::from_packed_index(index.internalId());
+      selection_->deselect_vertex(item_index.primitive_index(), item_index.vertex_index());
+    }
+  }
 }
 
 } // namespace dida::viz

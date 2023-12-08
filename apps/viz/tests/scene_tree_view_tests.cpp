@@ -54,12 +54,12 @@ TEST_CASE("SceneTreeModel::data")
     QModelIndex foo_index = tree_model.index(0, 0, QModelIndex());
     QModelIndex foo_vertex_index = tree_model.index(1, 0, foo_index);
     QVariant foo_vertex_text = tree_model.data(foo_vertex_index, Qt::DisplayRole);
-    CHECK(foo_vertex_text == "{4.78, 2.60}");
+    CHECK(foo_vertex_text == "1: {4.78, 2.60}");
 
     QModelIndex bar_index = tree_model.index(1, 0, QModelIndex());
     QModelIndex bar_vertex_index = tree_model.index(2, 0, bar_index);
     QVariant bar_vertex_text = tree_model.data(bar_vertex_index, Qt::DisplayRole);
-    CHECK(bar_vertex_text == "{4.96, 4.22}");
+    CHECK(bar_vertex_text == "2: {4.96, 4.22}");
   }
 }
 

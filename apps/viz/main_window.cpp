@@ -18,12 +18,13 @@
 namespace dida::viz
 {
 
-MainWindow::MainWindow(std::shared_ptr<VizScene> scene) : scene_(std::move(scene))
+MainWindow::MainWindow(std::shared_ptr<VizScene> scene, std::shared_ptr<VizSceneSelection> selection)
+  : scene_(std::move(scene)), selection_(std::move(selection))
 {
-  scene_view_ = new SceneView(scene_);
+  scene_view_ = new SceneView(scene_, selection_);
   setCentralWidget(scene_view_);
 
-  SceneTreeView* tree_view = new SceneTreeView(scene_);
+  SceneTreeView* tree_view = new SceneTreeView(scene_, selection_);
   QDockWidget* tree_view_dock_widget = new QDockWidget();
   tree_view_dock_widget->setWidget(tree_view);
   addDockWidget(Qt::LeftDockWidgetArea, tree_view_dock_widget);
@@ -59,6 +60,8 @@ MainWindow::MainWindow(std::shared_ptr<VizScene> scene) : scene_(std::move(scene
                    [this]() { scene_view_->switch_to_add_polygon_tool(true); });
   toolbar->addAction(add_convex_polygon_tool_action);
 }
+
+MainWindow::~MainWindow() = default;
 
 void MainWindow::on_copy()
 {

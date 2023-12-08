@@ -2,12 +2,13 @@
 
 #include <QtWidgets/QMainWindow>
 
-#include "scene.hpp"
-
 namespace dida::viz
 {
 
 class SceneView;
+class VizPolygon;
+class VizScene;
+class VizSceneSelection;
 
 /// The main window of the Dida visualization tool.
 class MainWindow : public QMainWindow
@@ -16,7 +17,8 @@ class MainWindow : public QMainWindow
 
 public:
   /// Constructs a @c MainWindow with the given scene.
-  MainWindow(std::shared_ptr<VizScene> scene);
+  MainWindow(std::shared_ptr<VizScene> scene, std::shared_ptr<VizSceneSelection> selection);
+  ~MainWindow();
 
 private:
   void on_copy();
@@ -24,6 +26,7 @@ private:
   void on_paste();
 
   std::shared_ptr<VizScene> scene_;
+  std::shared_ptr<VizSceneSelection> selection_;
 
   SceneView* scene_view_;
 };

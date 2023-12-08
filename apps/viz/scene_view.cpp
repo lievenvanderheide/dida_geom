@@ -3,6 +3,10 @@
 #include <QtGui/QMouseEvent>
 #include <QtGui/QPainter>
 
+#include "dida/predicates.hpp"
+#include "scene.hpp"
+#include "scene_selection.hpp"
+
 namespace dida::viz
 {
 
@@ -14,10 +18,6 @@ namespace
 constexpr float click_tolerance = 3;
 
 /// Returns whether two points are within @c click_tolerance L^inf distance of each other.
-///
-/// @param a The first point.
-/// @param b The second point.
-/// @return True iff there was a hit.
 bool points_within_click_tolerance(QPointF a, QPointF b)
 {
   return std::abs(a.x() - b.x()) <= click_tolerance && std::abs(a.y() - b.y()) <= click_tolerance;
@@ -25,7 +25,8 @@ bool points_within_click_tolerance(QPointF a, QPointF b)
 
 } // namespace
 
-SceneView::SceneView(std::shared_ptr<VizScene> scene) : scene_(scene), tool_(SelectMoveTool{})
+SceneView::SceneView(std::shared_ptr<VizScene> scene, std::shared_ptr<VizSceneSelection> selection)
+    : scene_(scene), selection_(selection), tool_(SelectMoveTool{})
 {
   QPalette palette;
   palette.setColor(QPalette::Window, Qt::white);
@@ -33,6 +34,7 @@ SceneView::SceneView(std::shared_ptr<VizScene> scene) : scene_(scene), tool_(Sel
   setAutoFillBackground(true);
 
   QObject::connect(scene_.get(), &VizScene::data_changed, this, &SceneView::on_scene_data_changed);
+  QObject::connect(selection_.get(), &VizSceneSelection::selection_changed, this, &SceneView::on_selection_changed);
 }
 
 void SceneView::switch_to_select_move_tool()
@@ -53,8 +55,9 @@ void SceneView::paintEvent(QPaintEvent* event)
 
   painter.setRenderHint(QPainter::Antialiasing);
 
-  for (const std::shared_ptr<VizPolygon>& polygon : scene_->primitives())
+  for (size_t primitive_index = 0; primitive_index < scene_->primitives().size(); primitive_index++)
   {
+    const std::shared_ptr<VizPolygon>& polygon = scene_->primitives()[primitive_index];
     const ArrayView<const Point2> vertices = polygon->vertices();
 
     std::vector<QPointF> qt_vertices(vertices.size());
@@ -76,9 +79,11 @@ void SceneView::paintEvent(QPaintEvent* event)
       painter.drawPolygon(qt_vertices.data(), static_cast<int>(qt_vertices.size()));
     }
 
-    for (QPointF point : qt_vertices)
+    for (size_t vertex_index = 0; vertex_index < qt_vertices.size(); vertex_index++)
     {
-      painter.fillRect(QRect(point.x() - 2, point.y() - 2, 5, 5), Qt::black);
+      QPointF qt_vertex = qt_vertices[vertex_index];
+      QColor color = selection_->is_vertex_selected(primitive_index, vertex_index) ? QColor(0, 64, 255) : Qt::black;
+      painter.fillRect(QRect(qt_vertex.x() - 2, qt_vertex.y() - 2, 5, 5), color);
     }
   }
 }
@@ -105,6 +110,11 @@ void SceneView::mouseMoveEvent(QMouseEvent* event)
 }
 
 void SceneView::on_scene_data_changed()
+{
+  update();
+}
+
+void SceneView::on_selection_changed()
 {
   update();
 }
