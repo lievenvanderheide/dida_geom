@@ -320,23 +320,16 @@ bool validate_node_neighbors(VerticesView vertices, Winding winding, const Chain
   return true;
 }
 
-bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition)
+bool validate_chain_decomposition(VerticesView vertices, Winding winding, const ChainDecomposition& chain_decomposition)
 {
-  PolygonRange range{
-      static_cast<size_t>(chain_decomposition.first_node->vertex_it - vertices.begin()),
-      distance_cyclic(vertices, chain_decomposition.first_node->vertex_it, chain_decomposition.last_node->vertex_it),
-      chain_decomposition.first_node->vertex_it->x(),
-      chain_decomposition.last_node->vertex_it->x(),
-  };
-
   std::set<const Node*> nodes = gather_nodes(chain_decomposition.first_node);
 
   {
     std::vector<VerticalExtensionContactPoint> contact_points =
-        vertical_extension_contact_points(chain_decomposition, Winding::ccw);
+        vertical_extension_contact_points(chain_decomposition, winding);
     std::vector<ChainDecompositionIsland> islands =
-        split_chain_decomposition_into_islands(vertices, Winding::ccw, chain_decomposition, contact_points);
-    if (!validate_vertical_extensions(vertices, islands))
+        split_chain_decomposition_into_islands(vertices, winding, chain_decomposition, contact_points);
+    if (!validate_vertical_extensions(vertices, winding, islands))
     {
       return false;
     }
@@ -344,7 +337,7 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
 
   for (const Node* node : nodes)
   {
-    if (!validate_node_neighbors(vertices, Winding::ccw, chain_decomposition, node))
+    if (!validate_node_neighbors(vertices, winding, chain_decomposition, node))
     {
       return false;
     }
@@ -353,18 +346,18 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
   return true;
 }
 
-bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node)
+bool validate_polygon_decomposition(VerticesView vertices, Winding winding, const Node* root_node)
 {
   std::set<const Node*> nodes = gather_nodes(root_node);
 
-  if (!validate_vertical_extensions(vertices, nodes))
+  if (!validate_vertical_extensions(vertices, winding, nodes))
   {
     return false;
   }
 
   for (const Node* node : nodes)
   {
-    if (!validate_node_neighbors(vertices, Winding::ccw, ChainDecomposition{nullptr, nullptr}, node))
+    if (!validate_node_neighbors(vertices, winding, ChainDecomposition{nullptr, nullptr}, node))
     {
       return false;
     }
@@ -391,13 +384,16 @@ std::string_view node_type_to_string(NodeType node_type)
   }
 }
 
-void flip_horizontally(ArrayView<Point2> vertices, ArrayView<Node> nodes)
+void flip_horizontally(ArrayView<Point2> vertices)
 {
   for (Point2& v : vertices)
   {
     v = Point2(-v.x(), v.y());
   }
+}
 
+void flip_horizontally(ArrayView<Node> nodes)
+{
   for (Node& node : nodes)
   {
     node.direction = other_direction(node.direction);
@@ -457,15 +453,25 @@ void print_nodes(VerticesView vertices, ArrayView<const Node> nodes)
   }
 }
 
-std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertices, NodePool& node_pool)
+std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertices, Winding winding,
+                                                             NodePool& node_pool)
 {
+  /// The horizontal direction of a boundary which has the interior above it.
+  bool lower_boundary_towards_right = winding == Winding::ccw;
+
+  auto is_convex_corner = [winding](Point2 a, Point2 b, Point2 c)
+  {
+    ScalarDeg2 side = cross(b - a, c - a);
+    return winding == Winding::ccw ? side > 0 : side < 0;
+  };
+
   // Find the first convex side vertex.
   VertexIt it = vertices.begin();
   for (; it != vertices.end(); ++it)
   {
     VertexIt prev_it = prev_cyclic(vertices, it);
     VertexIt next_it = next_cyclic(vertices, it);
-    if (lex_less_than(*prev_it, *it) != lex_less_than(*it, *next_it) && cross(*it - *prev_it, *next_it - *it) > 0)
+    if (lex_less_than(*prev_it, *it) != lex_less_than(*it, *next_it) && is_convex_corner(*prev_it, *it, *next_it))
     {
       break;
     }
@@ -484,7 +490,7 @@ std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertic
     bool outgoing_towards_right = lex_less_than(*it, *next_it);
     if (incoming_towards_right != outgoing_towards_right)
     {
-      bool is_convex_corner = cross(*it - *prev_it, *next_it - *it) > 0;
+      bool is_convex = is_convex_corner(*prev_it, *it, *next_it);
 
       if (i != 0)
       {
@@ -500,7 +506,7 @@ std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertic
         node->neighbors[1] = nullptr;
         node->neighbors[2] = nullptr;
 
-        if (incoming_towards_right)
+        if (incoming_towards_right == lower_boundary_towards_right)
         {
           node->neighbors[2] = prev_node;
           prev_node->neighbors[2] = node;
@@ -513,14 +519,14 @@ std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertic
 
         prev_node = node;
 
-        if (is_convex_corner)
+        if (is_convex)
         {
           // If it's a convex corner, then the node we just added is the last node of the chain.
           result.back().last_node = node;
         }
       }
 
-      if (is_convex_corner && i != vertices.size())
+      if (is_convex && i != vertices.size())
       {
         // Start a new chain.
 

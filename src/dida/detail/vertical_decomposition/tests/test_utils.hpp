@@ -44,13 +44,15 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
 ///
 /// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about
 /// these errors was logged using @c UNSCOPED_INFO.
-bool validate_node_neighbors(VerticesView vertices, Winding winding, const ChainDecomposition& chain_decomposition, const Node* node);
+bool validate_node_neighbors(VerticesView vertices, Winding winding, const ChainDecomposition& chain_decomposition,
+                             const Node* node);
 
 /// Validates a chain decomposition.
 ///
 /// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about
 /// these errors was logged using @c UNSCOPED_INFO.
-bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition);
+bool validate_chain_decomposition(VerticesView vertices, Winding winding,
+                                  const ChainDecomposition& chain_decomposition);
 
 /// Validates the vertical decomposition of a polygon.
 ///
@@ -59,13 +61,14 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
 ///
 /// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about
 /// these errors was logged using @c UNSCOPED_INFO.
-bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node);
+bool validate_polygon_decomposition(VerticesView vertices, Winding winding, const Node* root_node);
 
 /// Inverts the x-coordinate of the given vertices, and inverts the direction of each of the given nodes.
 ///
 /// This function can be used to turn a decomposition of a chain with a given winding into an equivalent decomposition
 /// for a chain with the opposite winding.
-void flip_horizontally(ArrayView<Point2> vertices, ArrayView<Node> nodes);
+void flip_horizontally(ArrayView<Point2> vertices);
+void flip_horizontally(ArrayView<Node> nodes);
 
 /// Returns the given node type as a string.
 std::string_view node_type_to_string(NodeType node_type);
@@ -75,6 +78,7 @@ void print_nodes(VerticesView vertices, ArrayView<const Node> nodes);
 
 /// Decomposes the polygon formed by @c vertices into a set of chain decompositions, by starting a new chain
 /// decomposition at each convex side vertex.
-std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertices, NodePool& node_pool);
+std::vector<ChainDecomposition> initial_chain_decompositions(VerticesView vertices, Winding winding,
+                                                             NodePool& node_pool);
 
 } // namespace dida::detail::vertical_decomposition

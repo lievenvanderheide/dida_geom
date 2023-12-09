@@ -183,7 +183,8 @@ TEST_CASE("node_branch_boundary_vertices")
     Winding winding = GENERATE(Winding::ccw, Winding::cw);
     if (winding == Winding::cw)
     {
-      flip_horizontally(vertices_storage, ArrayView<Node>(&node, 1));
+      flip_horizontally(vertices_storage);
+      flip_horizontally(ArrayView<Node>(&node, 1));
     }
 
     SECTION("Branch 0")
@@ -282,7 +283,8 @@ TEST_CASE("node_branch_boundary_vertices")
     Winding winding = GENERATE(Winding::ccw, Winding::cw);
     if (winding == Winding::cw)
     {
-      flip_horizontally(vertices_storage, ArrayView<Node>(&node, 1));
+      flip_horizontally(vertices_storage);
+      flip_horizontally(ArrayView<Node>(&node, 1));
     }
 
     SECTION("Branch 0")
@@ -383,7 +385,8 @@ TEST_CASE("node_branch_boundary_vertices")
       Winding winding = GENERATE(Winding::ccw, Winding::cw);
       if (winding == Winding::cw)
       {
-        flip_horizontally(vertices_storage, ArrayView<Node>(&node, 1));
+        flip_horizontally(vertices_storage);
+        flip_horizontally(ArrayView<Node>(&node, 1));
       }
 
       NodeBranchBoundaryVertices result =
@@ -407,7 +410,8 @@ TEST_CASE("node_branch_boundary_vertices")
       Winding winding = GENERATE(Winding::ccw, Winding::cw);
       if (winding == Winding::cw)
       {
-        flip_horizontally(vertices_storage, ArrayView<Node>(&node, 1));
+        flip_horizontally(vertices_storage);
+        flip_horizontally(ArrayView<Node>(&node, 1));
       }
 
       NodeBranchBoundaryVertices result =
@@ -621,7 +625,8 @@ TEST_CASE("validate_node_neighbors")
 
   SECTION("With clockwise winding")
   {
-    flip_horizontally(vertices_storage, nodes);
+    flip_horizontally(vertices_storage);
+    flip_horizontally(nodes);
 
     SECTION("Valid, with upper and lower boundary")
     {
@@ -635,71 +640,76 @@ TEST_CASE("validate_node_neighbors")
     }
 
     SECTION("Upper boundary not monotone")
-  {
-    std::swap(vertices_storage[10], vertices_storage[11]);
-    CHECK_FALSE(validate_node_neighbors(vertices, Winding::cw, ChainDecomposition{nullptr, nullptr}, &nodes[4]));
-  }
+    {
+      std::swap(vertices_storage[10], vertices_storage[11]);
+      CHECK_FALSE(validate_node_neighbors(vertices, Winding::cw, ChainDecomposition{nullptr, nullptr}, &nodes[4]));
+    }
   }
 }
 
 TEST_CASE("initial_chain_decompositions")
 {
-  Polygon2 polygon{
+  std::vector<Point2> vertices_storage {
       {-4.16, 6.38}, {-2.46, 6.38}, {-0.74, 5.90}, {-0.94, 4.24}, {-3.12, 3.84}, {-1.76, 2.58},
       {2.02, 2.92},  {4.08, 4.18},  {2.42, 4.20},  {1.18, 4.98},  {2.48, 6.12},  {4.34, 6.48},
       {2.36, 7.84},  {0.86, 8.34},  {0.44, 7.38},  {-0.64, 8.30}, {-2.62, 7.64},
   };
-  VerticesView vertices(polygon);
+  VerticesView vertices(vertices_storage);
+
+  Winding winding = GENERATE(Winding::ccw, Winding::cw);
+  if(winding == Winding::cw)
+  {
+    flip_horizontally(vertices_storage);
+  }
 
   SECTION("First chain starts at vertices 0")
   {
     NodePool node_pool;
-    std::vector<ChainDecomposition> result = initial_chain_decompositions(vertices, node_pool);
+    std::vector<ChainDecomposition> result = initial_chain_decompositions(vertices, winding, node_pool);
 
     REQUIRE(result.size() == 4);
 
     CHECK(result[0].first_node->vertex_it == vertices.begin());
     CHECK(result[0].last_node->vertex_it == vertices.begin() + 4);
-    CHECK(validate_chain_decomposition(vertices, result[0]));
+    CHECK(validate_chain_decomposition(vertices, winding, result[0]));
 
     CHECK(result[1].first_node->vertex_it == vertices.begin() + 4);
     CHECK(result[1].last_node->vertex_it == vertices.begin() + 7);
-    CHECK(validate_chain_decomposition(vertices, result[1]));
+    CHECK(validate_chain_decomposition(vertices, winding, result[1]));
 
     CHECK(result[2].first_node->vertex_it == vertices.begin() + 7);
     CHECK(result[2].last_node->vertex_it == vertices.begin() + 11);
-    CHECK(validate_chain_decomposition(vertices, result[2]));
+    CHECK(validate_chain_decomposition(vertices, winding, result[2]));
 
     CHECK(result[3].first_node->vertex_it == vertices.begin() + 11);
     CHECK(result[3].last_node->vertex_it == vertices.begin());
-    CHECK(validate_chain_decomposition(vertices, result[3]));
+    CHECK(validate_chain_decomposition(vertices, winding, result[3]));
   }
 
   SECTION("First chain doens't start at vertex 0")
   {
-    std::vector<Point2>& vertices_mut = polygon.unsafe_mutable_vertices();
-    std::rotate(vertices_mut.begin(), vertices_mut.begin() + 1, vertices_mut.end());
+    std::rotate(vertices_storage.begin(), vertices_storage.begin() + 1, vertices_storage.end());
 
     NodePool node_pool;
-    std::vector<ChainDecomposition> result = initial_chain_decompositions(vertices, node_pool);
+    std::vector<ChainDecomposition> result = initial_chain_decompositions(vertices, winding, node_pool);
 
     REQUIRE(result.size() == 4);
 
     CHECK(result[0].first_node->vertex_it == vertices.begin() + 3);
     CHECK(result[0].last_node->vertex_it == vertices.begin() + 6);
-    CHECK(validate_chain_decomposition(vertices, result[0]));
+    CHECK(validate_chain_decomposition(vertices, winding, result[0]));
 
     CHECK(result[1].first_node->vertex_it == vertices.begin() + 6);
     CHECK(result[1].last_node->vertex_it == vertices.begin() + 10);
-    CHECK(validate_chain_decomposition(vertices, result[1]));
+    CHECK(validate_chain_decomposition(vertices, winding, result[1]));
 
     CHECK(result[2].first_node->vertex_it == vertices.begin() + 10);
     CHECK(result[2].last_node->vertex_it == vertices.begin() + 16);
-    CHECK(validate_chain_decomposition(vertices, result[2]));
+    CHECK(validate_chain_decomposition(vertices, winding, result[2]));
 
     CHECK(result[3].first_node->vertex_it == vertices.begin() + 16);
     CHECK(result[3].last_node->vertex_it == vertices.begin() + 3);
-    CHECK(validate_chain_decomposition(vertices, result[3]));
+    CHECK(validate_chain_decomposition(vertices, winding, result[3]));
   }
 }
 
@@ -734,7 +744,8 @@ TEST_CASE("flip_horizontally")
   nodes[1].neighbors[1] = &nodes[0];
   nodes[1].neighbors[2] = &nodes[0];
 
-  flip_horizontally(vertices_storage, nodes);
+  flip_horizontally(vertices_storage);
+  flip_horizontally(nodes);
 
   CHECK(vertices[0] == Point2(2.76, 5.60));
   CHECK(vertices[1] == Point2(-0.08, 5.42));
