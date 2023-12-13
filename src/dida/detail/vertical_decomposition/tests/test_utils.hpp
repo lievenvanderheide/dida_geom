@@ -44,7 +44,8 @@ NodeBranchBoundaryVertices node_branch_boundary_vertices(const ChainDecompositio
 ///
 /// A return value of @c true indicates that validation succeeded. If there were errors, then extra information about
 /// these errors was logged using @c UNSCOPED_INFO.
-bool validate_node_neighbors(VerticesView vertices, Winding winding, const ChainDecomposition& chain_decomposition, const Node* node);
+bool validate_node_neighbors(VerticesView vertices, Winding winding, const ChainDecomposition& chain_decomposition,
+                             const Node* node);
 
 /// Validates a chain decomposition.
 ///
@@ -61,11 +62,18 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
 /// these errors was logged using @c UNSCOPED_INFO.
 bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node);
 
-/// Inverts the x-coordinate of the given vertices, and inverts the direction of each of the given nodes.
+/// Inverts the x-coordinate of the given vertices.
 ///
-/// This function can be used to turn a decomposition of a chain with a given winding into an equivalent decomposition
-/// for a chain with the opposite winding.
-void flip_horizontally(ArrayView<Point2> vertices, ArrayView<Node> nodes);
+/// This function can be used to turn a polygon with counter clockwise winding into one with clockwise winding and vice
+/// versa, in such a way that often, in an algorithm this new polygon will result in the same branches being taken as
+/// with the original polygon, if the winding of the algorithm is inverted.
+void flip_horizontally(ArrayView<Point2> vertices);
+
+/// Inverts the direction of each of the given nodes.
+///
+/// This function can be used to update the nodes of a vertical decomposition after the vertices of the polygon have
+/// been flipped using @c flip_horizontally.
+void flip_horizontally(ArrayView<Node> nodes);
 
 /// Returns the given node type as a string.
 std::string_view node_type_to_string(NodeType node_type);

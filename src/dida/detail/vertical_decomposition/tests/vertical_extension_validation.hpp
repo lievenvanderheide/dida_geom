@@ -11,57 +11,48 @@ namespace dida::detail::vertical_decomposition
 struct PolygonLocation
 {
   /// The index of the edge containing the location.
+  ///
+  /// The correct edge index for a location which coincides with a vertex depends on the winding of the polygon. If the
+  /// winding is @c Winding::ccw, then @c edge_index should be the index of the vertex' outgoing edge, if winding is @c
+  /// Winding::cw, it should be the index of the vertex' incoming edge.
+  ///
+  /// The edge cannot be a vertical edge.
   size_t edge_index;
 
   /// The x-coordinate of the location.
   ScalarDeg1 x;
 };
 
-/// A function object for comparing polygon locations. The () operator returns true iff the first operand is encountered
-/// before the second operand, when traversing the polygon's boundary while starting from its first vertex.
-struct PolygonLocationLessThan
-{
-  /// The vertices of the polygon.
-  VerticesView vertices;
-
-  /// Compares two @c PolygonLocation instances.
-  bool operator()(const PolygonLocation& a, const PolygonLocation& b) const;
-};
-
 /// A range of the boundary of a polygon.
+///
+/// The end points are included in the range.
 struct PolygonRange
 {
-  /// The first of the range.
-  size_t first_edge_index;
+  /// The location of the begining of the range.
+  PolygonLocation begin;
 
-  /// The number of edges (full or partial) in this range.
-  size_t num_edges;
-
-  /// The x-coordinate of the point on the first edge which is the start point of the range.
-  ScalarDeg1 start_point_x;
-
-  /// The x-coordinate of the point on the last edge which is the end point of the range.
-  ScalarDeg1 end_point_x;
-
-  /// Splits this @c PolygonRange at the given location, returning the two sub-ranges.
-  std::pair<PolygonRange, PolygonRange> split(VerticesView vertices, PolygonLocation location) const;
+  /// The location of the end of the range.
+  PolygonLocation end;
 };
 
-/// Casts a ray upwards from @c ray_origin, until it hits an edge in the given polygon range. If it hits an edge from
-/// the interior side, then that edge is returned, if it hits an edge from the exterior side, or if no edge is hit, then
-/// @c Edge::invalid() is returned.
+/// @{
+/// Casts a ray in the upwards/downwards direction from @c ray_origin, until it hits an edge in the given polygon or
+/// polygon range. If it hits an edge from the interior side, then that edge is returned, if it hits an edge from the
+/// exterior side, or if no edge is hit, then @c Edge::invalid() is returned.
 ///
-/// The special case where the ray hits the boundary on a vertex is resolved by shifting that vertex an infinitisemal
-/// offset to the right.
-Edge ray_cast_up(VerticesView vertices, Winding winding, const PolygonRange& range, Point2 ray_origin);
-
-/// Casts a ray downwards from @c ray_origin, until it hits an edge in the given polygon range. If it hits an edge from
-/// the interior side, then that edge is returned, if it hits an edge from the exterior side, or if no edge is hit, then
-/// @c Edge::invalid() is returned.
+/// Corner cases are resolved as follows:
 ///
-/// The special case where the ray hits the boundary on a vertex is resolved by shifting that vertex an infinitisemal
-/// offset to the left.
-Edge ray_cast_down(VerticesView vertices, Winding winding, const PolygonRange& range, Point2 ray_origin);
+///  - An edge can only be hit if <tt>lex_less_than(edge_left, ray_origin) && lex_less_than(ray_origin,
+///    edge_right)</tt>.
+///  - If @c ray_origin lies on an edge, then this edge is ignored.
+///  - If a range is provided, and the ray hits the first or last edge of the range, then it's condered a hit iff there
+///    would be a hit with the full edge according to the previous two conditions, and the point of intersection does
+///    not strictly lie outside the range. Note that this is different from simply clamping the edge and then testing
+///    against the clamped edge using the above conditions.
+///
+Edge ray_cast_up(VerticesView vertices, Winding winding, std::optional<PolygonRange> range, Point2 ray_origin);
+Edge ray_cast_down(VerticesView vertices, Winding winding, std::optional<PolygonRange> range, Point2 ray_origin);
+/// *}
 
 /// A contact point where a vertical extension meets its chain.
 struct VerticalExtensionContactPoint

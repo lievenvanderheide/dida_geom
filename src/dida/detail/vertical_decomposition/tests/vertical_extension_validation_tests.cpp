@@ -10,401 +10,475 @@
 namespace dida::detail::vertical_decomposition
 {
 
-TEST_CASE("PolygonLocationLessThan")
+namespace
 {
-  Polygon2 polygon{{2.44, 4.02}, {5.94, 6.58}, {2.58, 7.52}, {-1.32, 5.42}};
 
-  SECTION("Different edges")
-  {
-    PolygonLocation a{1, ScalarDeg1(4.2)};
-    PolygonLocation b{2, ScalarDeg1(-.12)};
-
-    PolygonLocationLessThan less_than{polygon};
-    CHECK(less_than(a, b));
-    CHECK_FALSE(less_than(b, a));
-  }
-
-  SECTION("On same edge, edge towards right")
-  {
-    PolygonLocation a{3, ScalarDeg1(-0.34)};
-    PolygonLocation b{3, ScalarDeg1(1.36)};
-
-    PolygonLocationLessThan less_than{polygon};
-    CHECK(less_than(a, b));
-    CHECK_FALSE(less_than(b, a));
-    CHECK_FALSE(less_than(a, a));
-  }
-
-  SECTION("On same edge, edge towards left")
-  {
-    PolygonLocation a{1, ScalarDeg1(4.92)};
-    PolygonLocation b{1, ScalarDeg1(2.96)};
-
-    PolygonLocationLessThan less_than{polygon};
-    CHECK(less_than(a, b));
-    CHECK_FALSE(less_than(b, a));
-    CHECK_FALSE(less_than(a, a));
-  }
+/// If <tt>winding == Winding::cw</tt>, returns @c point with its x-coordinate flip, otherwise returns @c point as it
+/// is.
+Point2 flip_horizontally_if_necessary(Winding winding, Point2 point)
+{
+  return winding == Winding::ccw ? point : Point2(-point.x(), point.y());
 }
 
-TEST_CASE("PolygonRange::split")
+/// If <tt>winding == Winding::cw</tt>, returns @c -x, otherwise returns @c x as it is.
+ScalarDeg1 flip_x_if_necessary(Winding winding, ScalarDeg1 x)
 {
-  Polygon2 polygon{{-4.48, 2.08}, {-2.64, 4.16}, {0.32, 2.40}, {2.98, 4.26}, {-7.36, 7.58}};
-  VerticesView vertices(polygon);
-
-  PolygonRange range_without_wrapping{1, 4, ScalarDeg1(-.92), ScalarDeg1(-6.82)};
-  PolygonRange range_with_wrapping{4, 5, ScalarDeg1(-6.82), ScalarDeg1(-4.52)};
-
-  SECTION("Split at vertex")
-  {
-    std::pair<PolygonRange, PolygonRange> result =
-        range_without_wrapping.split(vertices, PolygonLocation{3, ScalarDeg1(2.98)});
-
-    CHECK(result.first.first_edge_index == 1);
-    CHECK(result.first.num_edges == 2);
-    CHECK(result.first.start_point_x == ScalarDeg1(-.92));
-    CHECK(result.first.end_point_x == ScalarDeg1(2.98));
-
-    CHECK(result.second.first_edge_index == 3);
-    CHECK(result.second.num_edges == 2);
-    CHECK(result.second.start_point_x == ScalarDeg1(2.98));
-    CHECK(result.second.end_point_x == ScalarDeg1(-6.82));
-  }
-
-  SECTION("Split at vertex with wrapping")
-  {
-    std::pair<PolygonRange, PolygonRange> result =
-        range_with_wrapping.split(vertices, PolygonLocation{1, ScalarDeg1(-2.64)});
-
-    CHECK(result.first.first_edge_index == 4);
-    CHECK(result.first.num_edges == 2);
-    CHECK(result.first.start_point_x == ScalarDeg1(-6.82));
-    CHECK(result.first.end_point_x == ScalarDeg1(-2.64));
-
-    CHECK(result.second.first_edge_index == 1);
-    CHECK(result.second.num_edges == 3);
-    CHECK(result.second.start_point_x == ScalarDeg1(-2.64));
-    CHECK(result.second.end_point_x == ScalarDeg1(-4.52));
-  }
-
-  SECTION("Split mid edge")
-  {
-    std::pair<PolygonRange, PolygonRange> result =
-        range_without_wrapping.split(vertices, PolygonLocation{3, ScalarDeg1(-4.52)});
-
-    CHECK(result.first.first_edge_index == 1);
-    CHECK(result.first.num_edges == 3);
-    CHECK(result.first.start_point_x == ScalarDeg1(-.92));
-    CHECK(result.first.end_point_x == ScalarDeg1(-4.52));
-
-    CHECK(result.second.first_edge_index == 3);
-    CHECK(result.second.num_edges == 2);
-    CHECK(result.second.start_point_x == ScalarDeg1(-4.52));
-    CHECK(result.second.end_point_x == ScalarDeg1(-6.82));
-  }
-
-  SECTION("Split mid edge, with wrapping")
-  {
-    std::pair<PolygonRange, PolygonRange> result =
-        range_with_wrapping.split(vertices, PolygonLocation{1, ScalarDeg1(-0.92)});
-
-    CHECK(result.first.first_edge_index == 4);
-    CHECK(result.first.num_edges == 3);
-    CHECK(result.first.start_point_x == ScalarDeg1(-6.82));
-    CHECK(result.first.end_point_x == ScalarDeg1(-0.92));
-
-    CHECK(result.second.first_edge_index == 1);
-    CHECK(result.second.num_edges == 3);
-    CHECK(result.second.start_point_x == ScalarDeg1(-0.92));
-    CHECK(result.second.end_point_x == ScalarDeg1(-4.52));
-  }
+  return winding == Winding::ccw ? x : -x;
 }
+
+} // namespace
 
 TEST_CASE("ray_cast_up")
 {
-  Polygon2 polygon{
+  std::vector<Point2> vertices_storage{
       {1.98, -2.24}, {7.44, 0.74}, {2.38, 2.48}, {5.06, 0.68}, {2.26, -0.92}, {0.26, 3.38}, {4.98, 4.52}, {-1.16, 4.02},
   };
+  VerticesView vertices(vertices_storage);
 
-  ArrayView<const Point2> vertices(polygon);
-
-  SECTION("Full polygon, hits edge from inside")
+  Winding winding = GENERATE(Winding::ccw, Winding::cw);
+  if (winding == Winding::cw)
   {
-    for (size_t i = 0; i < vertices.size(); i++)
+    flip_horizontally(vertices_storage);
+  }
+
+  SECTION("Full polygon")
+  {
+    SECTION("Hits edge from inside")
     {
-      Edge edge = ray_cast_up(vertices, Winding::ccw,
-                              PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {4.06, -0.64});
+      Edge edge = ray_cast_up(vertices, winding, std::nullopt, flip_horizontally_if_necessary(winding, {4.06, -0.64}));
       REQUIRE(edge.is_valid());
-      CHECK(*edge.start_vertex_it == Point2(5.06, 0.68));
-      CHECK(*edge.end_vertex_it == Point2(2.26, -0.92));
+      CHECK(edge.start_vertex_it == vertices.begin() + 3);
+      CHECK(edge.end_vertex_it == vertices.begin() + 4);
     }
-  }
 
-  SECTION("Full polygon, hits edge from outside")
-  {
-    for (size_t i = 0; i < vertices.size(); i++)
+    SECTION("Hits edge from outside")
     {
-      Edge edge = ray_cast_up(vertices, Winding::ccw,
-                              PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {3.26, 1.16});
+      Edge edge = ray_cast_up(vertices, winding, std::nullopt, flip_horizontally_if_necessary(winding, {3.26, 1.16}));
       CHECK(!edge.is_valid());
-    }
-  }
-
-  SECTION("Full polygon, no hit")
-  {
-    for (size_t i = 0; i < vertices.size(); i++)
-    {
-      Edge edge = ray_cast_up(vertices, Winding::ccw,
-                              PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {6.36, 3.32});
-      CHECK(!edge.is_valid());
-    }
-  }
-
-  SECTION("Hits vertex -> return left side edge")
-  {
-    for (size_t i = 0; i < vertices.size(); i++)
-    {
-      Edge edge = ray_cast_up(vertices, Winding::ccw,
-                              PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {2.26, -1.52});
-      REQUIRE(edge.is_valid());
-      CHECK(*edge.start_vertex_it == Point2(2.26, -0.92));
-      CHECK(*edge.end_vertex_it == Point2(0.26, 3.38));
-    }
-  }
-
-  SECTION("ray_origin on edge -> ignore edge")
-  {
-    for (size_t i = 0; i < vertices.size(); i++)
-    {
-      Edge edge = ray_cast_up(vertices, Winding::ccw,
-                              PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {2.26, -0.92});
-      CHECK(!edge.is_valid());
-    }
-  }
-
-  SECTION("Open range, hits edge from inside")
-  {
-    Edge edge = ray_cast_up(vertices, Winding::ccw, PolygonRange{1, 3, vertices[1].x(), vertices[4].x()}, {4.93, 1.26});
-    REQUIRE(edge.is_valid());
-    CHECK(*edge.start_vertex_it == Point2(7.44, 0.74));
-    CHECK(*edge.end_vertex_it == Point2(2.38, 2.48));
-  }
-
-  SECTION("Open range, ignore closing edge")
-  {
-    Edge edge =
-        ray_cast_up(vertices, Winding::ccw, PolygonRange{0, 3, vertices[0].x(), vertices[3].x()}, {4.45, -0.62});
-    REQUIRE(!edge.is_valid());
-  }
-
-  SECTION("Hits partial first edge")
-  {
-    Edge edge = ray_cast_up(vertices, Winding::ccw, PolygonRange{3, 3, ScalarDeg1(4), vertices[6].x()}, {3.27, -0.82});
-    REQUIRE(edge.is_valid());
-    CHECK(*edge.start_vertex_it == Point2(5.06, 0.68));
-    CHECK(*edge.end_vertex_it == Point2(2.26, -0.92));
-  }
-
-  SECTION("Misses partial first edge")
-  {
-    Edge edge = ray_cast_up(vertices, Winding::ccw, PolygonRange{3, 3, ScalarDeg1(3), vertices[6].x()}, {3.27, -0.82});
-    CHECK(!edge.is_valid());
-  }
-
-  SECTION("Hits partial last edge")
-  {
-    Edge edge = ray_cast_up(vertices, Winding::ccw, PolygonRange{0, 4, vertices[0].x(), ScalarDeg1(3)}, {3.27, -0.82});
-    REQUIRE(edge.is_valid());
-    CHECK(*edge.start_vertex_it == Point2(5.06, 0.68));
-    CHECK(*edge.end_vertex_it == Point2(2.26, -0.92));
-  }
-
-  SECTION("Misses partial last edge")
-  {
-    Edge edge = ray_cast_up(vertices, Winding::ccw, PolygonRange{0, 4, vertices[0].x(), ScalarDeg1(4)}, {3.27, -0.82});
-    CHECK(!edge.is_valid());
-  }
-
-  SECTION("Open range, with wrap")
-  {
-    Edge edge =
-        ray_cast_up(vertices, Winding::ccw, PolygonRange{6, 6, vertices[6].x(), vertices[4].x()}, {3.48, -0.40});
-    REQUIRE(edge.is_valid());
-    CHECK(*edge.start_vertex_it == Point2(5.06, 0.68));
-    CHECK(*edge.end_vertex_it == Point2(2.26, -0.92));
-  }
-
-  SECTION("Clockwise winding")
-  {
-    std::vector<Point2> vertices_storage{
-        {-2.88, 2.24}, {-6.10, 3.46}, {-1.32, 4.30}, {-4.96, 6.12}, {-3.60, 7.16},
-        {-0.62, 6.90}, {1.52, 3.80},  {-3.82, 3.44}, {-2.44, 2.76}, {-2.36, 2.36},
-    };
-    VerticesView vertices(vertices_storage);
-    PolygonRange full_range{0, vertices.size(), vertices[0].x(), vertices[0].x()};
-
-    SECTION("Hit")
-    {
-      Edge edge = ray_cast_up(vertices, Winding::cw, full_range, {-2.74, 3.76});
-      REQUIRE(edge.is_valid());
-      CHECK(*edge.start_vertex_it == Point2(-6.10, 3.46));
-      CHECK(*edge.end_vertex_it == Point2(-1.32, 4.30));
     }
 
     SECTION("No hit")
     {
-      Edge edge = ray_cast_up(vertices, Winding::cw, full_range, {-3.14, 3.30});
+      Edge edge = ray_cast_up(vertices, winding, std::nullopt, flip_horizontally_if_necessary(winding, {6.36, 3.32}));
       CHECK(!edge.is_valid());
+    }
+
+    SECTION("Hits vertex -> return left side edge")
+    {
+      Edge edge = ray_cast_up(vertices, winding, std::nullopt, flip_horizontally_if_necessary(winding, {2.26, -1.52}));
+      REQUIRE(edge.is_valid());
+
+      if (winding == Winding::ccw)
+      {
+        CHECK(edge.start_vertex_it == vertices.begin() + 4);
+        CHECK(edge.end_vertex_it == vertices.begin() + 5);
+      }
+      else
+      {
+        CHECK(edge.start_vertex_it == vertices.begin() + 3);
+        CHECK(edge.end_vertex_it == vertices.begin() + 4);
+      }
+    }
+
+    SECTION("ray_origin on edge -> ignore edge")
+    {
+      Edge edge = ray_cast_up(vertices, winding, std::nullopt, flip_horizontally_if_necessary(winding, {2.26, -0.92}));
+      CHECK(!edge.is_valid());
+    }
+  }
+
+  SECTION("With range")
+  {
+    SECTION("Hits edge in range")
+    {
+      PolygonRange range{
+          {1, flip_x_if_necessary(winding, ScalarDeg1(5.76))},
+          {5, flip_x_if_necessary(winding, ScalarDeg1(2.2))},
+      };
+
+      Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {3.82, -0.62}));
+      REQUIRE(edge.is_valid());
+      CHECK(edge.start_vertex_it == vertices.begin() + 3);
+      CHECK(edge.end_vertex_it == vertices.begin() + 4);
+    }
+
+    SECTION("Doesn't hit edge outside range")
+    {
+      PolygonRange range{
+          {1, flip_x_if_necessary(winding, ScalarDeg1(5.76))},
+          {5, flip_x_if_necessary(winding, ScalarDeg1(2.2))},
+      };
+
+      Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {0.86, 3.9}));
+      CHECK_FALSE(edge.is_valid());
+    }
+
+    SECTION("With wrapping")
+    {
+      PolygonRange range{
+          {7, flip_x_if_necessary(winding, ScalarDeg1(0.18))},
+          {3, flip_x_if_necessary(winding, ScalarDeg1(3.42))},
+      };
+
+      Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {5.9, 0.58}));
+      REQUIRE(edge.is_valid());
+      CHECK(edge.start_vertex_it == vertices.begin() + 1);
+      CHECK(edge.end_vertex_it == vertices.begin() + 2);
+    }
+
+    SECTION("Partial first edge towards left")
+    {
+      PolygonRange range{
+          {1, flip_x_if_necessary(winding, ScalarDeg1(5.76))},
+          {5, flip_x_if_necessary(winding, ScalarDeg1(2.2))},
+      };
+
+      SECTION("Hit")
+      {
+        Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {3.56, 1.92}));
+        REQUIRE(edge.is_valid());
+        CHECK(edge.start_vertex_it == vertices.begin() + 1);
+        CHECK(edge.end_vertex_it == vertices.begin() + 2);
+      }
+
+      SECTION("Miss")
+      {
+        Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {6.54, 0.8}));
+        CHECK_FALSE(edge.is_valid());
+      }
+
+      SECTION("On range start point")
+      {
+        Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {5.76, 1.14}));
+        REQUIRE(edge.is_valid());
+        CHECK(edge.start_vertex_it == vertices.begin() + 1);
+        CHECK(edge.end_vertex_it == vertices.begin() + 2);
+      }
+    }
+
+    SECTION("Partial first edge towards right")
+    {
+      PolygonRange range{
+          {5, flip_x_if_necessary(winding, ScalarDeg1(2.2))},
+          {1, flip_x_if_necessary(winding, ScalarDeg1(5.76))},
+      };
+
+      SECTION("Hit")
+      {
+        // The range's first edge is an upward facing edge, and we're hitting it from below, so even though there's a
+        // hit, the expected return value is Edge::invalid().
+        Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {3.98, 3.93}));
+        CHECK_FALSE(edge.is_valid());
+      }
+
+      SECTION("Miss")
+      {
+        // We're missing the range's first edge, and instead hit the edge above it.
+        Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {1.25, 2.97}));
+        REQUIRE(edge.is_valid());
+        CHECK(edge.start_vertex_it == vertices.begin() + 6);
+        CHECK(edge.end_vertex_it == vertices.begin() + 7);
+      }
+
+      SECTION("On range start point")
+      {
+        UNSCOPED_INFO("Hier " << (winding == Winding::ccw ? "ccw" : "cw"));
+        Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {2.2, 2.93}));
+        UNSCOPED_INFO("Done");
+        CHECK_FALSE(edge.is_valid());
+      }
+    }
+
+    SECTION("Partial last edge towards left")
+    {
+      PolygonRange range{
+          {1, flip_x_if_necessary(winding, ScalarDeg1(5.76))},
+          {4, flip_x_if_necessary(winding, ScalarDeg1(0.96))},
+      };
+
+      SECTION("Hit")
+      {
+        Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {1.8, -0.26}));
+        REQUIRE(edge.is_valid());
+        CHECK(edge.start_vertex_it == vertices.begin() + 4);
+        CHECK(edge.end_vertex_it == vertices.begin() + 5);
+      }
+
+      SECTION("Miss")
+      {
+        Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {0.5, 2.46}));
+        CHECK_FALSE(edge.is_valid());
+      }
+
+      SECTION("On range end point")
+      {
+        Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {0.96, 0.4}));
+        REQUIRE(edge.is_valid());
+        CHECK(edge.start_vertex_it == vertices.begin() + 4);
+        CHECK(edge.end_vertex_it == vertices.begin() + 5);
+      }
+    }
+
+    SECTION("Partial last edge towards right")
+    {
+      PolygonRange range{
+          {7, flip_x_if_necessary(winding, ScalarDeg1(0.16))},
+          {2, flip_x_if_necessary(winding, ScalarDeg1(3.6))},
+      };
+
+      SECTION("Hit")
+      {
+        // The range's last edge is an upward facing edge, and we're hitting it from below, so even though there's a
+        // hit, the expected return value is Edge::invalid().
+        Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {2.74, 1.78}));
+        CHECK_FALSE(edge.is_valid());
+      }
+
+      SECTION("Miss")
+      {
+        // We're missing the range's last edge, and instead hit the above it.
+        Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {4.12, 0.49}));
+        REQUIRE(edge.is_valid());
+        CHECK(edge.start_vertex_it == vertices.begin() + 1);
+        CHECK(edge.end_vertex_it == vertices.begin() + 2);
+      }
+
+      SECTION("On range end point")
+      {
+        Edge edge = ray_cast_up(vertices, winding, range, flip_horizontally_if_necessary(winding, {3.6, 0.8}));
+        CHECK_FALSE(edge.is_valid());
+      }
     }
   }
 }
 
 TEST_CASE("ray_cast_down")
 {
-  Polygon2 polygon{
+  std::vector<Point2> vertices_storage{
       {-2.41, 3.78}, {-4.93, 1.68}, {1.45, -0.08}, {-2.47, -0.96},
       {1.81, -2.16}, {5.21, -1.82}, {2.65, 2.3},   {-3.69, 1.76},
   };
+  VerticesView vertices(vertices_storage);
 
-  ArrayView<const Point2> vertices(polygon);
-
-  SECTION("Full polygon, hits edge from inside")
+  Winding winding = GENERATE(Winding::ccw, Winding::cw);
+  if (winding == Winding::cw)
   {
-    for (size_t i = 0; i < vertices.size(); i++)
-    {
-      Edge edge = ray_cast_down(vertices, Winding::ccw,
-                                PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {0.47, 1.12});
-      REQUIRE(edge.is_valid());
-      CHECK(*edge.start_vertex_it == Point2(-4.93, 1.68));
-      CHECK(*edge.end_vertex_it == Point2(1.45, -0.08));
-    }
+    flip_horizontally(vertices_storage);
   }
 
-  SECTION("Full polygon, hits edge from outside")
+  SECTION("Full polygon")
   {
-    for (size_t i = 0; i < vertices.size(); i++)
+    SECTION("Hits edge from inside")
     {
-      Edge edge = ray_cast_down(vertices, Winding::ccw,
-                                PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {-1.29, 2.38});
+      Edge edge = ray_cast_down(vertices, winding, std::nullopt, flip_horizontally_if_necessary(winding, {0.47, 1.12}));
+      REQUIRE(edge.is_valid());
+      CHECK(edge.start_vertex_it == vertices.begin() + 1);
+      CHECK(edge.end_vertex_it == vertices.begin() + 2);
+    }
+
+    SECTION("Hits edge from outside")
+    {
+      Edge edge =
+          ray_cast_down(vertices, winding, std::nullopt, flip_horizontally_if_necessary(winding, {-1.29, 2.38}));
       CHECK(!edge.is_valid());
-    }
-  }
-
-  SECTION("Full polygon, no hit")
-  {
-    for (size_t i = 0; i < vertices.size(); i++)
-    {
-      Edge edge = ray_cast_down(vertices, Winding::ccw,
-                                PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {-3.63, -0.68});
-      CHECK(!edge.is_valid());
-    }
-  }
-
-  SECTION("Hits vertex -> return right side edge")
-  {
-    for (size_t i = 0; i < vertices.size(); i++)
-    {
-      Edge edge = ray_cast_down(vertices, Winding::ccw,
-                                PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {1.81, -0.98});
-      REQUIRE(edge.is_valid());
-      CHECK(*edge.start_vertex_it == Point2(1.81, -2.16));
-      CHECK(*edge.end_vertex_it == Point2(5.21, -1.82));
-    }
-  }
-
-  SECTION("ray_origin on edge -> ignore edge")
-  {
-    for (size_t i = 0; i < vertices.size(); i++)
-    {
-      Edge edge = ray_cast_down(vertices, Winding::ccw,
-                                PolygonRange{i, vertices.size(), vertices[i].x(), vertices[i].x()}, {2.65, 2.3});
-      REQUIRE(edge.is_valid());
-      CHECK(*edge.start_vertex_it == Point2(1.81, -2.16));
-      CHECK(*edge.end_vertex_it == Point2(5.21, -1.82));
-    }
-  }
-
-  SECTION("Open range, hits edge from inside")
-  {
-    Edge edge =
-        ray_cast_down(vertices, Winding::ccw, PolygonRange{2, 4, vertices[2].x(), vertices[6].x()}, {0.42, -1.22});
-    REQUIRE(edge.is_valid());
-    CHECK(*edge.start_vertex_it == Point2(-2.47, -0.96));
-    CHECK(*edge.end_vertex_it == Point2(1.81, -2.16));
-  }
-
-  SECTION("Open range, ignore closing edge")
-  {
-    Edge edge =
-        ray_cast_down(vertices, Winding::ccw, PolygonRange{2, 5, vertices[2].x(), vertices[7].x()}, {-0.55, 1.58});
-    CHECK(!edge.is_valid());
-  }
-
-  SECTION("Hits partial first edge")
-  {
-    Edge edge = ray_cast_down(vertices, Winding::ccw, PolygonRange{1, 3, ScalarDeg1(-4), ScalarDeg1(1)}, {-1.36, 1.41});
-    REQUIRE(edge.is_valid());
-    CHECK(*edge.start_vertex_it == Point2(-4.93, 1.68));
-    CHECK(*edge.end_vertex_it == Point2(1.45, -0.08));
-  }
-
-  SECTION("Misses partial first edge")
-  {
-    Edge edge =
-        ray_cast_down(vertices, Winding::ccw, PolygonRange{2, 4, ScalarDeg1(-2), ScalarDeg1(3.5)}, {-1.20, -0.24});
-    REQUIRE(edge.is_valid());
-    CHECK(*edge.start_vertex_it == Point2(-2.47, -0.96));
-    CHECK(*edge.end_vertex_it == Point2(1.81, -2.16));
-  }
-
-  SECTION("Hits partial last edge")
-  {
-    Edge edge =
-        ray_cast_down(vertices, Winding::ccw, PolygonRange{1, 3, ScalarDeg1(-4), ScalarDeg1(1)}, {-0.88, -1.08});
-    REQUIRE(edge.is_valid());
-    CHECK(*edge.start_vertex_it == Point2(-2.47, -0.96));
-    CHECK(*edge.end_vertex_it == Point2(1.81, -2.16));
-  }
-
-  SECTION("Misses partial last edge")
-  {
-    Edge edge =
-        ray_cast_down(vertices, Winding::ccw, PolygonRange{1, 6, ScalarDeg1(-2.5), ScalarDeg1(1.8)}, {0.36, 3.30});
-    REQUIRE(edge.is_valid());
-    CHECK(*edge.start_vertex_it == Point2(-4.93, 1.68));
-    CHECK(*edge.end_vertex_it == Point2(1.45, -0.08));
-  }
-
-  SECTION("Open range, with wrap")
-  {
-    Edge edge =
-        ray_cast_down(vertices, Winding::ccw, PolygonRange{6, 4, vertices[6].x(), vertices[2].x()}, {-4.26, 1.94});
-    REQUIRE(edge.is_valid());
-    CHECK(*edge.start_vertex_it == Point2(-4.93, 1.68));
-    CHECK(*edge.end_vertex_it == Point2(1.45, -0.08));
-  }
-
-  SECTION("Clockwise winding")
-  {
-    std::vector<Point2> vertices_storage{
-        {-2.88, 2.24}, {-6.10, 3.46}, {-1.32, 4.30}, {-4.96, 6.12}, {-3.60, 7.16},
-        {-0.62, 6.90}, {1.52, 3.80},  {-3.82, 3.44}, {-2.44, 2.76}, {-2.36, 2.36},
-    };
-    VerticesView vertices(vertices_storage);
-    PolygonRange full_range{0, vertices.size(), vertices[0].x(), vertices[0].x()};
-
-    SECTION("Hit")
-    {
-      Edge edge = ray_cast_down(vertices, Winding::cw, full_range, {-2.74, 3.76});
-      REQUIRE(edge.is_valid());
-      CHECK(*edge.start_vertex_it == Point2(1.52, 3.80));
-      CHECK(*edge.end_vertex_it == Point2(-3.82, 3.44));
     }
 
     SECTION("No hit")
     {
-      Edge edge = ray_cast_down(vertices, Winding::cw, full_range, {-3.14, 3.30});
-      CHECK(!edge.is_valid());
+      Edge edge =
+          ray_cast_down(vertices, winding, std::nullopt, flip_horizontally_if_necessary(winding, {-3.63, -0.68}));
+    }
+
+    SECTION("Hits vertex -> return right side edge")
+    {
+      Edge edge =
+          ray_cast_down(vertices, winding, std::nullopt, flip_horizontally_if_necessary(winding, {1.81, -0.98}));
+      REQUIRE(edge.is_valid());
+
+      if (winding == Winding::ccw)
+      {
+        CHECK(edge.start_vertex_it == vertices.begin() + 4);
+        CHECK(edge.end_vertex_it == vertices.begin() + 5);
+      }
+      else
+      {
+        CHECK(edge.start_vertex_it == vertices.begin() + 3);
+        CHECK(edge.end_vertex_it == vertices.begin() + 4);
+      }
+    }
+
+    SECTION("ray_origin on edge -> ignore edge")
+    {
+      Edge edge = ray_cast_down(vertices, winding, std::nullopt, flip_horizontally_if_necessary(winding, {2.65, 2.3}));
+      REQUIRE(edge.is_valid());
+      CHECK(edge.start_vertex_it == vertices.begin() + 4);
+      CHECK(edge.end_vertex_it == vertices.begin() + 5);
+    }
+  }
+
+  SECTION("With range")
+  {
+    SECTION("Hits edge in range")
+    {
+      PolygonRange range{
+          {1, flip_x_if_necessary(winding, ScalarDeg1(-4))},
+          {6, flip_x_if_necessary(winding, ScalarDeg1(1.8))},
+      };
+
+      Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {-0.72, 1.04}));
+      REQUIRE(edge.is_valid());
+      CHECK(edge.start_vertex_it == vertices.begin() + 1);
+      CHECK(edge.end_vertex_it == vertices.begin() + 2);
+    }
+
+    SECTION("Doesn't hit edge outside range")
+    {
+      PolygonRange range{
+          {2, flip_x_if_necessary(winding, ScalarDeg1(-1.42))},
+          {6, flip_x_if_necessary(winding, ScalarDeg1(-2.72))},
+      };
+
+      Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {-0.72, 1.04}));
+      REQUIRE(edge.is_valid());
+      CHECK(edge.start_vertex_it == vertices.begin() + 3);
+      CHECK(edge.end_vertex_it == vertices.begin() + 4);
+    }
+
+    SECTION("With wrapping")
+    {
+      PolygonRange range{
+          {6, flip_x_if_necessary(winding, ScalarDeg1(-2.27))},
+          {2, flip_x_if_necessary(winding, ScalarDeg1(-1.42))},
+      };
+
+      Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {-0.72, 1.04}));
+      REQUIRE(edge.is_valid());
+      CHECK(edge.start_vertex_it == vertices.begin() + 1);
+      CHECK(edge.end_vertex_it == vertices.begin() + 2);
+    }
+
+    SECTION("Partial first edge towards left")
+    {
+      PolygonRange range{
+          {2, flip_x_if_necessary(winding, ScalarDeg1(-0.32))},
+          {6, flip_x_if_necessary(winding, ScalarDeg1(-1.96))},
+      };
+
+      SECTION("Hit")
+      {
+        // The range's first edge is a downward facing edge, and we're hitting it from above, so even though there's a
+        // hit, the expected return value is Edge::invalid().
+        Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {-1.94, 0.36}));
+        CHECK_FALSE(edge.is_valid());
+      }
+
+      SECTION("Miss")
+      {
+        // We're missing the range's first edge, and instead hit the edge below it.
+        Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {0.36, 0.04}));
+        REQUIRE(edge.is_valid());
+        CHECK(edge.start_vertex_it == vertices.begin() + 3);
+        CHECK(edge.end_vertex_it == vertices.begin() + 4);
+      }
+
+      SECTION("On range start point")
+      {
+        Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {-0.32, -0.08}));
+        CHECK_FALSE(edge.is_valid());
+      }
+    }
+
+    SECTION("Partial first edge towards right")
+    {
+      PolygonRange range{
+          {1, flip_x_if_necessary(winding, ScalarDeg1(-3.71))},
+          {5, flip_x_if_necessary(winding, ScalarDeg1(3.43))},
+      };
+
+      SECTION("Hit")
+      {
+        Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {-1.13, 1.11}));
+        REQUIRE(edge.is_valid());
+        CHECK(edge.start_vertex_it == vertices.begin() + 1);
+        CHECK(edge.end_vertex_it == vertices.begin() + 2);
+      }
+
+      SECTION("Miss")
+      {
+        Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {-4.37, 1.74}));
+        CHECK_FALSE(edge.is_valid());
+      }
+
+      SECTION("On range start point")
+      {
+        Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {-3.71, 1.61}));
+        REQUIRE(edge.is_valid());
+        CHECK(edge.start_vertex_it == vertices.begin() + 1);
+        CHECK(edge.end_vertex_it == vertices.begin() + 2);
+      }
+    }
+
+    SECTION("Partial last edge towards left")
+    {
+      PolygonRange range{
+          {1, flip_x_if_necessary(winding, ScalarDeg1(-3.3))},
+          {6, flip_x_if_necessary(winding, ScalarDeg1(-0.74))},
+      };
+
+      SECTION("Hit")
+      {
+        // The range's last edge is a downward facing edge, and we're hitting it from above, so even though there's a
+        // hit, the expected return value is Edge::invalid().
+        Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {0.86, 3.04}));
+        CHECK_FALSE(edge.is_valid());
+      }
+
+      SECTION("Miss")
+      {
+        // We're missing the range's last edge, and instead hit the edge below it.
+        Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {-1.72, 2.56}));
+        REQUIRE(edge.is_valid());
+        CHECK(edge.start_vertex_it == vertices.begin() + 1);
+        CHECK(edge.end_vertex_it == vertices.begin() + 2);
+      }
+
+      SECTION("On range start point")
+      {
+        Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {-0.74, 2.23}));
+        CHECK_FALSE(edge.is_valid());
+      }
+    }
+
+    SECTION("Partial last edge towards right")
+    {
+      PolygonRange range{
+          {3, flip_x_if_necessary(winding, ScalarDeg1(-1.64))},
+          {1, flip_x_if_necessary(winding, ScalarDeg1(-0.86))},
+      };
+
+      SECTION("Hit")
+      {
+        Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {-1.86, 1.06}));
+        REQUIRE(edge.is_valid());
+        CHECK(edge.start_vertex_it == vertices.begin() + 1);
+        CHECK(edge.end_vertex_it == vertices.begin() + 2);
+      }
+
+      SECTION("Miss")
+      {
+        Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {-0.1, 0.66}));
+        REQUIRE(edge.is_valid());
+        CHECK(edge.start_vertex_it == vertices.begin() + 3);
+        CHECK(edge.end_vertex_it == vertices.begin() + 4);
+      }
+
+      SECTION("On range end point")
+      {
+        Edge edge = ray_cast_down(vertices, winding, range, flip_horizontally_if_necessary(winding, {-0.86, 1.06}));
+        REQUIRE(edge.is_valid());
+        CHECK(edge.start_vertex_it == vertices.begin() + 1);
+        CHECK(edge.end_vertex_it == vertices.begin() + 2);
+      }
     }
   }
 }
@@ -536,7 +610,8 @@ TEST_CASE("vertical_extension_contact_points")
     Winding winding = GENERATE(Winding::ccw, Winding::cw);
     if (winding == Winding::cw)
     {
-      flip_horizontally(vertices_storage, nodes);
+      flip_horizontally(vertices_storage);
+      flip_horizontally(nodes);
     }
 
     ChainDecomposition chain_decomposition{&nodes[1], &nodes[8]};
@@ -695,7 +770,8 @@ TEST_CASE("vertical_extension_contact_points")
     Winding winding = GENERATE(Winding::ccw, Winding::cw);
     if (winding == Winding::cw)
     {
-      flip_horizontally(vertices_storage, nodes);
+      flip_horizontally(vertices_storage);
+      flip_horizontally(nodes);
     }
 
     std::vector<VerticalExtensionContactPoint> contact_points =
@@ -825,7 +901,8 @@ TEST_CASE("split_chain_decomposition_into_islands")
     Winding winding = GENERATE(Winding::ccw, Winding::cw);
     if (winding == Winding::cw)
     {
-      flip_horizontally(vertices_storage, nodes);
+      flip_horizontally(vertices_storage);
+      flip_horizontally(nodes);
     }
 
     std::vector<VerticalExtensionContactPoint> contact_points =
@@ -839,17 +916,17 @@ TEST_CASE("split_chain_decomposition_into_islands")
 
     CHECK(islands[0].contact_points.begin() == contact_points.data());
     CHECK(islands[0].contact_points.end() == contact_points.data() + 6);
-    CHECK(islands[0].range.first_edge_index == 0);
-    CHECK(islands[0].range.num_edges == 3);
-    CHECK(islands[0].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(2.40)));
-    CHECK(islands[0].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(-0.06)));
+    CHECK(islands[0].range.begin.edge_index == 0);
+    CHECK(islands[0].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(2.40)));
+    CHECK(islands[0].range.end.edge_index == 3);
+    CHECK(islands[0].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(-0.06)));
 
     CHECK(islands[1].contact_points.begin() == contact_points.data() + 7);
     CHECK(islands[1].contact_points.end() == contact_points.data() + 10);
-    CHECK(islands[1].range.first_edge_index == 3);
-    CHECK(islands[1].range.num_edges == 2);
-    CHECK(islands[1].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(-0.06)));
-    CHECK(islands[1].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(-2.34)));
+    CHECK(islands[1].range.begin.edge_index == 3);
+    CHECK(islands[1].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(-0.06)));
+    CHECK(islands[1].range.end.edge_index == 5);
+    CHECK(islands[1].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(-2.34)));
   }
 
   SECTION("Split at contact point of type 'vertex_upwards'")
@@ -914,7 +991,8 @@ TEST_CASE("split_chain_decomposition_into_islands")
     Winding winding = GENERATE(Winding::ccw, Winding::cw);
     if (winding == Winding::cw)
     {
-      flip_horizontally(vertices_storage, nodes);
+      flip_horizontally(vertices_storage);
+      flip_horizontally(nodes);
     }
 
     std::vector<VerticalExtensionContactPoint> contact_points =
@@ -928,17 +1006,17 @@ TEST_CASE("split_chain_decomposition_into_islands")
 
     CHECK(islands[0].contact_points.begin() == contact_points.data());
     CHECK(islands[0].contact_points.end() == contact_points.data() + 3);
-    CHECK(islands[0].range.first_edge_index == 0);
-    CHECK(islands[0].range.num_edges == 2);
-    CHECK(islands[0].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(-1.20)));
-    CHECK(islands[0].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(0.56)));
+    CHECK(islands[0].range.begin.edge_index == 0);
+    CHECK(islands[0].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(-1.20)));
+    CHECK(islands[0].range.end.edge_index == 2);
+    CHECK(islands[0].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(0.56)));
 
     CHECK(islands[1].contact_points.begin() == contact_points.data() + 4);
     CHECK(islands[1].contact_points.end() == contact_points.data() + 10);
-    CHECK(islands[1].range.first_edge_index == 2);
-    CHECK(islands[1].range.num_edges == 3);
-    CHECK(islands[1].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(0.56)));
-    CHECK(islands[1].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(2.04)));
+    CHECK(islands[1].range.begin.edge_index == 2);
+    CHECK(islands[1].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(0.56)));
+    CHECK(islands[1].range.end.edge_index == 5);
+    CHECK(islands[1].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(2.04)));
   }
 
   SECTION("Split at contact point of type 'lower_opp_edge'")
@@ -995,7 +1073,8 @@ TEST_CASE("split_chain_decomposition_into_islands")
     Winding winding = GENERATE(Winding::ccw, Winding::cw);
     if (winding == Winding::cw)
     {
-      flip_horizontally(vertices_storage, nodes);
+      flip_horizontally(vertices_storage);
+      flip_horizontally(nodes);
     }
 
     std::vector<VerticalExtensionContactPoint> contact_points =
@@ -1009,17 +1088,17 @@ TEST_CASE("split_chain_decomposition_into_islands")
 
     CHECK(islands[0].contact_points.begin() == contact_points.data());
     CHECK(islands[0].contact_points.end() == contact_points.data() + 4);
-    CHECK(islands[0].range.first_edge_index == 0);
-    CHECK(islands[0].range.num_edges == 5);
-    CHECK(islands[0].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(-5.10)));
-    CHECK(islands[0].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(-5.10)));
+    CHECK(islands[0].range.begin.edge_index == 0);
+    CHECK(islands[0].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(-5.10)));
+    CHECK(islands[0].range.end.edge_index == 4);
+    CHECK(islands[0].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(-5.10)));
 
     CHECK(islands[1].contact_points.begin() == contact_points.data() + 5);
     CHECK(islands[1].contact_points.end() == contact_points.data() + 8);
-    CHECK(islands[1].range.first_edge_index == 4);
-    CHECK(islands[1].range.num_edges == 3);
-    CHECK(islands[1].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(-5.10)));
-    CHECK(islands[1].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(-1.62)));
+    CHECK(islands[1].range.begin.edge_index == 4);
+    CHECK(islands[1].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(-5.10)));
+    CHECK(islands[1].range.end.edge_index == 7);
+    CHECK(islands[1].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(-1.62)));
   }
 
   SECTION("Split at contact point of type 'upper_opp_edge'")
@@ -1084,7 +1163,8 @@ TEST_CASE("split_chain_decomposition_into_islands")
     Winding winding = GENERATE(Winding::ccw, Winding::cw);
     if (winding == Winding::cw)
     {
-      flip_horizontally(vertices_storage, nodes);
+      flip_horizontally(vertices_storage);
+      flip_horizontally(nodes);
     }
 
     std::vector<VerticalExtensionContactPoint> contact_points =
@@ -1098,17 +1178,17 @@ TEST_CASE("split_chain_decomposition_into_islands")
 
     CHECK(islands[0].contact_points.begin() == contact_points.data());
     CHECK(islands[0].contact_points.end() == contact_points.data() + 4);
-    CHECK(islands[0].range.first_edge_index == 0);
-    CHECK(islands[0].range.num_edges == 4);
-    CHECK(islands[0].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(4.28)));
-    CHECK(islands[0].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(4.28)));
+    CHECK(islands[0].range.begin.edge_index == 0);
+    CHECK(islands[0].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(4.28)));
+    CHECK(islands[0].range.end.edge_index == 3);
+    CHECK(islands[0].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(4.28)));
 
     CHECK(islands[1].contact_points.begin() == contact_points.data() + 5);
     CHECK(islands[1].contact_points.end() == contact_points.data() + 8);
-    CHECK(islands[1].range.first_edge_index == 3);
-    CHECK(islands[1].range.num_edges == 3);
-    CHECK(islands[1].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(4.28)));
-    CHECK(islands[1].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(0.56)));
+    CHECK(islands[1].range.begin.edge_index == 3);
+    CHECK(islands[1].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(4.28)));
+    CHECK(islands[1].range.end.edge_index == 6);
+    CHECK(islands[1].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(0.56)));
   }
 
   SECTION("Infinite vertical extensions which don't agree with ray-cast result")
@@ -1175,7 +1255,8 @@ TEST_CASE("split_chain_decomposition_into_islands")
       Winding winding = GENERATE(Winding::ccw, Winding::cw);
       if (winding == Winding::cw)
       {
-        flip_horizontally(vertices_storage, nodes);
+        flip_horizontally(vertices_storage);
+        flip_horizontally(nodes);
       }
 
       std::vector<VerticalExtensionContactPoint> contact_points =
@@ -1188,10 +1269,10 @@ TEST_CASE("split_chain_decomposition_into_islands")
       REQUIRE(islands.size() == 1);
       CHECK(islands[0].contact_points.begin() == contact_points.data());
       CHECK(islands[0].contact_points.end() == contact_points.data() + 10);
-      CHECK(islands[0].range.first_edge_index == 0);
-      CHECK(islands[0].range.num_edges == 7);
-      CHECK(islands[0].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(-.06)));
-      CHECK(islands[0].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(.8)));
+      CHECK(islands[0].range.begin.edge_index == 0);
+      CHECK(islands[0].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(-.06)));
+      CHECK(islands[0].range.end.edge_index == 7);
+      CHECK(islands[0].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(.8)));
     }
 
     SECTION("Contact point on upper_opp_edge")
@@ -1255,7 +1336,8 @@ TEST_CASE("split_chain_decomposition_into_islands")
       Winding winding = GENERATE(Winding::ccw, Winding::cw);
       if (winding == Winding::cw)
       {
-        flip_horizontally(vertices_storage, nodes);
+        flip_horizontally(vertices_storage);
+        flip_horizontally(nodes);
       }
 
       std::vector<VerticalExtensionContactPoint> contact_points =
@@ -1268,10 +1350,10 @@ TEST_CASE("split_chain_decomposition_into_islands")
       REQUIRE(islands.size() == 1);
       CHECK(islands[0].contact_points.begin() == contact_points.data());
       CHECK(islands[0].contact_points.end() == contact_points.data() + 10);
-      CHECK(islands[0].range.first_edge_index == 0);
-      CHECK(islands[0].range.num_edges == 6);
-      CHECK(islands[0].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(4.88)));
-      CHECK(islands[0].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(4.26)));
+      CHECK(islands[0].range.begin.edge_index == 0);
+      CHECK(islands[0].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(4.88)));
+      CHECK(islands[0].range.end.edge_index == 6);
+      CHECK(islands[0].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(4.26)));
     }
 
     SECTION("Contact points on vertices")
@@ -1350,9 +1432,10 @@ TEST_CASE("split_chain_decomposition_into_islands")
       ChainDecomposition chain_decomposition{&nodes[2], &nodes[0]};
 
       Winding winding = GENERATE(Winding::ccw, Winding::cw);
-      if(winding == Winding::cw)
+      if (winding == Winding::cw)
       {
-        flip_horizontally(vertices_storage, nodes);
+        flip_horizontally(vertices_storage);
+        flip_horizontally(nodes);
       }
 
       std::vector<VerticalExtensionContactPoint> contact_points =
@@ -1365,10 +1448,10 @@ TEST_CASE("split_chain_decomposition_into_islands")
       REQUIRE(islands.size() == 1);
       CHECK(islands[0].contact_points.begin() == contact_points.data());
       CHECK(islands[0].contact_points.end() == contact_points.data() + 12);
-      CHECK(islands[0].range.first_edge_index == 0);
-      CHECK(islands[0].range.num_edges == 8);
-      CHECK(islands[0].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(-2.50)));
-      CHECK(islands[0].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(-2.50)));
+      CHECK(islands[0].range.begin.edge_index == 0);
+      CHECK(islands[0].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(-2.50)));
+      CHECK(islands[0].range.end.edge_index == 7);
+      CHECK(islands[0].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(-2.50)));
     }
   }
 
@@ -1450,7 +1533,8 @@ TEST_CASE("split_chain_decomposition_into_islands")
     Winding winding = GENERATE(Winding::ccw, Winding::cw);
     if (winding == Winding::cw)
     {
-      flip_horizontally(vertices_storage, nodes);
+      flip_horizontally(vertices_storage);
+      flip_horizontally(nodes);
     }
 
     std::vector<VerticalExtensionContactPoint> contact_points =
@@ -1464,24 +1548,24 @@ TEST_CASE("split_chain_decomposition_into_islands")
 
     CHECK(islands[0].contact_points.begin() == contact_points.data());
     CHECK(islands[0].contact_points.end() == contact_points.data() + 3);
-    CHECK(islands[0].range.first_edge_index == 0);
-    CHECK(islands[0].range.num_edges == 2);
-    CHECK(islands[0].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(-3.60)));
-    CHECK(islands[0].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(-1.28)));
+    CHECK(islands[0].range.begin.edge_index == 0);
+    CHECK(islands[0].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(-3.60)));
+    CHECK(islands[0].range.end.edge_index == 2);
+    CHECK(islands[0].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(-1.28)));
 
     CHECK(islands[1].contact_points.begin() == contact_points.data() + 4);
     CHECK(islands[1].contact_points.end() == contact_points.data() + 10);
-    CHECK(islands[1].range.first_edge_index == 2);
-    CHECK(islands[1].range.num_edges == 3);
-    CHECK(islands[1].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(-1.28)));
-    CHECK(islands[1].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(1.24)));
+    CHECK(islands[1].range.begin.edge_index == 2);
+    CHECK(islands[1].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(-1.28)));
+    CHECK(islands[1].range.end.edge_index == 5);
+    CHECK(islands[1].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(1.24)));
 
     CHECK(islands[2].contact_points.begin() == contact_points.data() + 11);
     CHECK(islands[2].contact_points.end() == contact_points.data() + 14);
-    CHECK(islands[2].range.first_edge_index == 5);
-    CHECK(islands[2].range.num_edges == 2);
-    CHECK(islands[2].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(1.24)));
-    CHECK(islands[2].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(2.64)));
+    CHECK(islands[2].range.begin.edge_index == 5);
+    CHECK(islands[2].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(1.24)));
+    CHECK(islands[2].range.end.edge_index == 7);
+    CHECK(islands[2].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(2.64)));
   }
 
   SECTION("Split at multiple locations, needs recursion")
@@ -1562,7 +1646,8 @@ TEST_CASE("split_chain_decomposition_into_islands")
     Winding winding = GENERATE(Winding::ccw, Winding::cw);
     if (winding == Winding::cw)
     {
-      flip_horizontally(vertices_storage, nodes);
+      flip_horizontally(vertices_storage);
+      flip_horizontally(nodes);
     }
 
     std::vector<VerticalExtensionContactPoint> contact_points =
@@ -1576,24 +1661,24 @@ TEST_CASE("split_chain_decomposition_into_islands")
 
     CHECK(islands[0].contact_points.begin() == contact_points.data() + 2);
     CHECK(islands[0].contact_points.end() == contact_points.data() + 3);
-    CHECK(islands[0].range.first_edge_index == 1);
-    CHECK(islands[0].range.num_edges == 3);
-    CHECK(islands[0].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(6.24)));
-    CHECK(islands[0].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(6.24)));
+    CHECK(islands[0].range.begin.edge_index == 1);
+    CHECK(islands[0].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(6.24)));
+    CHECK(islands[0].range.end.edge_index == 3);
+    CHECK(islands[0].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(6.24)));
 
     CHECK(islands[1].contact_points.begin() == contact_points.data() + 5);
     CHECK(islands[1].contact_points.end() == contact_points.data() + 6);
-    CHECK(islands[1].range.first_edge_index == 3);
-    CHECK(islands[1].range.num_edges == 3);
-    CHECK(islands[1].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(6.24)));
-    CHECK(islands[1].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(6.24)));
+    CHECK(islands[1].range.begin.edge_index == 3);
+    CHECK(islands[1].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(6.24)));
+    CHECK(islands[1].range.end.edge_index == 5);
+    CHECK(islands[1].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(6.24)));
 
     CHECK(islands[2].contact_points.begin() == contact_points.data() + 8);
     CHECK(islands[2].contact_points.end() == contact_points.data() + 12);
-    CHECK(islands[2].range.first_edge_index == 5);
-    CHECK(islands[2].range.num_edges == 4);
-    CHECK(islands[2].range.start_point_x == flip_x_if_necessary(winding, ScalarDeg1(6.24)));
-    CHECK(islands[2].range.end_point_x == flip_x_if_necessary(winding, ScalarDeg1(6.24)));
+    CHECK(islands[2].range.begin.edge_index == 5);
+    CHECK(islands[2].range.begin.x == flip_x_if_necessary(winding, ScalarDeg1(6.24)));
+    CHECK(islands[2].range.end.edge_index == 9);
+    CHECK(islands[2].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(6.24)));
   }
 }
 

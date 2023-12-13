@@ -7,68 +7,61 @@
 namespace dida::detail::vertical_decomposition
 {
 
-bool PolygonLocationLessThan::operator()(const PolygonLocation& a, const PolygonLocation& b) const
-{
-  if (a.edge_index != b.edge_index)
-  {
-    return a.edge_index < b.edge_index;
-  }
-
-  if (lex_less_than(vertices[a.edge_index], vertices[succ_modulo(a.edge_index, vertices.size())]))
-  {
-    return a.x < b.x;
-  }
-  else
-  {
-    return a.x > b.x;
-  }
-}
-
-std::pair<PolygonRange, PolygonRange> PolygonRange::split(VerticesView vertices, PolygonLocation location) const
-{
-  // There's no support yet for the case when num_edges == vertices.size() + 1 (which can happen when we have a range
-  // whose start and end point are strictly on the interior of the same edge).
-  DIDA_ASSERT(num_edges <= vertices.size());
-
-  size_t a_num_edges = sub_modulo(location.edge_index, first_edge_index, vertices.size());
-  size_t b_num_edges = num_edges - a_num_edges;
-
-  if (location.x != vertices[location.edge_index].x())
-  {
-    a_num_edges++;
-  }
-
-  return std::make_pair(
-      PolygonRange{
-          first_edge_index,
-          a_num_edges,
-          start_point_x,
-          location.x,
-      },
-      PolygonRange{
-          location.edge_index,
-          b_num_edges,
-          location.x,
-          end_point_x,
-      });
-}
-
-Edge ray_cast_up(VerticesView vertices, Winding winding, const PolygonRange& range, Point2 ray_origin)
+Edge ray_cast_up(VerticesView vertices, Winding winding, std::optional<PolygonRange> range, Point2 ray_origin)
 {
   YOnEdge result_y = YOnEdge::infinity();
   Edge result = Edge::invalid();
 
-  VertexIt edge_start_it = vertices.begin() + range.first_edge_index;
-  for (size_t i = 0; i < range.num_edges; i++)
+  VertexIt edge_start_it;
+  size_t num_edges;
+  if (range)
+  {
+    edge_start_it = vertices.begin() + range->begin.edge_index;
+    num_edges = sub_modulo(range->end.edge_index, range->begin.edge_index, vertices.size()) + 1;
+  }
+  else
+  {
+    edge_start_it = vertices.begin();
+    num_edges = vertices.size();
+  }
+
+  for (size_t i = 0; i < num_edges; i++)
   {
     VertexIt edge_end_it = next_cyclic(vertices, edge_start_it);
 
-    ScalarDeg1 edge_start_x = i == 0 ? range.start_point_x : edge_start_it->x();
-    ScalarDeg1 edge_end_x = i == range.num_edges - 1 ? range.end_point_x : edge_end_it->x();
+    bool edge_start_on_left = edge_start_it->x() < ray_origin.x();
+    bool edge_end_on_left = edge_end_it->x() < ray_origin.x();
 
-    bool edge_start_on_left = edge_start_x < ray_origin.x();
-    bool edge_end_on_left = edge_end_x < ray_origin.x();
-    if (edge_start_on_left != edge_end_on_left)
+    bool bidirectional_ray_intersects_edge = edge_start_on_left != edge_end_on_left;
+
+    if (range)
+    {
+      if (bidirectional_ray_intersects_edge && i == 0)
+      {
+        if (edge_start_on_left)
+        {
+          bidirectional_ray_intersects_edge = ray_origin.x() >= range->begin.x;
+        }
+        else
+        {
+          bidirectional_ray_intersects_edge = ray_origin.x() <= range->begin.x;
+        }
+      }
+
+      if (bidirectional_ray_intersects_edge && i == num_edges - 1)
+      {
+        if (edge_start_on_left)
+        {
+          bidirectional_ray_intersects_edge = ray_origin.x() <= range->end.x;
+        }
+        else
+        {
+          bidirectional_ray_intersects_edge = ray_origin.x() >= range->end.x;
+        }
+      }
+    }
+
+    if (bidirectional_ray_intersects_edge)
     {
       YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
       if (cur_y > ray_origin.y() && cur_y < result_y)
@@ -85,27 +78,66 @@ Edge ray_cast_up(VerticesView vertices, Winding winding, const PolygonRange& ran
   return result;
 }
 
-Edge ray_cast_down(VerticesView vertices, Winding winding, const PolygonRange& range, Point2 ray_origin)
+Edge ray_cast_down(VerticesView vertices, Winding winding, std::optional<PolygonRange> range, Point2 ray_origin)
 {
   YOnEdge result_y = YOnEdge::negative_infinity();
   Edge result = Edge::invalid();
 
-  VertexIt edge_start_it = vertices.begin() + range.first_edge_index;
-  for (size_t i = 0; i < range.num_edges; i++)
+  VertexIt edge_start_it;
+  size_t num_edges;
+  if (range)
+  {
+    edge_start_it = vertices.begin() + range->begin.edge_index;
+    num_edges = sub_modulo(range->end.edge_index, range->begin.edge_index, vertices.size()) + 1;
+  }
+  else
+  {
+    edge_start_it = vertices.begin();
+    num_edges = vertices.size();
+  }
+
+  for (size_t i = 0; i < num_edges; i++)
   {
     VertexIt edge_end_it = next_cyclic(vertices, edge_start_it);
 
-    ScalarDeg1 edge_start_x = i == 0 ? range.start_point_x : edge_start_it->x();
-    ScalarDeg1 edge_end_x = i == range.num_edges - 1 ? range.end_point_x : edge_end_it->x();
+    bool edge_start_on_left = edge_start_it->x() <= ray_origin.x();
+    bool edge_end_on_left = edge_end_it->x() <= ray_origin.x();
 
-    bool edge_start_on_left = edge_start_x <= ray_origin.x();
-    bool edge_end_on_left = edge_end_x <= ray_origin.x();
-    if (edge_start_on_left != edge_end_on_left)
+    bool bidirectional_ray_intersects_edge = edge_start_on_left != edge_end_on_left;
+
+    if (range)
+    {
+      if (bidirectional_ray_intersects_edge && i == 0)
+      {
+        if (edge_start_on_left)
+        {
+          bidirectional_ray_intersects_edge = ray_origin.x() >= range->begin.x;
+        }
+        else
+        {
+          bidirectional_ray_intersects_edge = ray_origin.x() <= range->begin.x;
+        }
+      }
+
+      if (bidirectional_ray_intersects_edge && i == num_edges - 1)
+      {
+        if (edge_start_on_left)
+        {
+          bidirectional_ray_intersects_edge = ray_origin.x() <= range->end.x;
+        }
+        else
+        {
+          bidirectional_ray_intersects_edge = ray_origin.x() >= range->end.x;
+        }
+      }
+    }
+
+    if (bidirectional_ray_intersects_edge)
     {
       YOnEdge cur_y = y_on_edge_for_x(Segment2(*edge_start_it, *edge_end_it), ray_origin.x());
       if (cur_y < ray_origin.y() && cur_y > result_y)
       {
-        bool on_interior_side = edge_start_on_left == (winding == Winding::ccw);
+        bool on_interior_side = (edge_start_it->x() < edge_end_it->x()) == (winding == Winding::ccw);
         result = on_interior_side ? Edge{edge_start_it, edge_end_it} : Edge::invalid();
         result_y = cur_y;
       }
@@ -387,8 +419,6 @@ void split_chain_decomposition_into_islands_rec(VerticesView vertices, Winding w
 
     if (should_split)
     {
-      std::pair<PolygonRange, PolygonRange> sub_ranges = range.split(vertices, split_location);
-
       if (winding == Winding::ccw)
       {
         if (i != island_begin)
@@ -396,10 +426,10 @@ void split_chain_decomposition_into_islands_rec(VerticesView vertices, Winding w
           ArrayView<const VerticalExtensionContactPoint> rec_contact_points(contact_points.begin() + island_begin,
                                                                             i - island_begin);
           split_chain_decomposition_into_islands_rec(vertices, winding, chain_decomposition, rec_contact_points,
-                                                     sub_ranges.first, result);
+                                                     PolygonRange{range.begin, split_location}, result);
         }
 
-        range = sub_ranges.second;
+        range = PolygonRange{split_location, range.end};
         island_begin = i + 1;
       }
       else
@@ -409,10 +439,10 @@ void split_chain_decomposition_into_islands_rec(VerticesView vertices, Winding w
           ArrayView<const VerticalExtensionContactPoint> rec_contact_points(
               contact_points.begin() + contact_points.size() - i, i - island_begin);
           split_chain_decomposition_into_islands_rec(vertices, winding, chain_decomposition, rec_contact_points,
-                                                     sub_ranges.second, result);
+                                                     PolygonRange{split_location, range.end}, result);
         }
 
-        range = sub_ranges.first;
+        range = PolygonRange{range.begin, split_location};
         island_begin = i + 1;
       }
     }
@@ -445,14 +475,19 @@ split_chain_decomposition_into_islands(VerticesView vertices, Winding winding,
                                        const ChainDecomposition& chain_decomposition,
                                        ArrayView<const VerticalExtensionContactPoint> contact_points)
 {
-  PolygonRange full_range{
-      static_cast<size_t>(chain_decomposition.first_node->vertex_it - vertices.begin()),
-      distance_cyclic(vertices, chain_decomposition.first_node->vertex_it, chain_decomposition.last_node->vertex_it),
-      chain_decomposition.first_node->vertex_it->x(),
-      chain_decomposition.last_node->vertex_it->x(),
+  PolygonRange chain_range{
+      PolygonLocation{
+          static_cast<size_t>(chain_decomposition.first_node->vertex_it - vertices.begin()),
+          chain_decomposition.first_node->vertex_it->x(),
+      },
+      PolygonLocation{
+          static_cast<size_t>(chain_decomposition.last_node->vertex_it - vertices.begin()),
+          chain_decomposition.last_node->vertex_it->x(),
+      },
   };
+
   std::vector<ChainDecompositionIsland> result;
-  split_chain_decomposition_into_islands_rec(vertices, winding, chain_decomposition, contact_points, full_range,
+  split_chain_decomposition_into_islands_rec(vertices, winding, chain_decomposition, contact_points, chain_range,
                                              result);
 
   if (winding == Winding::cw)
@@ -625,8 +660,6 @@ bool validate_vertical_extensions(VerticesView vertices, ArrayView<const ChainDe
 
 bool validate_vertical_extensions(VerticesView vertices, const std::set<const Node*>& nodes)
 {
-  PolygonRange full_range{0, vertices.size(), vertices[0].x(), vertices[0].x()};
-
   for (const Node* node : nodes)
   {
     Edge expected_lower_opp_edge, expected_upper_opp_edge;
@@ -648,8 +681,8 @@ bool validate_vertical_extensions(VerticesView vertices, const std::set<const No
     }
     else
     {
-      expected_lower_opp_edge = ray_cast_down(vertices, Winding::ccw, full_range, *node->vertex_it);
-      expected_upper_opp_edge = ray_cast_up(vertices, Winding::ccw, full_range, *node->vertex_it);
+      expected_lower_opp_edge = ray_cast_down(vertices, Winding::ccw, std::nullopt, *node->vertex_it);
+      expected_upper_opp_edge = ray_cast_up(vertices, Winding::ccw, std::nullopt, *node->vertex_it);
     }
 
     if (node->lower_opp_edge != expected_lower_opp_edge)

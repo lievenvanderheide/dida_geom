@@ -323,10 +323,14 @@ bool validate_node_neighbors(VerticesView vertices, Winding winding, const Chain
 bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition)
 {
   PolygonRange range{
-      static_cast<size_t>(chain_decomposition.first_node->vertex_it - vertices.begin()),
-      distance_cyclic(vertices, chain_decomposition.first_node->vertex_it, chain_decomposition.last_node->vertex_it),
-      chain_decomposition.first_node->vertex_it->x(),
-      chain_decomposition.last_node->vertex_it->x(),
+      PolygonLocation{
+          static_cast<size_t>(chain_decomposition.first_node->vertex_it - vertices.begin()),
+          chain_decomposition.first_node->vertex_it->x(),
+      },
+      PolygonLocation{
+          static_cast<size_t>(chain_decomposition.last_node->vertex_it - vertices.begin()),
+          chain_decomposition.last_node->vertex_it->x(),
+      },
   };
 
   std::set<const Node*> nodes = gather_nodes(chain_decomposition.first_node);
@@ -391,13 +395,16 @@ std::string_view node_type_to_string(NodeType node_type)
   }
 }
 
-void flip_horizontally(ArrayView<Point2> vertices, ArrayView<Node> nodes)
+void flip_horizontally(ArrayView<Point2> vertices)
 {
   for (Point2& v : vertices)
   {
     v = Point2(-v.x(), v.y());
   }
+}
 
+void flip_horizontally(ArrayView<Node> nodes)
+{
   for (Node& node : nodes)
   {
     node.direction = other_direction(node.direction);
