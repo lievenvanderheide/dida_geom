@@ -51,7 +51,7 @@ TEST_CASE("vertical_decomposition_with_divide_and_conquer_builder")
 
     Node* root_node = vertical_decomposition_with_divide_and_conquer_builder(
         vertices, node_pool, VerticalDecompositionType::interior_decomposition);
-    CHECK(validate_polygon_decomposition(vertices, root_node));
+    CHECK(validate_polygon_decomposition(vertices, Winding::ccw, root_node));
   }
 
   SECTION("General case")
@@ -71,7 +71,7 @@ TEST_CASE("vertical_decomposition_with_divide_and_conquer_builder")
     Node* root_node = vertical_decomposition_with_divide_and_conquer_builder(
         vertices, node_pool, VerticalDecompositionType::interior_decomposition);
 
-    CHECK(validate_polygon_decomposition(vertices, root_node));
+    CHECK(validate_polygon_decomposition(vertices, Winding::ccw, root_node));
   }
 
   SECTION("Spirals")
@@ -87,7 +87,7 @@ TEST_CASE("vertical_decomposition_with_divide_and_conquer_builder")
 
       Node* root_node = vertical_decomposition_with_divide_and_conquer_builder(
           vertices, node_pool, VerticalDecompositionType::interior_decomposition);
-      CHECK(validate_polygon_decomposition(vertices, root_node));
+      CHECK(validate_polygon_decomposition(vertices, Winding::ccw, root_node));
     }
 
     SECTION("Clockwise")
@@ -99,7 +99,7 @@ TEST_CASE("vertical_decomposition_with_divide_and_conquer_builder")
 
       Node* root_node = vertical_decomposition_with_divide_and_conquer_builder(
           vertices, node_pool, VerticalDecompositionType::interior_decomposition);
-      CHECK(validate_polygon_decomposition(vertices, root_node));
+      CHECK(validate_polygon_decomposition(vertices, Winding::ccw, root_node));
     }
   }
 }

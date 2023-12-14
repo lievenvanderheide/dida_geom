@@ -320,7 +320,7 @@ bool validate_node_neighbors(VerticesView vertices, Winding winding, const Chain
   return true;
 }
 
-bool validate_chain_decomposition(VerticesView vertices, const ChainDecomposition& chain_decomposition)
+bool validate_chain_decomposition(VerticesView vertices, Winding winding, const ChainDecomposition& chain_decomposition)
 {
   PolygonRange range{
       PolygonLocation{
@@ -357,7 +357,7 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
   return true;
 }
 
-bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node)
+bool validate_polygon_decomposition(VerticesView vertices, Winding winding, const Node* root_node)
 {
   std::set<const Node*> nodes = gather_nodes(root_node);
 

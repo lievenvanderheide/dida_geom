@@ -25,11 +25,11 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
 
     CHECK(chain_decompositions[0].first_node->vertex_it == vertices.begin() + 1);
     CHECK(chain_decompositions[0].last_node->vertex_it == vertices.begin() + 7);
-    CHECK(validate_chain_decomposition(vertices, chain_decompositions[0]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, chain_decompositions[0]));
 
     CHECK(chain_decompositions[1].first_node->vertex_it == vertices.begin() + 7);
     CHECK(chain_decompositions[1].last_node->vertex_it == vertices.begin() + 1);
-    CHECK(validate_chain_decomposition(vertices, chain_decompositions[1]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, chain_decompositions[1]));
   }
 
   SECTION("Zigzag complex")
@@ -54,11 +54,11 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
 
     CHECK(chain_decompositions[0].first_node->vertex_it == vertices.begin() + 1);
     CHECK(chain_decompositions[0].last_node->vertex_it == vertices.begin() + 28);
-    CHECK(validate_chain_decomposition(vertices, chain_decompositions[0]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, chain_decompositions[0]));
 
     CHECK(chain_decompositions[1].first_node->vertex_it == vertices.begin() + 28);
     CHECK(chain_decompositions[1].last_node->vertex_it == vertices.begin() + 1);
-    CHECK(validate_chain_decomposition(vertices, chain_decompositions[1]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, chain_decompositions[1]));
   }
 
   SECTION("Greater sinuosity")
@@ -79,19 +79,19 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
 
     CHECK(chain_decompositions[0].first_node->vertex_it == vertices.begin() + 1);
     CHECK(chain_decompositions[0].last_node->vertex_it == vertices.begin() + 8);
-    CHECK(validate_chain_decomposition(vertices, chain_decompositions[0]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, chain_decompositions[0]));
 
     CHECK(chain_decompositions[1].first_node->vertex_it == vertices.begin() + 8);
     CHECK(chain_decompositions[1].last_node->vertex_it == vertices.begin() + 16);
-    CHECK(validate_chain_decomposition(vertices, chain_decompositions[1]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, chain_decompositions[1]));
 
     CHECK(chain_decompositions[2].first_node->vertex_it == vertices.begin() + 16);
     CHECK(chain_decompositions[2].last_node->vertex_it == vertices.begin() + 21);
-    CHECK(validate_chain_decomposition(vertices, chain_decompositions[2]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, chain_decompositions[2]));
 
     CHECK(chain_decompositions[3].first_node->vertex_it == vertices.begin() + 21);
     CHECK(chain_decompositions[3].last_node->vertex_it == vertices.begin() + 1);
-    CHECK(validate_chain_decomposition(vertices, chain_decompositions[3]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, chain_decompositions[3]));
   }
 
   SECTION("Opposites for chain last nodes")
@@ -110,15 +110,15 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
 
     CHECK(chain_decompositions[0].first_node->vertex_it == vertices.begin() + 1);
     CHECK(chain_decompositions[0].last_node->vertex_it == vertices.begin() + 4);
-    CHECK(validate_chain_decomposition(vertices, chain_decompositions[0]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, chain_decompositions[0]));
 
     CHECK(chain_decompositions[1].first_node->vertex_it == vertices.begin() + 4);
     CHECK(chain_decompositions[1].last_node->vertex_it == vertices.begin() + 9);
-    CHECK(validate_chain_decomposition(vertices, chain_decompositions[1]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, chain_decompositions[1]));
 
     CHECK(chain_decompositions[2].first_node->vertex_it == vertices.begin() + 9);
     CHECK(chain_decompositions[2].last_node->vertex_it == vertices.begin() + 1);
-    CHECK(validate_chain_decomposition(vertices, chain_decompositions[2]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, chain_decompositions[2]));
   }
 
   SECTION("Spiral")
@@ -138,15 +138,15 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
 
     CHECK(chain_decompositions[0].first_node->vertex_it == vertices.begin() + 1);
     CHECK(chain_decompositions[0].last_node->vertex_it == vertices.begin() + 5);
-    CHECK(validate_chain_decomposition(vertices, chain_decompositions[0]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, chain_decompositions[0]));
 
     CHECK(chain_decompositions[1].first_node->vertex_it == vertices.begin() + 5);
     CHECK(chain_decompositions[1].last_node->vertex_it == vertices.begin() + 9);
-    CHECK(validate_chain_decomposition(vertices, chain_decompositions[1]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, chain_decompositions[1]));
 
     CHECK(chain_decompositions[2].first_node->vertex_it == vertices.begin() + 9);
     CHECK(chain_decompositions[2].last_node->vertex_it == vertices.begin() + 1);
-    CHECK(validate_chain_decomposition(vertices, chain_decompositions[2]));
+    CHECK(validate_chain_decomposition(vertices, Winding::ccw, chain_decompositions[2]));
   }
 
   SECTION("Monotone polygon")
@@ -162,7 +162,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
 
       REQUIRE(chain_decompositions.size() == 1);
       CHECK(chain_decompositions[0].first_node->vertex_it == vertices.begin() + 2);
-      CHECK(validate_polygon_decomposition(vertices, chain_decompositions[0].first_node));
+      CHECK(validate_polygon_decomposition(vertices, Winding::ccw, chain_decompositions[0].first_node));
     }
 
     SECTION("First node vertex on right side")
@@ -178,7 +178,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
 
       REQUIRE(chain_decompositions.size() == 1);
       CHECK(chain_decompositions[0].first_node->vertex_it == vertices.begin() + 3);
-      CHECK(validate_polygon_decomposition(vertices, chain_decompositions[0].first_node));
+      CHECK(validate_polygon_decomposition(vertices, Winding::ccw, chain_decompositions[0].first_node));
     }
   }
 }
