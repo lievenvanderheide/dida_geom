@@ -340,7 +340,7 @@ bool validate_chain_decomposition(VerticesView vertices, const ChainDecompositio
         vertical_extension_contact_points(chain_decomposition, Winding::ccw);
     std::vector<ChainDecompositionIsland> islands =
         split_chain_decomposition_into_islands(vertices, Winding::ccw, chain_decomposition, contact_points);
-    if (!validate_vertical_extensions(vertices, islands))
+    if (!validate_vertical_extensions(vertices, Winding::ccw, islands))
     {
       return false;
     }
@@ -361,7 +361,7 @@ bool validate_polygon_decomposition(VerticesView vertices, const Node* root_node
 {
   std::set<const Node*> nodes = gather_nodes(root_node);
 
-  if (!validate_vertical_extensions(vertices, nodes))
+  if (!validate_vertical_extensions(vertices, Winding::ccw, nodes))
   {
     return false;
   }

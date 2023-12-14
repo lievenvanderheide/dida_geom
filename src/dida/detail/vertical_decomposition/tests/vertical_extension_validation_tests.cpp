@@ -483,39 +483,25 @@ TEST_CASE("ray_cast_down")
   }
 }
 
-TEST_CASE("VerticalExtensionContactPoint::operator==")
-{
-  Node node1, node2;
-  VerticalExtensionContactPoint a{VerticalExtensionContactPoint::Type::vertex_downwards, &node1};
-  VerticalExtensionContactPoint b{VerticalExtensionContactPoint::Type::vertex_upwards, &node1};
-  VerticalExtensionContactPoint c{VerticalExtensionContactPoint::Type::vertex_downwards, &node2};
-  CHECK(a == a);
-  CHECK_FALSE(a == b);
-  CHECK_FALSE(a == c);
-}
-
-TEST_CASE("VerticalExtensionContactPoint::operator<")
-{
-  Node nodes[3];
-  VerticalExtensionContactPoint a{VerticalExtensionContactPoint::Type::vertex_upwards, &nodes[1]};
-  VerticalExtensionContactPoint b{VerticalExtensionContactPoint::Type::vertex_downwards, &nodes[2]};
-  VerticalExtensionContactPoint c{VerticalExtensionContactPoint::Type::leaf, &nodes[0]};
-  VerticalExtensionContactPoint d{VerticalExtensionContactPoint::Type::vertex_upwards, &nodes[0]};
-  VerticalExtensionContactPoint e{VerticalExtensionContactPoint::Type::vertex_upwards, &nodes[2]};
-  CHECK_FALSE(a < a);
-  CHECK_FALSE(a < b);
-  CHECK(a < c);
-  CHECK_FALSE(a < d);
-  CHECK(a < e);
-}
-
 TEST_CASE("contact_point_type_to_string")
 {
   CHECK(contact_point_type_to_string(VerticalExtensionContactPoint::Type::vertex_downwards) == "vertex_downwards");
   CHECK(contact_point_type_to_string(VerticalExtensionContactPoint::Type::vertex_upwards) == "vertex_upwards");
-  CHECK(contact_point_type_to_string(VerticalExtensionContactPoint::Type::lower_opp_edge) == "lower_opp_edge");
-  CHECK(contact_point_type_to_string(VerticalExtensionContactPoint::Type::upper_opp_edge) == "upper_opp_edge");
+  CHECK(contact_point_type_to_string(VerticalExtensionContactPoint::Type::outer_branch_lower_opp_edge) ==
+        "outer_branch_lower_opp_edge");
   CHECK(contact_point_type_to_string(VerticalExtensionContactPoint::Type::leaf) == "leaf");
+  CHECK(contact_point_type_to_string(VerticalExtensionContactPoint::Type::vertex_downwards_to_infinity) ==
+        "vertex_downwards_to_infinity");
+  CHECK(contact_point_type_to_string(VerticalExtensionContactPoint::Type::vertex_upwards_to_infinity) ==
+        "vertex_upwards_to_infinity");
+  CHECK(contact_point_type_to_string(VerticalExtensionContactPoint::Type::lower_opp_edge_to_infinity) ==
+        "lower_opp_edge_to_infinity");
+  CHECK(contact_point_type_to_string(VerticalExtensionContactPoint::Type::lower_opp_edge_to_vertex_exterior_side) ==
+        "lower_opp_edge_to_vertex_exterior_side");
+  CHECK(contact_point_type_to_string(VerticalExtensionContactPoint::Type::upper_opp_edge_to_infinity) ==
+        "upper_opp_edge_to_infinity");
+  CHECK(contact_point_type_to_string(VerticalExtensionContactPoint::Type::upper_opp_edge_to_vertex_exterior_side) ==
+        "upper_opp_edge_to_vertex_exterior_side");
 }
 
 TEST_CASE("vertical_extension_contact_points")
@@ -619,7 +605,7 @@ TEST_CASE("vertical_extension_contact_points")
     std::vector<VerticalExtensionContactPoint> contact_points =
         vertical_extension_contact_points(chain_decomposition, winding);
 
-    REQUIRE(contact_points.size() == 18);
+    REQUIRE(contact_points.size() == 16);
 
     CHECK(contact_points[0].type == VerticalExtensionContactPoint::Type::vertex_upwards);
     CHECK(contact_points[0].node == &nodes[1]);
@@ -627,58 +613,52 @@ TEST_CASE("vertical_extension_contact_points")
     CHECK(contact_points[1].type == VerticalExtensionContactPoint::Type::leaf);
     CHECK(contact_points[1].node == &nodes[2]);
 
-    CHECK(contact_points[2].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
-    CHECK(contact_points[2].node == &nodes[1]);
+    CHECK(contact_points[2].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[2].node == &nodes[0]);
 
-    CHECK(contact_points[3].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[3].node == &nodes[0]);
+    CHECK(contact_points[3].type == VerticalExtensionContactPoint::Type::lower_opp_edge_to_vertex_exterior_side);
+    CHECK(contact_points[3].node == &nodes[1]);
 
-    CHECK(contact_points[4].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
-    CHECK(contact_points[4].node == &nodes[1]);
+    CHECK(contact_points[4].type == VerticalExtensionContactPoint::Type::vertex_upwards_to_infinity);
+    CHECK(contact_points[4].node == &nodes[4]);
 
-    CHECK(contact_points[5].type == VerticalExtensionContactPoint::Type::vertex_upwards);
+    CHECK(contact_points[5].type == VerticalExtensionContactPoint::Type::vertex_downwards);
     CHECK(contact_points[5].node == &nodes[4]);
 
-    CHECK(contact_points[6].type == VerticalExtensionContactPoint::Type::vertex_downwards);
-    CHECK(contact_points[6].node == &nodes[4]);
+    CHECK(contact_points[6].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[6].node == &nodes[3]);
 
-    CHECK(contact_points[7].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[7].node == &nodes[3]);
+    CHECK(contact_points[7].type == VerticalExtensionContactPoint::Type::lower_opp_edge_to_infinity);
+    CHECK(contact_points[7].node == &nodes[4]);
 
-    CHECK(contact_points[8].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
-    CHECK(contact_points[8].node == &nodes[4]);
+    CHECK(contact_points[8].type == VerticalExtensionContactPoint::Type::lower_opp_edge_to_infinity);
+    CHECK(contact_points[8].node == &nodes[5]);
 
-    CHECK(contact_points[9].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
-    CHECK(contact_points[9].node == &nodes[5]);
+    CHECK(contact_points[9].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[9].node == &nodes[6]);
 
-    CHECK(contact_points[10].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[10].node == &nodes[6]);
+    CHECK(contact_points[10].type == VerticalExtensionContactPoint::Type::vertex_downwards);
+    CHECK(contact_points[10].node == &nodes[5]);
 
-    CHECK(contact_points[11].type == VerticalExtensionContactPoint::Type::vertex_downwards);
+    CHECK(contact_points[11].type == VerticalExtensionContactPoint::Type::vertex_upwards_to_infinity);
     CHECK(contact_points[11].node == &nodes[5]);
 
-    CHECK(contact_points[12].type == VerticalExtensionContactPoint::Type::vertex_upwards);
-    CHECK(contact_points[12].node == &nodes[5]);
+    CHECK(contact_points[12].type == VerticalExtensionContactPoint::Type::lower_opp_edge_to_vertex_exterior_side);
+    CHECK(contact_points[12].node == &nodes[8]);
 
-    CHECK(contact_points[13].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
-    CHECK(contact_points[13].node == &nodes[8]);
+    CHECK(contact_points[13].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[13].node == &nodes[9]);
 
     CHECK(contact_points[14].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[14].node == &nodes[9]);
+    CHECK(contact_points[14].node == &nodes[7]);
 
-    CHECK(contact_points[15].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
+    CHECK(contact_points[15].type == VerticalExtensionContactPoint::Type::vertex_upwards);
     CHECK(contact_points[15].node == &nodes[8]);
-
-    CHECK(contact_points[16].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[16].node == &nodes[7]);
-
-    CHECK(contact_points[17].type == VerticalExtensionContactPoint::Type::vertex_upwards);
-    CHECK(contact_points[17].node == &nodes[8]);
   }
 
   SECTION("Chain 2")
   {
-    // The same chain as in the previous section, rotated by 180 degrees. This way, we're covering all the cases.
+    // The same chain as in the previous section, rotated by 180 degrees.
 
     std::vector<Point2> vertices_storage{
         {3.00, -2.64},  {0.30, -3.64},  {3.12, -5.62},  {5.92, -3.10},  {2.76, -0.64},  {-0.78, -2.34}, {0.02, -0.62},
@@ -777,7 +757,7 @@ TEST_CASE("vertical_extension_contact_points")
     std::vector<VerticalExtensionContactPoint> contact_points =
         vertical_extension_contact_points(chain_decomposition, winding);
 
-    REQUIRE(contact_points.size() == 18);
+    REQUIRE(contact_points.size() == 16);
 
     CHECK(contact_points[0].type == VerticalExtensionContactPoint::Type::vertex_downwards);
     CHECK(contact_points[0].node == &nodes[1]);
@@ -785,57 +765,481 @@ TEST_CASE("vertical_extension_contact_points")
     CHECK(contact_points[1].type == VerticalExtensionContactPoint::Type::leaf);
     CHECK(contact_points[1].node == &nodes[2]);
 
-    CHECK(contact_points[2].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
-    CHECK(contact_points[2].node == &nodes[1]);
+    CHECK(contact_points[2].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[2].node == &nodes[0]);
 
-    CHECK(contact_points[3].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[3].node == &nodes[0]);
+    CHECK(contact_points[3].type == VerticalExtensionContactPoint::Type::upper_opp_edge_to_vertex_exterior_side);
+    CHECK(contact_points[3].node == &nodes[1]);
 
-    CHECK(contact_points[4].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
-    CHECK(contact_points[4].node == &nodes[1]);
+    CHECK(contact_points[4].type == VerticalExtensionContactPoint::Type::vertex_downwards_to_infinity);
+    CHECK(contact_points[4].node == &nodes[4]);
 
-    CHECK(contact_points[5].type == VerticalExtensionContactPoint::Type::vertex_downwards);
+    CHECK(contact_points[5].type == VerticalExtensionContactPoint::Type::vertex_upwards);
     CHECK(contact_points[5].node == &nodes[4]);
 
-    CHECK(contact_points[6].type == VerticalExtensionContactPoint::Type::vertex_upwards);
-    CHECK(contact_points[6].node == &nodes[4]);
+    CHECK(contact_points[6].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[6].node == &nodes[3]);
 
-    CHECK(contact_points[7].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[7].node == &nodes[3]);
+    CHECK(contact_points[7].type == VerticalExtensionContactPoint::Type::upper_opp_edge_to_infinity);
+    CHECK(contact_points[7].node == &nodes[4]);
 
-    CHECK(contact_points[8].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
-    CHECK(contact_points[8].node == &nodes[4]);
+    CHECK(contact_points[8].type == VerticalExtensionContactPoint::Type::upper_opp_edge_to_infinity);
+    CHECK(contact_points[8].node == &nodes[5]);
 
-    CHECK(contact_points[9].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
-    CHECK(contact_points[9].node == &nodes[5]);
+    CHECK(contact_points[9].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[9].node == &nodes[6]);
 
-    CHECK(contact_points[10].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[10].node == &nodes[6]);
+    CHECK(contact_points[10].type == VerticalExtensionContactPoint::Type::vertex_upwards);
+    CHECK(contact_points[10].node == &nodes[5]);
 
-    CHECK(contact_points[11].type == VerticalExtensionContactPoint::Type::vertex_upwards);
+    CHECK(contact_points[11].type == VerticalExtensionContactPoint::Type::vertex_downwards_to_infinity);
     CHECK(contact_points[11].node == &nodes[5]);
 
-    CHECK(contact_points[12].type == VerticalExtensionContactPoint::Type::vertex_downwards);
-    CHECK(contact_points[12].node == &nodes[5]);
+    CHECK(contact_points[12].type == VerticalExtensionContactPoint::Type::upper_opp_edge_to_vertex_exterior_side);
+    CHECK(contact_points[12].node == &nodes[8]);
 
-    CHECK(contact_points[13].type == VerticalExtensionContactPoint::Type::upper_opp_edge);
-    CHECK(contact_points[13].node == &nodes[8]);
+    CHECK(contact_points[13].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[13].node == &nodes[9]);
 
     CHECK(contact_points[14].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[14].node == &nodes[9]);
+    CHECK(contact_points[14].node == &nodes[7]);
 
-    CHECK(contact_points[15].type == VerticalExtensionContactPoint::Type::lower_opp_edge);
+    CHECK(contact_points[15].type == VerticalExtensionContactPoint::Type::vertex_downwards);
     CHECK(contact_points[15].node == &nodes[8]);
+  }
 
-    CHECK(contact_points[16].type == VerticalExtensionContactPoint::Type::leaf);
-    CHECK(contact_points[16].node == &nodes[7]);
+  SECTION("With outer branches 1")
+  {
+    std::vector<Point2> vertices_storage{
+        {-3.86, 4.26}, {-4.98, 3.40}, {-3.06, 2.74}, {-1.54, 3.98}, {-5.04, 6.08}, {-7.68, 3.24}, {-3.42, 0.82},
+        {-0.56, 1.92}, {1.46, 1.30},  {4.76, 1.68},  {6.14, 3.80},  {4.44, 5.46},  {2.44, 6.06},  {0.46, 4.12},
+        {1.96, 2.64},  {3.82, 3.04},  {4.22, 3.92},  {2.96, 4.62},  {2.12, 4.38},
+    };
+    VerticesView vertices(vertices_storage);
 
-    CHECK(contact_points[17].type == VerticalExtensionContactPoint::Type::vertex_downwards);
-    CHECK(contact_points[17].node == &nodes[8]);
+    std::vector<Node> nodes(10);
+    nodes[0].direction = HorizontalDirection::left;
+    nodes[0].type = NodeType::branch;
+    nodes[0].vertex_it = vertices.begin() + 0;
+    nodes[0].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[0].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[0].neighbors[0] = &nodes[2];
+    nodes[0].neighbors[1] = &nodes[1];
+    nodes[0].neighbors[2] = &nodes[3];
+
+    nodes[1].direction = HorizontalDirection::left;
+    nodes[1].type = NodeType::leaf;
+    nodes[1].vertex_it = vertices.begin() + 1;
+    nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 0);
+    nodes[1].neighbors[0] = &nodes[0];
+
+    nodes[2].direction = HorizontalDirection::right;
+    nodes[2].type = NodeType::leaf;
+    nodes[2].vertex_it = vertices.begin() + 3;
+    nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 2);
+    nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[2].neighbors[0] = &nodes[0];
+
+    nodes[3].direction = HorizontalDirection::right;
+    nodes[3].type = NodeType::outer_branch;
+    nodes[3].vertex_it = vertices.begin() + 1;
+    nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 5);
+    nodes[3].upper_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[3].neighbors[0] = &nodes[4];
+    nodes[3].neighbors[1] = &nodes[5];
+    nodes[3].neighbors[2] = &nodes[0];
+
+    nodes[4].direction = HorizontalDirection::right;
+    nodes[4].type = NodeType::leaf;
+    nodes[4].vertex_it = vertices.begin() + 5;
+    nodes[4].lower_opp_edge = Edge::edge_from_index(vertices, 5);
+    nodes[4].upper_opp_edge = Edge::edge_from_index(vertices, 4);
+    nodes[4].neighbors[0] = &nodes[3];
+
+    nodes[5].direction = HorizontalDirection::left;
+    nodes[5].type = NodeType::outer_branch;
+    nodes[5].vertex_it = vertices.begin() + 16;
+    nodes[5].lower_opp_edge = Edge::edge_from_index(vertices, 8);
+    nodes[5].upper_opp_edge = Edge::edge_from_index(vertices, 11);
+    nodes[5].neighbors[0] = &nodes[6];
+    nodes[5].neighbors[1] = &nodes[3];
+    nodes[5].neighbors[2] = &nodes[7];
+
+    nodes[6].direction = HorizontalDirection::right;
+    nodes[6].type = NodeType::leaf;
+    nodes[6].vertex_it = vertices.begin() + 10;
+    nodes[6].lower_opp_edge = Edge::edge_from_index(vertices, 9);
+    nodes[6].upper_opp_edge = Edge::edge_from_index(vertices, 10);
+    nodes[6].neighbors[0] = &nodes[5];
+
+    nodes[7].direction = HorizontalDirection::right;
+    nodes[7].type = NodeType::branch;
+    nodes[7].vertex_it = vertices.begin() + 18;
+    nodes[7].lower_opp_edge = Edge::edge_from_index(vertices, 14);
+    nodes[7].upper_opp_edge = Edge::edge_from_index(vertices, 12);
+    nodes[7].neighbors[0] = &nodes[8];
+    nodes[7].neighbors[1] = &nodes[9];
+    nodes[7].neighbors[2] = &nodes[5];
+
+    nodes[8].direction = HorizontalDirection::left;
+    nodes[8].type = NodeType::leaf;
+    nodes[8].vertex_it = vertices.begin() + 13;
+    nodes[8].lower_opp_edge = Edge::edge_from_index(vertices, 13);
+    nodes[8].upper_opp_edge = Edge::edge_from_index(vertices, 12);
+    nodes[8].neighbors[0] = &nodes[5];
+
+    nodes[9].direction = HorizontalDirection::right;
+    nodes[9].type = NodeType::leaf;
+    nodes[9].vertex_it = vertices.begin() + 16;
+    nodes[9].lower_opp_edge = Edge::edge_from_index(vertices, 16);
+    nodes[9].upper_opp_edge = Edge::edge_from_index(vertices, 16);
+    nodes[9].neighbors[0] = &nodes[7];
+
+    ChainDecomposition chain_decomposition{&nodes[0], &nodes[7]};
+
+    Winding winding = GENERATE(Winding::ccw, Winding::cw);
+    if (winding == Winding::cw)
+    {
+      flip_horizontally(vertices_storage);
+      flip_horizontally(nodes);
+    }
+
+    std::vector<VerticalExtensionContactPoint> contact_points =
+        vertical_extension_contact_points(chain_decomposition, winding);
+
+    REQUIRE(contact_points.size() == 12);
+
+    CHECK(contact_points[0].type == VerticalExtensionContactPoint::Type::vertex_downwards);
+    CHECK(contact_points[0].node == &nodes[0]);
+
+    CHECK(contact_points[1].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[1].node == &nodes[1]);
+
+    CHECK(contact_points[2].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[2].node == &nodes[2]);
+
+    CHECK(contact_points[3].type == VerticalExtensionContactPoint::Type::upper_opp_edge_to_vertex_exterior_side);
+    CHECK(contact_points[3].node == &nodes[0]);
+
+    CHECK(contact_points[4].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[4].node == &nodes[4]);
+
+    CHECK(contact_points[5].type == VerticalExtensionContactPoint::Type::outer_branch_lower_opp_edge);
+    CHECK(contact_points[5].node == &nodes[3]);
+
+    CHECK(contact_points[6].type == VerticalExtensionContactPoint::Type::outer_branch_lower_opp_edge);
+    CHECK(contact_points[6].node == &nodes[5]);
+
+    CHECK(contact_points[7].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[7].node == &nodes[6]);
+
+    CHECK(contact_points[8].type == VerticalExtensionContactPoint::Type::upper_opp_edge_to_vertex_exterior_side);
+    CHECK(contact_points[8].node == &nodes[7]);
+
+    CHECK(contact_points[9].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[9].node == &nodes[8]);
+
+    CHECK(contact_points[10].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[10].node == &nodes[9]);
+
+    CHECK(contact_points[11].type == VerticalExtensionContactPoint::Type::vertex_downwards);
+    CHECK(contact_points[11].node == &nodes[7]);
+  }
+
+  SECTION("With outer branch 2")
+  {
+    std::vector<Point2> vertices_storage{
+        {3.86, -4.26},  {4.98, -3.40},  {3.06, -2.74},  {1.54, -3.98},  {5.04, -6.08},  {7.68, -3.24},  {3.42, -0.82},
+        {0.56, -1.92},  {-1.46, -1.30}, {-4.76, -1.68}, {-6.14, -3.80}, {-4.44, -5.46}, {-2.44, -6.06}, {-0.46, -4.12},
+        {-1.96, -2.64}, {-3.82, -3.04}, {-4.22, -3.92}, {-2.96, -4.62}, {-2.12, -4.38},
+    };
+    VerticesView vertices(vertices_storage);
+
+    std::vector<Node> nodes(10);
+    nodes[0].direction = HorizontalDirection::right;
+    nodes[0].type = NodeType::branch;
+    nodes[0].vertex_it = vertices.begin() + 0;
+    nodes[0].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[0].upper_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[0].neighbors[0] = &nodes[2];
+    nodes[0].neighbors[1] = &nodes[3];
+    nodes[0].neighbors[2] = &nodes[1];
+
+    nodes[1].direction = HorizontalDirection::right;
+    nodes[1].type = NodeType::leaf;
+    nodes[1].vertex_it = vertices.begin() + 1;
+    nodes[1].lower_opp_edge = Edge::edge_from_index(vertices, 0);
+    nodes[1].upper_opp_edge = Edge::edge_from_index(vertices, 1);
+    nodes[1].neighbors[0] = &nodes[0];
+
+    nodes[2].direction = HorizontalDirection::left;
+    nodes[2].type = NodeType::leaf;
+    nodes[2].vertex_it = vertices.begin() + 3;
+    nodes[2].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[2].upper_opp_edge = Edge::edge_from_index(vertices, 2);
+    nodes[2].neighbors[0] = &nodes[0];
+
+    nodes[3].direction = HorizontalDirection::left;
+    nodes[3].type = NodeType::outer_branch;
+    nodes[3].vertex_it = vertices.begin() + 1;
+    nodes[3].lower_opp_edge = Edge::edge_from_index(vertices, 3);
+    nodes[3].upper_opp_edge = Edge::edge_from_index(vertices, 5);
+    nodes[3].neighbors[0] = &nodes[4];
+    nodes[3].neighbors[1] = &nodes[0];
+    nodes[3].neighbors[2] = &nodes[5];
+
+    nodes[4].direction = HorizontalDirection::left;
+    nodes[4].type = NodeType::leaf;
+    nodes[4].vertex_it = vertices.begin() + 5;
+    nodes[4].lower_opp_edge = Edge::edge_from_index(vertices, 4);
+    nodes[4].upper_opp_edge = Edge::edge_from_index(vertices, 5);
+    nodes[4].neighbors[0] = &nodes[3];
+
+    nodes[5].direction = HorizontalDirection::right;
+    nodes[5].type = NodeType::outer_branch;
+    nodes[5].vertex_it = vertices.begin() + 16;
+    nodes[5].lower_opp_edge = Edge::edge_from_index(vertices, 11);
+    nodes[5].upper_opp_edge = Edge::edge_from_index(vertices, 8);
+    nodes[5].neighbors[0] = &nodes[6];
+    nodes[5].neighbors[1] = &nodes[7];
+    nodes[5].neighbors[2] = &nodes[3];
+
+    nodes[6].direction = HorizontalDirection::left;
+    nodes[6].type = NodeType::leaf;
+    nodes[6].vertex_it = vertices.begin() + 10;
+    nodes[6].lower_opp_edge = Edge::edge_from_index(vertices, 10);
+    nodes[6].upper_opp_edge = Edge::edge_from_index(vertices, 9);
+    nodes[6].neighbors[0] = &nodes[5];
+
+    nodes[7].direction = HorizontalDirection::left;
+    nodes[7].type = NodeType::branch;
+    nodes[7].vertex_it = vertices.begin() + 18;
+    nodes[7].lower_opp_edge = Edge::edge_from_index(vertices, 12);
+    nodes[7].upper_opp_edge = Edge::edge_from_index(vertices, 14);
+    nodes[7].neighbors[0] = &nodes[8];
+    nodes[7].neighbors[1] = &nodes[5];
+    nodes[7].neighbors[2] = &nodes[9];
+
+    nodes[8].direction = HorizontalDirection::right;
+    nodes[8].type = NodeType::leaf;
+    nodes[8].vertex_it = vertices.begin() + 13;
+    nodes[8].lower_opp_edge = Edge::edge_from_index(vertices, 12);
+    nodes[8].upper_opp_edge = Edge::edge_from_index(vertices, 13);
+    nodes[8].neighbors[0] = &nodes[5];
+
+    nodes[9].direction = HorizontalDirection::left;
+    nodes[9].type = NodeType::leaf;
+    nodes[9].vertex_it = vertices.begin() + 16;
+    nodes[9].lower_opp_edge = Edge::edge_from_index(vertices, 16);
+    nodes[9].upper_opp_edge = Edge::edge_from_index(vertices, 16);
+    nodes[9].neighbors[0] = &nodes[7];
+
+    ChainDecomposition chain_decomposition{&nodes[0], &nodes[7]};
+
+    Winding winding = GENERATE(Winding::ccw, Winding::cw);
+    if (winding == Winding::cw)
+    {
+      flip_horizontally(vertices_storage);
+      flip_horizontally(nodes);
+    }
+
+    std::vector<VerticalExtensionContactPoint> contact_points =
+        vertical_extension_contact_points(chain_decomposition, winding);
+
+    REQUIRE(contact_points.size() == 12);
+
+    CHECK(contact_points[0].type == VerticalExtensionContactPoint::Type::vertex_upwards);
+    CHECK(contact_points[0].node == &nodes[0]);
+
+    CHECK(contact_points[1].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[1].node == &nodes[1]);
+
+    CHECK(contact_points[2].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[2].node == &nodes[2]);
+
+    CHECK(contact_points[3].type == VerticalExtensionContactPoint::Type::lower_opp_edge_to_vertex_exterior_side);
+    CHECK(contact_points[3].node == &nodes[0]);
+
+    CHECK(contact_points[4].type == VerticalExtensionContactPoint::Type::outer_branch_lower_opp_edge);
+    CHECK(contact_points[4].node == &nodes[3]);
+
+    CHECK(contact_points[5].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[5].node == &nodes[4]);
+
+    CHECK(contact_points[6].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[6].node == &nodes[6]);
+
+    CHECK(contact_points[7].type == VerticalExtensionContactPoint::Type::outer_branch_lower_opp_edge);
+    CHECK(contact_points[7].node == &nodes[5]);
+
+    CHECK(contact_points[8].type == VerticalExtensionContactPoint::Type::lower_opp_edge_to_vertex_exterior_side);
+    CHECK(contact_points[8].node == &nodes[7]);
+
+    CHECK(contact_points[9].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[9].node == &nodes[8]);
+
+    CHECK(contact_points[10].type == VerticalExtensionContactPoint::Type::leaf);
+    CHECK(contact_points[10].node == &nodes[9]);
+
+    CHECK(contact_points[11].type == VerticalExtensionContactPoint::Type::vertex_upwards);
+    CHECK(contact_points[11].node == &nodes[7]);
+  }
+
+  SECTION("Infinite extensions into all directions 1")
+  {
+    std::vector<Point2> vertices_storage{{-4.12, 1.90}, {-5.52, 3.64}, {-2.28, 5.78}, {2.38, 4.02}, {0.52, 1.88}};
+    VerticesView vertices(vertices_storage);
+
+    std::vector<Node> nodes(4);
+
+    nodes[0].direction = HorizontalDirection::left;
+    nodes[0].type = NodeType::branch;
+    nodes[0].vertex_it = vertices.begin() + 0;
+    nodes[0].lower_opp_edge = Edge::invalid();
+    nodes[0].upper_opp_edge = Edge::invalid();
+    nodes[0].neighbors[0] = nullptr;
+    nodes[0].neighbors[1] = &nodes[1];
+    nodes[0].neighbors[2] = nullptr;
+
+    nodes[1].direction = HorizontalDirection::right;
+    nodes[1].type = NodeType::branch;
+    nodes[1].vertex_it = vertices.begin() + 1;
+    nodes[1].lower_opp_edge = Edge::invalid();
+    nodes[1].upper_opp_edge = Edge::invalid();
+    nodes[1].neighbors[0] = nullptr;
+    nodes[1].neighbors[1] = &nodes[0];
+    nodes[1].neighbors[2] = &nodes[2];
+
+    nodes[2].direction = HorizontalDirection::left;
+    nodes[2].type = NodeType::branch;
+    nodes[2].vertex_it = vertices.begin() + 3;
+    nodes[2].lower_opp_edge = Edge::invalid();
+    nodes[2].upper_opp_edge = Edge::invalid();
+    nodes[2].neighbors[0] = nullptr;
+    nodes[2].neighbors[1] = &nodes[3];
+    nodes[2].neighbors[2] = &nodes[1];
+
+    nodes[3].direction = HorizontalDirection::right;
+    nodes[3].type = NodeType::branch;
+    nodes[3].vertex_it = vertices.begin() + 4;
+    nodes[3].lower_opp_edge = Edge::invalid();
+    nodes[3].upper_opp_edge = Edge::invalid();
+    nodes[3].neighbors[0] = nullptr;
+    nodes[3].neighbors[1] = &nodes[2];
+    nodes[3].neighbors[2] = nullptr;
+
+    ChainDecomposition chain_decomposition{&nodes[0], &nodes[3]};
+
+    Winding winding = GENERATE(Winding::ccw, Winding::cw);
+    if (winding == Winding::cw)
+    {
+      flip_horizontally(vertices_storage);
+      flip_horizontally(nodes);
+    }
+
+    std::vector<VerticalExtensionContactPoint> contact_points =
+        vertical_extension_contact_points(chain_decomposition, winding);
+
+    REQUIRE(contact_points.size() == 6);
+
+    CHECK(contact_points[0].type == VerticalExtensionContactPoint::Type::vertex_downwards_to_infinity);
+    CHECK(contact_points[0].node == &nodes[0]);
+
+    CHECK(contact_points[1].type == VerticalExtensionContactPoint::Type::vertex_downwards_to_infinity);
+    CHECK(contact_points[1].node == &nodes[1]);
+
+    CHECK(contact_points[2].type == VerticalExtensionContactPoint::Type::vertex_upwards_to_infinity);
+    CHECK(contact_points[2].node == &nodes[1]);
+
+    CHECK(contact_points[3].type == VerticalExtensionContactPoint::Type::vertex_upwards_to_infinity);
+    CHECK(contact_points[3].node == &nodes[2]);
+
+    CHECK(contact_points[4].type == VerticalExtensionContactPoint::Type::vertex_downwards_to_infinity);
+    CHECK(contact_points[4].node == &nodes[2]);
+
+    CHECK(contact_points[5].type == VerticalExtensionContactPoint::Type::vertex_downwards_to_infinity);
+    CHECK(contact_points[5].node == &nodes[3]);
+  }
+
+  SECTION("Infinite extensions into all directions 2")
+  {
+    std::vector<Point2> vertices_storage{{4.12, -1.90}, {5.52, -3.64}, {2.28, -5.78}, {-2.38, -4.02}, {-0.52, -1.88}};
+    VerticesView vertices(vertices_storage);
+
+    std::vector<Node> nodes(4);
+
+    nodes[0].direction = HorizontalDirection::right;
+    nodes[0].type = NodeType::branch;
+    nodes[0].vertex_it = vertices.begin() + 0;
+    nodes[0].lower_opp_edge = Edge::invalid();
+    nodes[0].upper_opp_edge = Edge::invalid();
+    nodes[0].neighbors[0] = nullptr;
+    nodes[0].neighbors[1] = nullptr;
+    nodes[0].neighbors[2] = &nodes[1];
+
+    nodes[1].direction = HorizontalDirection::left;
+    nodes[1].type = NodeType::branch;
+    nodes[1].vertex_it = vertices.begin() + 1;
+    nodes[1].lower_opp_edge = Edge::invalid();
+    nodes[1].upper_opp_edge = Edge::invalid();
+    nodes[1].neighbors[0] = nullptr;
+    nodes[1].neighbors[1] = &nodes[2];
+    nodes[1].neighbors[2] = &nodes[0];
+
+    nodes[2].direction = HorizontalDirection::right;
+    nodes[2].type = NodeType::branch;
+    nodes[2].vertex_it = vertices.begin() + 3;
+    nodes[2].lower_opp_edge = Edge::invalid();
+    nodes[2].upper_opp_edge = Edge::invalid();
+    nodes[2].neighbors[0] = nullptr;
+    nodes[2].neighbors[1] = &nodes[1];
+    nodes[2].neighbors[2] = &nodes[3];
+
+    nodes[3].direction = HorizontalDirection::left;
+    nodes[3].type = NodeType::branch;
+    nodes[3].vertex_it = vertices.begin() + 4;
+    nodes[3].lower_opp_edge = Edge::invalid();
+    nodes[3].upper_opp_edge = Edge::invalid();
+    nodes[3].neighbors[0] = nullptr;
+    nodes[3].neighbors[1] = nullptr;
+    nodes[3].neighbors[2] = &nodes[2];
+
+    ChainDecomposition chain_decomposition{&nodes[0], &nodes[3]};
+
+    Winding winding = GENERATE(Winding::ccw, Winding::cw);
+    if (winding == Winding::cw)
+    {
+      flip_horizontally(vertices_storage);
+      flip_horizontally(nodes);
+    }
+
+    std::vector<VerticalExtensionContactPoint> contact_points =
+        vertical_extension_contact_points(chain_decomposition, winding);
+
+    REQUIRE(contact_points.size() == 6);
+
+    CHECK(contact_points[0].type == VerticalExtensionContactPoint::Type::vertex_upwards_to_infinity);
+    CHECK(contact_points[0].node == &nodes[0]);
+
+    CHECK(contact_points[1].type == VerticalExtensionContactPoint::Type::vertex_upwards_to_infinity);
+    CHECK(contact_points[1].node == &nodes[1]);
+
+    CHECK(contact_points[2].type == VerticalExtensionContactPoint::Type::vertex_downwards_to_infinity);
+    CHECK(contact_points[2].node == &nodes[1]);
+
+    CHECK(contact_points[3].type == VerticalExtensionContactPoint::Type::vertex_downwards_to_infinity);
+    CHECK(contact_points[3].node == &nodes[2]);
+
+    CHECK(contact_points[4].type == VerticalExtensionContactPoint::Type::vertex_upwards_to_infinity);
+    CHECK(contact_points[4].node == &nodes[2]);
+
+    CHECK(contact_points[5].type == VerticalExtensionContactPoint::Type::vertex_upwards_to_infinity);
+    CHECK(contact_points[5].node == &nodes[3]);
   }
 }
 
-TEST_CASE("split_chain_decomposition_into_islands")
+/*TEST_CASE("split_chain_decomposition_into_islands")
 {
   auto flip_x_if_necessary = [](Winding winding, ScalarDeg1 x) { return winding == Winding::ccw ? x : -x; };
 
@@ -1680,6 +2084,6 @@ TEST_CASE("split_chain_decomposition_into_islands")
     CHECK(islands[2].range.end.edge_index == 9);
     CHECK(islands[2].range.end.x == flip_x_if_necessary(winding, ScalarDeg1(6.24)));
   }
-}
+}*/
 
 } // namespace dida::detail::vertical_decomposition

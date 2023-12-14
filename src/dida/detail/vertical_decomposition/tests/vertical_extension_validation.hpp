@@ -60,20 +60,47 @@ struct VerticalExtensionContactPoint
   /// The type of contact point.
   enum class Type
   {
-    /// The contact point of a downward vertical extension and the vertex it originates from.
+    /// The contact point at the vertex, of a finite vertical extension which extends downwards from this vertex to its
+    /// lower_opp_edge.
     vertex_downwards,
 
-    /// The contact point of an upward vertical extension and the vertex it originates from.
+    /// The contact point at the vertex, of a finite vertical extension which extends upwards from this vertex to its
+    /// upper_opp_edge.
     vertex_upwards,
 
-    /// The contact point of an upward vertical extension and its @c node->lower_opp_edge.
-    lower_opp_edge,
+    /// The lower contact point of the finite vertical extension which extends from an outer_branches' lower_opp_edge to
+    /// its upper_opp_edge.
+    outer_branch_lower_opp_edge,
 
-    /// The contact point of a downward vertical extension and its @c node->upper_opp_edge.
-    upper_opp_edge,
-
-    /// The contact point is the vertex of @c node, and @c node is a leaf node.
+    /// The contact point represents a leaf.
     leaf,
+
+    /// The contact point at the vertex, of an infinite vertical extension which extends downwards from this vertex.
+    vertex_downwards_to_infinity,
+
+    /// The contact point at the vertex, of an infinite vertical extension which extends upwards from this vertex.
+    vertex_upwards_to_infinity,
+
+    /// The contact point on the lower_opp_edge, of an infinite vertical extension which extends upwards from this edge.
+    ///
+    /// This type of vertical extension occurs on the incoming side of a node of @c NodeType::branches, which has an
+    /// infinite upper outgoing branch, but finite lower outgoing branch.
+    lower_opp_edge_to_infinity,
+
+    /// The contact point on the lower_opp_edge, of an infinite vertical extension, which extends upwards from this
+    /// edge, the the outer side of the first or last vertex of the chain.
+    lower_opp_edge_to_vertex_exterior_side,
+
+    /// The contact point on the upper_opp_edge, of an infinite vertical extension which extends downwards from this
+    /// edge.
+    ///
+    /// This type of vertical extension occurs on the incoming side of a node of @c NodeType::branches, which has an
+    /// infinite lower outgoing branch, but finite upper outgoing branch.
+    upper_opp_edge_to_infinity,
+
+    /// The contact point on the upper_opp_edge, of an infinite vertical extension, which extends downwards from this
+    /// edge, the the outer side of the first or last vertex of the chain.
+    upper_opp_edge_to_vertex_exterior_side,
   };
 
   /// The type of this @c contact point.
@@ -81,14 +108,6 @@ struct VerticalExtensionContactPoint
 
   /// The node.
   const Node* node;
-
-  /// Compares two contact points for equality.
-  bool operator==(const VerticalExtensionContactPoint& b) const;
-
-  /// Returns whether this contact point compares less than contact point @c b.
-  ///
-  /// This ordering is provided so that contact points can be sorted, but is otherwise not very meaningful.
-  bool operator<(const VerticalExtensionContactPoint& b) const;
 };
 
 /// Returns the given type as a string.
@@ -122,12 +141,12 @@ split_chain_decomposition_into_islands(VerticesView vertices, Winding winding,
                                        ArrayView<const VerticalExtensionContactPoint> contact_points);
 
 /// Validates the vertical extensions in the given islands.
-bool validate_vertical_extensions(VerticesView vertices, ArrayView<const ChainDecompositionIsland> islands);
+bool validate_vertical_extensions(VerticesView vertices, Winding winding, ArrayView<const ChainDecompositionIsland> islands);
 
 /// Validates the vertical extensions in the decomposition of the full polygon formed by @c vertices.
 ///
 /// This function assumes there are no infinite vertical extensions, so can't be used to validate chain decompositions.
 /// To validate chain decompositions, use the above overload of @c validate_vertical_extensions.
-bool validate_vertical_extensions(VerticesView vertices, const std::set<const Node*>& nodes);
+bool validate_vertical_extensions(VerticesView vertices, Winding winding, const std::set<const Node*>& nodes);
 
 } // namespace dida::detail::vertical_decomposition
