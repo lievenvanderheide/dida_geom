@@ -3,6 +3,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "dida/detail/vertical_decomposition/sweep_line_builder.hpp"
+#include "dida/detail/vertical_decomposition/tests/test_utils.hpp"
 
 namespace dida::detail::vertical_decomposition
 {
@@ -160,15 +161,33 @@ TEST_CASE("Edge::on_interior_side")
   std::vector<Point2> vertices_storage{{2, 2}, {8, 5}, {-2, 3}};
   VerticesView vertices(vertices_storage);
 
-  Edge edge_0 = Edge::edge_from_index(vertices, 0);
-  CHECK_FALSE(edge_0.on_interior_side({5, 2}));
-  CHECK_FALSE(edge_0.on_interior_side({4, 3}));
-  CHECK(edge_0.on_interior_side({2, 3}));
+  SECTION("Winding::ccw")
+  {
+    Edge edge_0 = Edge::edge_from_index(vertices, 0);
+    CHECK_FALSE(edge_0.on_interior_side<Winding::ccw>({5, 2}));
+    CHECK_FALSE(edge_0.on_interior_side<Winding::ccw>({4, 3}));
+    CHECK(edge_0.on_interior_side<Winding::ccw>({2, 3}));
 
-  Edge edge_1 = Edge::edge_from_index(vertices, 1);
-  CHECK_FALSE(edge_1.on_interior_side({5, 6}));
-  CHECK_FALSE(edge_1.on_interior_side({3, 4}));
-  CHECK(edge_1.on_interior_side({2, 3}));
+    Edge edge_1 = Edge::edge_from_index(vertices, 1);
+    CHECK_FALSE(edge_1.on_interior_side<Winding::ccw>({5, 6}));
+    CHECK_FALSE(edge_1.on_interior_side<Winding::ccw>({3, 4}));
+    CHECK(edge_1.on_interior_side<Winding::ccw>({2, 3}));
+  }
+
+  SECTION("Winding::cw")
+  {
+    flip_horizontally(vertices_storage);
+
+    Edge edge_0 = Edge::edge_from_index(vertices, 0);
+    CHECK_FALSE(edge_0.on_interior_side<Winding::cw>({-5, 2}));
+    CHECK_FALSE(edge_0.on_interior_side<Winding::cw>({-4, 3}));
+    CHECK(edge_0.on_interior_side<Winding::cw>({-2, 3}));
+
+    Edge edge_1 = Edge::edge_from_index(vertices, 1);
+    CHECK_FALSE(edge_1.on_interior_side<Winding::cw>({-5, 6}));
+    CHECK_FALSE(edge_1.on_interior_side<Winding::cw>({-3, 4}));
+    CHECK(edge_1.on_interior_side<Winding::cw>({-2, 3}));
+  }
 }
 
 TEST_CASE("Edge::on_exterior_side")
@@ -176,15 +195,33 @@ TEST_CASE("Edge::on_exterior_side")
   std::vector<Point2> vertices_storage{{2, 2}, {8, 5}, {-2, 3}};
   VerticesView vertices(vertices_storage);
 
-  Edge edge_0 = Edge::edge_from_index(vertices, 0);
-  CHECK(edge_0.on_exterior_side({5, 2}));
-  CHECK_FALSE(edge_0.on_exterior_side({4, 3}));
-  CHECK_FALSE(edge_0.on_exterior_side({2, 3}));
+  SECTION("Winding::ccw")
+  {
+    Edge edge_0 = Edge::edge_from_index(vertices, 0);
+    CHECK(edge_0.on_exterior_side<Winding::ccw>({5, 2}));
+    CHECK_FALSE(edge_0.on_exterior_side<Winding::ccw>({4, 3}));
+    CHECK_FALSE(edge_0.on_exterior_side<Winding::ccw>({2, 3}));
 
-  Edge edge_1 = Edge::edge_from_index(vertices, 1);
-  CHECK(edge_1.on_exterior_side({5, 6}));
-  CHECK_FALSE(edge_1.on_exterior_side({3, 4}));
-  CHECK_FALSE(edge_1.on_exterior_side({2, 3}));
+    Edge edge_1 = Edge::edge_from_index(vertices, 1);
+    CHECK(edge_1.on_exterior_side<Winding::ccw>({5, 6}));
+    CHECK_FALSE(edge_1.on_exterior_side<Winding::ccw>({3, 4}));
+    CHECK_FALSE(edge_1.on_exterior_side<Winding::ccw>({2, 3}));
+  }
+
+  SECTION("Winding::cw")
+  {
+    flip_horizontally(vertices_storage);
+
+    Edge edge_0 = Edge::edge_from_index(vertices, 0);
+    CHECK(edge_0.on_exterior_side<Winding::cw>({-5, 2}));
+    CHECK_FALSE(edge_0.on_exterior_side<Winding::cw>({-4, 3}));
+    CHECK_FALSE(edge_0.on_exterior_side<Winding::cw>({-2, 3}));
+
+    Edge edge_1 = Edge::edge_from_index(vertices, 1);
+    CHECK(edge_1.on_exterior_side<Winding::cw>({-5, 6}));
+    CHECK_FALSE(edge_1.on_exterior_side<Winding::cw>({-3, 4}));
+    CHECK_FALSE(edge_1.on_exterior_side<Winding::cw>({-2, 3}));
+  }
 }
 
 TEST_CASE("Edge::operator==/!=")

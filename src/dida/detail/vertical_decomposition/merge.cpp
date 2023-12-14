@@ -69,42 +69,43 @@ struct MergeState
 ///
 /// This function will create the leaf node at the shared vertex, as well as an outer branch for the outer side of the
 /// shared vertex if necessary.
+template <Winding winding>
 void init_merge(MergeState& merge_state, Node* a_node, Node* b_node);
 
 /// Performs a single iteration of the merge. The template parameter @c direction must equal @c merge_state.direction.
 ///
 /// The return value is @c true if we should keep iterating and @c false if we've finished.
-template <HorizontalDirection direction>
+template <Winding winding, HorizontalDirection direction>
 bool merge_iteration(MergeState& merge_state);
 
 /// Implements the case of @c merge_iteration when the next node to be merged is of type @c NodeType::branch, and has
 /// direction equal to the current merge direction.
 ///
 /// @c p must be the @c ChainMergeState of the chain containing the next node.
-template <HorizontalDirection direction, bool p_is_lower>
+template <Winding winding, HorizontalDirection direction, bool p_is_a>
 void merge_iteration_forward_branch(MergeState& merge_state, ChainMergeState& p, ChainMergeState& q);
 
 /// Implements the case of @c merge_iteration when the next node to be merged is of type @c NodeType::branch, and has
 /// direction opposite to the current merge direction.
 ///
 /// @c p must be the @c ChainMergeState of the chain containing the next node.
-template <HorizontalDirection direction, bool p_is_lower>
+template <Winding winding, HorizontalDirection direction, bool p_is_a>
 void merge_iteration_reverse_branch(MergeState& merge_state, ChainMergeState& p, ChainMergeState& q);
 
 /// Implements the case of @c merge_iteration when the next node is of type @c NodeType::outer_branch.
 ///
 /// @c p must be the @c ChainMergeState of the chain containing the next node.
-template <HorizontalDirection direction, bool p_is_lower>
+template <Winding winding, HorizontalDirection direction, bool p_is_a>
 void merge_iteration_reverse_outer_branch(MergeState& merge_state, ChainMergeState& p, ChainMergeState& q);
 
 /// Implements the case of @c merge_iteration when the end of chain @c q has been reached, and the remaining part of
 /// chain @c p can be added as is.
-template <HorizontalDirection direction, bool p_is_lower>
+template <Winding winding, HorizontalDirection direction, bool p_is_a>
 void merge_tail(MergeState& merge_state, ChainMergeState& p, ChainMergeState& q);
 
 /// Implements the case of @c merge_iteration when the next nodes of both chains use the same vertex. This happens at
 /// the end of the merge when merging the final two chains of a polygon.
-template <bool a_is_lower>
+template <Winding winding, HorizontalDirection direction>
 void merge_closing_vertex(MergeState& merge_state);
 
 /// Connects a newly merged node to the already merged part of the vertical decomposition.
@@ -118,15 +119,20 @@ void push_opp_node(ChainMergeState& chain_merge_state, Node* node, uint8_t incom
 /// Advances @c chain_merge_state.edge to the edge which contains the main active point. The current position of the
 /// main active point is taken to be the position it would have when the merge has reached a node whose vertex is at @c
 /// point.
-template <HorizontalDirection direction, bool chain_is_lower>
+template <HorizontalDirection direction, bool chain_is_a>
 void advance_edge(MergeState& merge_state, ChainMergeState& chain_merge_state, Point2 point);
 
 /// Advances @c chain_merge_state.opp_edge to the edge which contains the opposite active point. The current position of
 /// the opposite active point is taken to be the position it would have when the merge has reached a node whose vertex
 /// is at @c point.
-template <HorizontalDirection direction, bool chain_is_lower>
+template <HorizontalDirection direction, bool chain_is_a>
 void advance_opp_edge(MergeState& merge_state, ChainMergeState& chain_merge_state, Point2 point);
 
+/// Returns whether the boundary of the chain A/B is the lower boundary of the adjacent region, when going into the
+/// given direction, during a merge with the given winding.
+constexpr bool is_lower(Winding winding, HorizontalDirection direction, bool is_a);
+
+template <Winding winding>
 void init_merge(MergeState& merge_state, Node* a_node, Node* b_node)
 {
   VertexIt vertex_it = a_node->vertex_it;
@@ -136,8 +142,8 @@ void init_merge(MergeState& merge_state, Node* a_node, Node* b_node)
   merge_state.direction = a_node->direction;
   DIDA_DEBUG_ASSERT(a_node->direction == b_node->direction);
 
-  bool a_is_lower = merge_state.direction == HorizontalDirection::left;
-  bool b_is_lower = merge_state.direction == HorizontalDirection::right;
+  bool a_is_lower = is_lower(winding, merge_state.direction, true);
+  bool b_is_lower = is_lower(winding, merge_state.direction, false);
 
   merge_state.a.prev = a_node;
   merge_state.a.next = a_node->neighbors[a_is_lower ? 2 : 1];
@@ -208,27 +214,24 @@ void init_merge(MergeState& merge_state, Node* a_node, Node* b_node)
   leaf_node->upper_opp_edge = a_is_lower ? merge_state.b.edge : merge_state.a.edge;
 }
 
-template <HorizontalDirection direction>
+template <Winding winding, HorizontalDirection direction>
 bool merge_iteration(MergeState& merge_state)
 {
-  constexpr bool a_is_lower = direction == HorizontalDirection::left;
-  constexpr bool b_is_lower = direction == HorizontalDirection::right;
-
   if (!merge_state.b.next)
   {
-    merge_tail<direction, a_is_lower>(merge_state, merge_state.a, merge_state.b);
+    merge_tail<winding, direction, true>(merge_state, merge_state.a, merge_state.b);
     return false;
   }
 
   if (!merge_state.a.next)
   {
-    merge_tail<direction, b_is_lower>(merge_state, merge_state.b, merge_state.a);
+    merge_tail<winding, direction, false>(merge_state, merge_state.b, merge_state.a);
     return false;
   }
 
   if (merge_state.a.next->vertex_it == merge_state.b.next->vertex_it)
   {
-    merge_closing_vertex<a_is_lower>(merge_state);
+    merge_closing_vertex<winding, direction>(merge_state);
     return false;
   }
 
@@ -236,47 +239,49 @@ bool merge_iteration(MergeState& merge_state)
   {
     if (merge_state.a.next->direction == direction)
     {
-      merge_iteration_forward_branch<direction, a_is_lower>(merge_state, merge_state.a, merge_state.b);
+      merge_iteration_forward_branch<winding, direction, true>(merge_state, merge_state.a, merge_state.b);
     }
     else if (merge_state.a.next->type == NodeType::branch)
     {
-      merge_iteration_reverse_branch<direction, a_is_lower>(merge_state, merge_state.a, merge_state.b);
+      merge_iteration_reverse_branch<winding, direction, true>(merge_state, merge_state.a, merge_state.b);
     }
     else
     {
       DIDA_DEBUG_ASSERT(merge_state.a.next->type == NodeType::outer_branch);
-      merge_iteration_reverse_outer_branch<direction, a_is_lower>(merge_state, merge_state.a, merge_state.b);
+      merge_iteration_reverse_outer_branch<winding, direction, true>(merge_state, merge_state.a, merge_state.b);
     }
   }
   else
   {
     if (merge_state.b.next->direction == direction)
     {
-      merge_iteration_forward_branch<direction, b_is_lower>(merge_state, merge_state.b, merge_state.a);
+      merge_iteration_forward_branch<winding, direction, false>(merge_state, merge_state.b, merge_state.a);
     }
     else if (merge_state.b.next->type == NodeType::branch)
     {
-      merge_iteration_reverse_branch<direction, b_is_lower>(merge_state, merge_state.b, merge_state.a);
+      merge_iteration_reverse_branch<winding, direction, false>(merge_state, merge_state.b, merge_state.a);
     }
     else
     {
       DIDA_DEBUG_ASSERT(merge_state.b.next->type == NodeType::outer_branch);
-      merge_iteration_reverse_outer_branch<direction, b_is_lower>(merge_state, merge_state.b, merge_state.a);
+      merge_iteration_reverse_outer_branch<winding, direction, false>(merge_state, merge_state.b, merge_state.a);
     }
   }
 
   return true;
 }
 
-template <HorizontalDirection direction, bool p_is_lower>
+template <Winding winding, HorizontalDirection direction, bool p_is_a>
 void merge_iteration_forward_branch(MergeState& merge_state, ChainMergeState& p, ChainMergeState& q)
 {
   DIDA_DEBUG_ASSERT(p.next->type == NodeType::branch);
   DIDA_DEBUG_ASSERT(p.next->direction == direction);
 
-  advance_edge<direction, !p_is_lower>(merge_state, q, *p.next->vertex_it);
+  constexpr bool p_is_lower = is_lower(winding, direction, p_is_a);
 
-  if (q.edge.on_interior_side(*p.next->vertex_it))
+  advance_edge<direction, !p_is_a>(merge_state, q, *p.next->vertex_it);
+
+  if (q.edge.on_interior_side<winding>(*p.next->vertex_it))
   {
     if constexpr (p_is_lower)
     {
@@ -289,9 +294,9 @@ void merge_iteration_forward_branch(MergeState& merge_state, ChainMergeState& p,
       p.next->lower_opp_edge = q.edge;
     }
 
-    p.edge = p_is_lower == (direction == HorizontalDirection::right)
-                 ? Edge{p.next->vertex_it, next_cyclic(merge_state.vertices, p.next->vertex_it)}
-                 : Edge{prev_cyclic(merge_state.vertices, p.next->vertex_it), p.next->vertex_it};
+    p.edge = p_is_a
+                 ? Edge{prev_cyclic(merge_state.vertices, p.next->vertex_it), p.next->vertex_it}
+                 : Edge{p.next->vertex_it, next_cyclic(merge_state.vertices, p.next->vertex_it)};
 
     push_merged_node(merge_state, p.next, 0, p_is_lower ? 2 : 1);
 
@@ -311,9 +316,9 @@ void merge_iteration_forward_branch(MergeState& merge_state, ChainMergeState& p,
       p.next->upper_opp_edge = Edge::invalid();
     }
 
-    p.opp_edge = p_is_lower == (direction == HorizontalDirection::right)
-                     ? Edge{prev_cyclic(merge_state.vertices, p.next->vertex_it), p.next->vertex_it}
-                     : Edge{p.next->vertex_it, next_cyclic(merge_state.vertices, p.next->vertex_it)};
+    p.opp_edge = p_is_a
+                     ? Edge{p.next->vertex_it, next_cyclic(merge_state.vertices, p.next->vertex_it)}
+                     : Edge{prev_cyclic(merge_state.vertices, p.next->vertex_it), p.next->vertex_it};
 
     push_opp_node(p, p.next, 0, p_is_lower ? 1 : 2);
 
@@ -322,23 +327,25 @@ void merge_iteration_forward_branch(MergeState& merge_state, ChainMergeState& p,
   }
 }
 
-template <HorizontalDirection direction, bool p_is_lower>
+template <Winding winding, HorizontalDirection direction, bool p_is_a>
 void merge_iteration_reverse_branch(MergeState& merge_state, ChainMergeState& p, ChainMergeState& q)
 {
   DIDA_DEBUG_ASSERT(p.next->type == NodeType::branch);
   DIDA_DEBUG_ASSERT(p.next->direction == other_direction(direction));
 
+  constexpr bool p_is_lower = is_lower(winding, direction, p_is_a);
+
   bool p_vertex_visible_from_q = p_is_lower == (p.next->neighbors[2] == p.prev);
 
   if (p_vertex_visible_from_q)
   {
-    advance_edge<direction, !p_is_lower>(merge_state, q, *p.next->vertex_it);
+    advance_edge<direction, !p_is_a>(merge_state, q, *p.next->vertex_it);
 
     bool should_turn_around;
     if (q.opp_edge.is_valid())
     {
       p.opp_edge = p_is_lower ? p.next->lower_opp_edge : p.next->upper_opp_edge;
-      advance_opp_edge<direction, !p_is_lower>(merge_state, q, *p.next->vertex_it);
+      advance_opp_edge<direction, !p_is_a>(merge_state, q, *p.next->vertex_it);
 
       if (p.opp_edge.is_valid())
       {
@@ -405,9 +412,9 @@ void merge_iteration_reverse_branch(MergeState& merge_state, ChainMergeState& p,
         p.next->upper_opp_edge = q.opp_edge;
       }
 
-      p.edge = p_is_lower == (direction == HorizontalDirection::right)
-                   ? Edge{p.next->vertex_it, next_cyclic(merge_state.vertices, p.next->vertex_it)}
-                   : Edge{prev_cyclic(merge_state.vertices, p.next->vertex_it), p.next->vertex_it};
+      p.edge = p_is_a
+                   ? Edge{prev_cyclic(merge_state.vertices, p.next->vertex_it), p.next->vertex_it}
+                   : Edge{p.next->vertex_it, next_cyclic(merge_state.vertices, p.next->vertex_it)};
 
       q.edge = q.opp_edge;
       q.opp_edge = Edge::invalid();
@@ -454,10 +461,10 @@ void merge_iteration_reverse_branch(MergeState& merge_state, ChainMergeState& p,
 
     if (!p.opp_edge.is_valid())
     {
-      advance_edge<direction, !p_is_lower>(merge_state, q, *p.next->vertex_it);
+      advance_edge<direction, !p_is_a>(merge_state, q, *p.next->vertex_it);
     }
 
-    if (!p.opp_edge.is_valid() && q.edge.on_interior_side(*p.next->vertex_it))
+    if (!p.opp_edge.is_valid() && q.edge.on_interior_side<winding>(*p.next->vertex_it))
     {
       p.edge = p_is_lower ? p.next->lower_opp_edge : p.next->upper_opp_edge;
 
@@ -500,15 +507,17 @@ void merge_iteration_reverse_branch(MergeState& merge_state, ChainMergeState& p,
   }
 }
 
-template <HorizontalDirection direction, bool p_is_lower>
+template <Winding winding, HorizontalDirection direction, bool p_is_a>
 void merge_iteration_reverse_outer_branch(MergeState& merge_state, ChainMergeState& p, ChainMergeState& q)
 {
   DIDA_DEBUG_ASSERT(p.next->type == NodeType::outer_branch);
   DIDA_DEBUG_ASSERT(p.next->direction == other_direction(direction));
 
-  advance_edge<direction, !p_is_lower>(merge_state, q, *p.next->vertex_it);
+  constexpr bool p_is_lower = is_lower(winding, direction, p_is_a);
 
-  if (q.edge.on_interior_side(*p.next->vertex_it))
+  advance_edge<direction, !p_is_a>(merge_state, q, *p.next->vertex_it);
+
+  if (q.edge.on_interior_side<winding>(*p.next->vertex_it))
   {
     p.edge = p_is_lower ? p.next->lower_opp_edge : p.next->upper_opp_edge;
 
@@ -552,7 +561,7 @@ void merge_iteration_reverse_outer_branch(MergeState& merge_state, ChainMergeSta
   }
 }
 
-template <HorizontalDirection direction, bool p_is_lower>
+template <Winding winding, HorizontalDirection direction, bool p_is_a>
 void merge_tail(MergeState& merge_state, ChainMergeState& p, ChainMergeState& q)
 {
   DIDA_DEBUG_ASSERT(!q.next);
@@ -560,14 +569,14 @@ void merge_tail(MergeState& merge_state, ChainMergeState& p, ChainMergeState& q)
 
   if (p.opp_last)
   {
-    advance_opp_edge<direction, p_is_lower>(merge_state, p, *merge_state.last_merged->vertex_it);
+    advance_opp_edge<direction, p_is_a>(merge_state, p, *merge_state.last_merged->vertex_it);
 
     Node* node = merge_state.node_pool.alloc();
     node->direction = other_direction(direction);
     node->type = NodeType::outer_branch;
     node->vertex_it = merge_state.last_merged->vertex_it;
 
-    if constexpr (p_is_lower)
+    if constexpr (is_lower(winding, direction, p_is_a))
     {
       node->lower_opp_edge = merge_state.last_merged->lower_opp_edge;
       node->upper_opp_edge = p.opp_edge;
@@ -597,7 +606,7 @@ void merge_tail(MergeState& merge_state, ChainMergeState& p, ChainMergeState& q)
   }
 }
 
-template <bool a_is_lower>
+template <Winding winding, HorizontalDirection direction>
 void merge_closing_vertex(MergeState& merge_state)
 {
   Node* a_node = merge_state.a.next;
@@ -609,7 +618,7 @@ void merge_closing_vertex(MergeState& merge_state)
   Edge incoming_edge{prev_cyclic(merge_state.vertices, a_node->vertex_it), a_node->vertex_it};
   Edge outgoing_edge{a_node->vertex_it, next_cyclic(merge_state.vertices, a_node->vertex_it)};
 
-  if constexpr (a_is_lower)
+  if constexpr (is_lower(winding, direction, true))
   {
     a_node->lower_opp_edge = outgoing_edge;
     a_node->upper_opp_edge = incoming_edge;
@@ -647,18 +656,10 @@ void push_opp_node(ChainMergeState& chain_merge_state, Node* node, uint8_t incom
   chain_merge_state.opp_last_branch_index = outgoing_branch_index;
 }
 
-template <HorizontalDirection direction, bool chain_is_lower>
+template <HorizontalDirection direction, bool is_a_chain>
 void advance_edge(MergeState& merge_state, ChainMergeState& chain_merge_state, Point2 point)
 {
-  if constexpr (chain_is_lower == (direction == HorizontalDirection::right))
-  {
-    while (lex_less_than_with_direction<direction>(*chain_merge_state.edge.end_vertex_it, point))
-    {
-      chain_merge_state.edge.start_vertex_it = chain_merge_state.edge.end_vertex_it;
-      chain_merge_state.edge.end_vertex_it = next_cyclic(merge_state.vertices, chain_merge_state.edge.end_vertex_it);
-    }
-  }
-  else
+  if constexpr (is_a_chain)
   {
     while (lex_less_than_with_direction<direction>(*chain_merge_state.edge.start_vertex_it, point))
     {
@@ -667,21 +668,20 @@ void advance_edge(MergeState& merge_state, ChainMergeState& chain_merge_state, P
           prev_cyclic(merge_state.vertices, chain_merge_state.edge.start_vertex_it);
     }
   }
-}
-
-template <HorizontalDirection direction, bool chain_is_lower>
-void advance_opp_edge(MergeState& merge_state, ChainMergeState& chain_merge_state, Point2 point)
-{
-  if constexpr (chain_is_lower == (direction == HorizontalDirection::right))
+  else
   {
-    while (lex_less_than_with_direction<direction>(*chain_merge_state.opp_edge.start_vertex_it, point))
+    while (lex_less_than_with_direction<direction>(*chain_merge_state.edge.end_vertex_it, point))
     {
-      chain_merge_state.opp_edge.end_vertex_it = chain_merge_state.opp_edge.start_vertex_it;
-      chain_merge_state.opp_edge.start_vertex_it =
-          prev_cyclic(merge_state.vertices, chain_merge_state.opp_edge.start_vertex_it);
+      chain_merge_state.edge.start_vertex_it = chain_merge_state.edge.end_vertex_it;
+      chain_merge_state.edge.end_vertex_it = next_cyclic(merge_state.vertices, chain_merge_state.edge.end_vertex_it);
     }
   }
-  else
+}
+
+template <HorizontalDirection direction, bool is_a_chain>
+void advance_opp_edge(MergeState& merge_state, ChainMergeState& chain_merge_state, Point2 point)
+{
+  if constexpr (is_a_chain)
   {
     while (lex_less_than_with_direction<direction>(*chain_merge_state.opp_edge.end_vertex_it, point))
     {
@@ -690,10 +690,32 @@ void advance_opp_edge(MergeState& merge_state, ChainMergeState& chain_merge_stat
           next_cyclic(merge_state.vertices, chain_merge_state.opp_edge.end_vertex_it);
     }
   }
+  else
+  {
+    while (lex_less_than_with_direction<direction>(*chain_merge_state.opp_edge.start_vertex_it, point))
+    {
+      chain_merge_state.opp_edge.end_vertex_it = chain_merge_state.opp_edge.start_vertex_it;
+      chain_merge_state.opp_edge.start_vertex_it =
+          prev_cyclic(merge_state.vertices, chain_merge_state.opp_edge.start_vertex_it);
+    }
+  }
 }
 
-} // namespace
 
+constexpr bool is_lower(Winding winding, HorizontalDirection direction, bool is_a)
+{
+  // We use the following as the base case for which we know the result is true:
+  //
+  //  winding = Winding::ccw
+  //  direction = HorizontalDirection::left
+  //  is_a = true
+  //
+  // All other values can be obtained using the fact that changing any one of the 3 inputs to its opposite changes the
+  // result to its opposite as well.
+  return (winding == Winding::ccw) == (direction == HorizontalDirection::left) == is_a;
+}
+
+template <Winding winding>
 ChainDecomposition merge_chain_decompositions(VerticesView vertices, NodePool& node_pool, const ChainDecomposition& a,
                                               const ChainDecomposition& b)
 {
@@ -701,20 +723,20 @@ ChainDecomposition merge_chain_decompositions(VerticesView vertices, NodePool& n
 
   MergeState merge_state{vertices, node_pool};
 
-  init_merge(merge_state, a.last_node, b.first_node);
+  init_merge<winding>(merge_state, a.last_node, b.first_node);
 
   while (true)
   {
     if (merge_state.direction == HorizontalDirection::left)
     {
-      if (!merge_iteration<HorizontalDirection::left>(merge_state))
+      if (!merge_iteration<winding, HorizontalDirection::left>(merge_state))
       {
         break;
       }
     }
     else
     {
-      if (!merge_iteration<HorizontalDirection::right>(merge_state))
+      if (!merge_iteration<winding, HorizontalDirection::right>(merge_state))
       {
         break;
       }
@@ -722,6 +744,21 @@ ChainDecomposition merge_chain_decompositions(VerticesView vertices, NodePool& n
   }
 
   return ChainDecomposition{a.first_node, b.last_node};
+}
+
+} // namespace
+
+ChainDecomposition merge_chain_decompositions(VerticesView vertices, Winding winding, NodePool& node_pool,
+                                              const ChainDecomposition& a, const ChainDecomposition& b)
+{
+  if (winding == Winding::ccw)
+  {
+    return merge_chain_decompositions<Winding::ccw>(vertices, node_pool, a, b);
+  }
+  else
+  {
+    return merge_chain_decompositions<Winding::cw>(vertices, node_pool, a, b);
+  }
 }
 
 } // namespace dida::detail::vertical_decomposition

@@ -77,15 +77,20 @@ Segment2 Edge::segment() const
   return Segment2::unsafe_from_endpoints(*start_vertex_it, *end_vertex_it);
 }
 
+template <Winding winding>
 bool Edge::on_interior_side(Point2 point) const
 {
-  return cross(*end_vertex_it - *start_vertex_it, point - *start_vertex_it) > 0;
+  ScalarDeg2 side = cross(*end_vertex_it - *start_vertex_it, point - *start_vertex_it);
+  return winding == Winding::ccw ? side > 0 : side < 0;
 }
 
+template <Winding winding>
 bool Edge::on_exterior_side(Point2 point) const
 {
-  return cross(*end_vertex_it - *start_vertex_it, point - *start_vertex_it) < 0;
+  ScalarDeg2 side = cross(*end_vertex_it - *start_vertex_it, point - *start_vertex_it);
+  return winding == Winding::ccw ? side < 0 : side > 0;
 }
+
 
 bool Edge::operator==(const Edge b) const
 {

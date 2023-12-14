@@ -112,15 +112,11 @@ struct Edge
   inline Segment2 segment() const;
 
   /// Returns whether @c point is strictly on the interior side of (the line through) this edge.
-  ///
-  /// @param point The point.
-  /// @return True iff @c point is on the interior side of this edge.
+  template <Winding winding>
   inline bool on_interior_side(Point2 point) const;
 
   /// Returns whether @c point is strictly on the exterior side of (the line through) this edge.
-  ///
-  /// @param point The point.
-  /// @return True iff @c point is on the exterior side of this edge.
+  template <Winding winding>
   inline bool on_exterior_side(Point2 point) const;
 
   /// Compares two edges for equality.
