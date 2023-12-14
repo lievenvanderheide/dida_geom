@@ -20,7 +20,7 @@ ChainDecomposition merge_chain_decompositions_rec(VerticesView vertices, NodePoo
     ChainDecomposition a = merge_chain_decompositions_rec(vertices, node_pool, chain_decompositions, mid);
     ChainDecomposition b =
         merge_chain_decompositions_rec(vertices, node_pool, chain_decompositions + mid, num_chain_decompositions - mid);
-    return merge_chain_decompositions(vertices, node_pool, a, b);
+    return merge_chain_decompositions(vertices, Winding::ccw, node_pool, a, b);
   }
 }
 

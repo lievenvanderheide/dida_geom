@@ -231,7 +231,7 @@ find_initial_region(VerticesView a_vertices, const VerticalDecomposition& a_exte
     // b_leftmost.
     Edge upper_edge = edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(
         a_vertices, EdgeRange{a_leftmost_it, a_rightmost_it}, b_leftmost);
-    if (upper_edge.on_exterior_side(b_leftmost))
+    if (upper_edge.on_exterior_side<Winding::ccw>(b_leftmost))
     {
       return InitialRegion{
           Region{a_exterior_decomposition.leftmost_node, a_exterior_decomposition.rightmost_node},
@@ -246,7 +246,7 @@ find_initial_region(VerticesView a_vertices, const VerticalDecomposition& a_exte
     // b_leftmost.
     Edge lower_edge = edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(
         a_vertices, EdgeRange{a_rightmost_it, a_leftmost_it}, b_leftmost);
-    if (lower_edge.on_exterior_side(b_leftmost))
+    if (lower_edge.on_exterior_side<Winding::ccw>(b_leftmost))
     {
       return InitialRegion{
           Region{a_exterior_decomposition.leftmost_node, a_exterior_decomposition.rightmost_node},
@@ -289,7 +289,7 @@ std::optional<EdgePair> is_point_in_region(VerticesView vertices, Region region,
   {
     result.lower_edge =
         edge_for_point_with_monotone_edge_range<HorizontalDirection::left>(vertices, lower_boundary, point);
-    if (!result.lower_edge.on_exterior_side(point))
+    if (!result.lower_edge.on_exterior_side<Winding::ccw>(point))
     {
       return std::nullopt;
     }
@@ -304,7 +304,7 @@ std::optional<EdgePair> is_point_in_region(VerticesView vertices, Region region,
   {
     result.upper_edge =
         edge_for_point_with_monotone_edge_range<HorizontalDirection::right>(vertices, upper_boundary, point);
-    if (!result.upper_edge.on_exterior_side(point))
+    if (!result.upper_edge.on_exterior_side<Winding::ccw>(point))
     {
       return std::nullopt;
     }
@@ -333,7 +333,7 @@ IntermediateResult intersect_iteration(IntersectState& state)
         break;
       }
 
-      if (!state.b.edge.on_exterior_side(*state.a.edge.end_vertex_it))
+      if (!state.b.edge.on_exterior_side<Winding::ccw>(*state.a.edge.end_vertex_it))
       {
         return IntermediateResult::intersect;
       }
@@ -348,7 +348,7 @@ IntermediateResult intersect_iteration(IntersectState& state)
         break;
       }
 
-      if (!state.a.edge.on_exterior_side(*state.b.edge.start_vertex_it))
+      if (!state.a.edge.on_exterior_side<Winding::ccw>(*state.b.edge.start_vertex_it))
       {
         return IntermediateResult::intersect;
       }
@@ -384,7 +384,7 @@ IntermediateResult intersect_iteration_advance_forward_node(IntersectState& stat
 
   if (p.next->type == NodeType::branch)
   {
-    if (q.edge.on_exterior_side(p_vertex))
+    if (q.edge.on_exterior_side<Winding::ccw>(p_vertex))
     {
       p.edge = p_is_ccw ? Edge::outgoing_edge(p.vertices, p.next->vertex_it)
                         : Edge::incoming_edge(p.vertices, p.next->vertex_it);
@@ -426,7 +426,7 @@ IntermediateResult intersect_iteration_advance_reverse_node(IntersectState& stat
 
   Point2 p_vertex = *p.next->vertex_it;
 
-  if (!q.edge.on_exterior_side(p_vertex))
+  if (!q.edge.on_exterior_side<Winding::ccw>(p_vertex))
   {
     return IntermediateResult::intersect;
   }
@@ -456,7 +456,7 @@ IntermediateResult intersect_iteration_advance_reverse_node(IntersectState& stat
 
   if (should_turn_around)
   {
-    if (q_opp_edge.is_valid() && !q_opp_edge.on_exterior_side(p_vertex))
+    if (q_opp_edge.is_valid() && !q_opp_edge.on_exterior_side<Winding::ccw>(p_vertex))
     {
       return IntermediateResult::intersect;
     }
