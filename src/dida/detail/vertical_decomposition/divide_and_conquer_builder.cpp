@@ -30,7 +30,8 @@ Node* vertical_decomposition_with_divide_and_conquer_builder(VerticesView vertic
   // VerticalDecompositionType::exterior_decomposition is not yet supported.
   DIDA_ASSERT(decomposition_type == VerticalDecompositionType::interior_decomposition);
 
-  std::vector<ChainDecomposition> chain_decompositions = vertical_decomposition_zigzag_phase(vertices, node_pool);
+  std::vector<ChainDecomposition> chain_decompositions =
+      vertical_decomposition_zigzag_phase(vertices, Winding::ccw, node_pool);
 
   ChainDecomposition merged =
       merge_chain_decompositions_rec(vertices, node_pool, chain_decompositions.data(), chain_decompositions.size());
