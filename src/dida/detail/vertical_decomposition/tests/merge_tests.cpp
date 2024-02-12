@@ -723,30 +723,36 @@ TEST_CASE("vertical_decomposition_merge")
 
       SECTION("Towards left")
       {
-        Polygon2 polygon{
+        std::vector<Point2> vertices_storage{
             {7.68, 5.80},  {6.50, 6.16},  {4.38, 5.38}, {5.82, 4.06}, {9.26, 4.14}, {11.68, 6.28},
             {9.50, 9.18},  {6.74, 10.06}, {2.66, 9.18}, {0.44, 7.20}, {2.24, 3.70}, {5.08, 1.56},
             {10.24, 1.88}, {11.10, 2.96}, {9.50, 2.58}, {5.46, 2.42}, {3.00, 4.24}, {2.34, 7.12},
             {3.44, 8.32},  {6.66, 9.22},  {8.96, 8.46}, {9.68, 6.42}, {8.76, 5.24}, {7.12, 5.34},
         };
 
-        VerticesView vertices(polygon);
+        Winding winding = GENERATE(Winding::ccw, Winding::cw);
+        if (winding == Winding::cw)
+        {
+          flip_horizontally(vertices_storage);
+        }
+
+        VerticesView vertices(vertices_storage);
         NodePool node_pool;
 
         std::vector<ChainDecomposition> chain_decompositions =
-            initial_chain_decompositions(vertices, Winding::ccw, node_pool);
+            initial_chain_decompositions(vertices, winding, node_pool);
         REQUIRE(chain_decompositions.size() == 5);
 
-        ChainDecomposition a = merge_chain_decompositions(vertices, Winding::ccw, node_pool, chain_decompositions[0],
-                                                          chain_decompositions[1]);
-        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, a));
+        ChainDecomposition a =
+            merge_chain_decompositions(vertices, winding, node_pool, chain_decompositions[0], chain_decompositions[1]);
+        REQUIRE(validate_chain_decomposition(vertices, winding, a));
 
-        ChainDecomposition b = merge_chain_decompositions(vertices, Winding::ccw, node_pool, chain_decompositions[2],
-                                                          chain_decompositions[3]);
-        REQUIRE(validate_chain_decomposition(vertices, Winding::ccw, b));
+        ChainDecomposition b =
+            merge_chain_decompositions(vertices, winding, node_pool, chain_decompositions[2], chain_decompositions[3]);
+        REQUIRE(validate_chain_decomposition(vertices, winding, b));
 
-        ChainDecomposition merged = merge_chain_decompositions(vertices, Winding::ccw, node_pool, a, b);
-        CHECK(validate_chain_decomposition(vertices, Winding::ccw, merged));
+        ChainDecomposition merged = merge_chain_decompositions(vertices, winding, node_pool, a, b);
+        CHECK(validate_chain_decomposition(vertices, winding, merged));
       }
     }
 
