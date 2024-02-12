@@ -9,7 +9,7 @@
 namespace dida::detail::vertical_decomposition
 {
 
-TEST_CASE("vertical_decomposition_zigzag_phase")
+TEST_CASE("interior_zigzag_phase")
 {
   SECTION("Zigzag simple")
   {
@@ -26,8 +26,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
     }
 
     NodePool node_pool;
-    std::vector<ChainDecomposition> chain_decompositions =
-        vertical_decomposition_zigzag_phase(vertices, winding, node_pool);
+    std::vector<ChainDecomposition> chain_decompositions = interior_zigzag_phase(vertices, winding, node_pool);
 
     REQUIRE(chain_decompositions.size() == 2);
 
@@ -62,8 +61,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
     }
 
     NodePool node_pool;
-    std::vector<ChainDecomposition> chain_decompositions =
-        vertical_decomposition_zigzag_phase(vertices, winding, node_pool);
+    std::vector<ChainDecomposition> chain_decompositions = interior_zigzag_phase(vertices, winding, node_pool);
 
     REQUIRE(chain_decompositions.size() == 2);
 
@@ -94,8 +92,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
     }
 
     NodePool node_pool;
-    std::vector<ChainDecomposition> chain_decompositions =
-        vertical_decomposition_zigzag_phase(vertices, winding, node_pool);
+    std::vector<ChainDecomposition> chain_decompositions = interior_zigzag_phase(vertices, winding, node_pool);
 
     REQUIRE(chain_decompositions.size() == 4);
 
@@ -132,8 +129,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
     }
 
     NodePool node_pool;
-    std::vector<ChainDecomposition> chain_decompositions =
-        vertical_decomposition_zigzag_phase(vertices, winding, node_pool);
+    std::vector<ChainDecomposition> chain_decompositions = interior_zigzag_phase(vertices, winding, node_pool);
 
     REQUIRE(chain_decompositions.size() == 3);
 
@@ -167,8 +163,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
     }
 
     NodePool node_pool;
-    std::vector<ChainDecomposition> chain_decompositions =
-        vertical_decomposition_zigzag_phase(vertices, winding, node_pool);
+    std::vector<ChainDecomposition> chain_decompositions = interior_zigzag_phase(vertices, winding, node_pool);
 
     REQUIRE(chain_decompositions.size() == 3);
 
@@ -201,8 +196,7 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
       }
 
       NodePool node_pool;
-      std::vector<ChainDecomposition> chain_decompositions =
-          vertical_decomposition_zigzag_phase(vertices, winding, node_pool);
+      std::vector<ChainDecomposition> chain_decompositions = interior_zigzag_phase(vertices, winding, node_pool);
 
       REQUIRE(chain_decompositions.size() == 1);
       CHECK(chain_decompositions[0].first_node->vertex_it == vertices.begin() + 2);
@@ -224,13 +218,139 @@ TEST_CASE("vertical_decomposition_zigzag_phase")
       }
 
       NodePool node_pool;
-      std::vector<ChainDecomposition> chain_decompositions =
-          vertical_decomposition_zigzag_phase(vertices, winding, node_pool);
+      std::vector<ChainDecomposition> chain_decompositions = interior_zigzag_phase(vertices, winding, node_pool);
 
       REQUIRE(chain_decompositions.size() == 1);
       CHECK(chain_decompositions[0].first_node->vertex_it == vertices.begin() + 3);
       CHECK(validate_polygon_decomposition(vertices, winding, chain_decompositions[0].first_node));
     }
+  }
+}
+
+namespace
+{
+
+void validate_exterior_zigzag_phase_result(ExteriorChainDecompositions& result, VerticesView vertices, Winding winding,
+                                           size_t expected_leftmost_vertex_index,
+                                           size_t expected_rightmost_vertex_index,
+                                           size_t expected_num_lower_chain_decompositions,
+                                           size_t expected_num_upper_chain_decompositions)
+{
+  CHECK(result.leftmost_node->vertex_it == vertices.begin() + expected_leftmost_vertex_index);
+  CHECK(result.rightmost_node->vertex_it == vertices.begin() + expected_rightmost_vertex_index);
+
+  REQUIRE(result.lower_chain_decompositions.size() == expected_num_lower_chain_decompositions);
+  REQUIRE(result.upper_chain_decompositions.size() == expected_num_upper_chain_decompositions);
+
+  if (winding == Winding::ccw)
+  {
+    CHECK(result.lower_chain_decompositions.front().first_node == result.rightmost_node);
+    CHECK(result.lower_chain_decompositions.back().last_node == result.leftmost_node);
+
+    CHECK(result.upper_chain_decompositions.front().first_node == result.leftmost_node);
+    CHECK(result.upper_chain_decompositions.back().last_node == result.rightmost_node);
+  }
+  else
+  {
+    CHECK(result.lower_chain_decompositions.front().first_node == result.leftmost_node);
+    CHECK(result.lower_chain_decompositions.back().last_node == result.rightmost_node);
+
+    CHECK(result.upper_chain_decompositions.front().first_node == result.rightmost_node);
+    CHECK(result.upper_chain_decompositions.back().last_node == result.leftmost_node);
+  }
+
+  {
+    Node* leftmost_node_upper_neighbor_backup = result.leftmost_node->neighbors[2];
+    result.leftmost_node->neighbors[2] = nullptr;
+
+    Node* rightmost_node_upper_neighbor_backup = result.rightmost_node->neighbors[2];
+    result.rightmost_node->neighbors[2] = nullptr;
+
+    for (const ChainDecomposition& chain_decomposition : result.lower_chain_decompositions)
+    {
+      CHECK(validate_chain_decomposition(vertices, winding, chain_decomposition));
+    }
+
+    result.leftmost_node->neighbors[2] = leftmost_node_upper_neighbor_backup;
+    result.rightmost_node->neighbors[2] = rightmost_node_upper_neighbor_backup;
+  }
+
+  {
+    Node* leftmost_node_lower_neighbor_backup = result.leftmost_node->neighbors[1];
+    result.leftmost_node->neighbors[1] = nullptr;
+
+    Node* rightmost_node_lower_neighbor_backup = result.rightmost_node->neighbors[1];
+    result.rightmost_node->neighbors[1] = nullptr;
+
+    for (const ChainDecomposition& chain_decomposition : result.upper_chain_decompositions)
+    {
+      CHECK(validate_chain_decomposition(vertices, winding, chain_decomposition));
+    }
+
+    result.leftmost_node->neighbors[1] = leftmost_node_lower_neighbor_backup;
+    result.rightmost_node->neighbors[1] = rightmost_node_lower_neighbor_backup;
+  }
+}
+
+} // namespace
+
+TEST_CASE("exterior_zigzag_phase")
+{
+  SECTION("Monotone polygon")
+  {
+    std::vector<Point2> vertices_storage{
+        {-4.24, 4.70}, {-6.56, 3.62}, {-5.24, 0.74}, {-0.62, 0.14}, {1.82, 1.76},
+        {4.30, 0.30},  {6.08, 2.06},  {4.54, 5.20},  {-1.98, 6.96},
+    };
+
+    size_t expected_leftmost_vertex_index = 1;
+    size_t expected_rightmost_vertex_index = 6;
+
+    Winding winding = GENERATE(Winding::cw, Winding::ccw);
+    if (winding == Winding::ccw)
+    {
+      flip_horizontally(vertices_storage);
+      std::swap(expected_leftmost_vertex_index, expected_rightmost_vertex_index);
+    }
+
+    VerticesView vertices(vertices_storage);
+
+    NodePool node_pool;
+    ExteriorChainDecompositions chain_decompositions = exterior_zigzag_phase(vertices, winding, node_pool);
+
+    validate_exterior_zigzag_phase_result(chain_decompositions, vertices, winding, expected_leftmost_vertex_index,
+                                          expected_rightmost_vertex_index, 1, 1);
+  }
+
+  SECTION("Multiply chains")
+  {
+    std::vector<Point2> vertices_storage{
+        {-3.86, 8.50}, {-3.82, 6.90}, {-5.34, 6.00}, {-8.60, 5.76}, {-5.12, 5.16},  {-2.20, 3.22}, {-4.62, 1.48},
+        {-5.96, 1.90}, {-4.84, 3.24}, {-6.90, 2.16}, {-5.26, 0.46}, {-3.12, -0.02}, {-0.94, 1.50}, {2.08, 1.24},
+        {3.76, 0.56},  {5.80, 2.06},  {5.02, 3.96},  {3.16, 4.26},  {4.62, 2.86},   {4.54, 1.92},  {2.58, 1.88},
+        {1.46, 3.80},  {2.38, 5.50},  {7.30, 5.66},  {3.20, 6.54},  {2.46, 7.76},   {3.82, 9.28},  {5.60, 8.10},
+        {4.44, 7.46},  {6.34, 7.66},  {6.40, 9.28},  {3.68, 9.84},  {1.22, 7.78},   {-2.26, 7.64}, {-4.04, 9.50},
+        {-6.48, 9.50}, {-8.00, 8.58}, {-8.12, 7.02}, {-6.68, 6.68}, {-5.50, 7.54},  {-6.96, 7.38}, {-7.48, 8.28},
+        {-6.26, 8.94},
+    };
+
+    size_t expected_leftmost_vertex_index = 3;
+    size_t expected_rightmost_vertex_index = 23;
+
+    Winding winding = GENERATE(Winding::cw, Winding::ccw);
+    if (winding == Winding::ccw)
+    {
+      flip_horizontally(vertices_storage);
+      std::swap(expected_leftmost_vertex_index, expected_rightmost_vertex_index);
+    }
+
+    VerticesView vertices(vertices_storage);
+
+    NodePool node_pool;
+    ExteriorChainDecompositions chain_decompositions = exterior_zigzag_phase(vertices, winding, node_pool);
+
+    validate_exterior_zigzag_phase_result(chain_decompositions, vertices, winding, expected_leftmost_vertex_index,
+                                          expected_rightmost_vertex_index, 3, 3);
   }
 }
 

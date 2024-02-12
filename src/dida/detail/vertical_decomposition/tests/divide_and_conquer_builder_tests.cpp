@@ -40,7 +40,7 @@ Polygon2 spiral_polygon(size_t num_revolutions, size_t num_vertices_per_revoluti
   return Polygon2(vertices);
 }
 
-TEST_CASE("vertical_decomposition_with_divide_and_conquer_builder")
+TEST_CASE("interior_decomposition_with_divide_and_conquer_builder")
 {
   SECTION("Monotone polygon")
   {
@@ -49,8 +49,7 @@ TEST_CASE("vertical_decomposition_with_divide_and_conquer_builder")
     VerticesView vertices(polygon);
     NodePool node_pool;
 
-    Node* root_node = vertical_decomposition_with_divide_and_conquer_builder(
-        vertices, node_pool, VerticalDecompositionType::interior_decomposition);
+    Node* root_node = interior_decomposition_with_divide_and_conquer_builder(vertices, node_pool);
     CHECK(validate_polygon_decomposition(vertices, Winding::ccw, root_node));
   }
 
@@ -68,8 +67,7 @@ TEST_CASE("vertical_decomposition_with_divide_and_conquer_builder")
 
     VerticesView vertices(polygon);
     NodePool node_pool;
-    Node* root_node = vertical_decomposition_with_divide_and_conquer_builder(
-        vertices, node_pool, VerticalDecompositionType::interior_decomposition);
+    Node* root_node = interior_decomposition_with_divide_and_conquer_builder(vertices, node_pool);
 
     CHECK(validate_polygon_decomposition(vertices, Winding::ccw, root_node));
   }
@@ -85,8 +83,7 @@ TEST_CASE("vertical_decomposition_with_divide_and_conquer_builder")
       VerticesView vertices(polygon);
       NodePool node_pool;
 
-      Node* root_node = vertical_decomposition_with_divide_and_conquer_builder(
-          vertices, node_pool, VerticalDecompositionType::interior_decomposition);
+      Node* root_node = interior_decomposition_with_divide_and_conquer_builder(vertices, node_pool);
       CHECK(validate_polygon_decomposition(vertices, Winding::ccw, root_node));
     }
 
@@ -97,8 +94,7 @@ TEST_CASE("vertical_decomposition_with_divide_and_conquer_builder")
       VerticesView vertices(polygon);
       NodePool node_pool;
 
-      Node* root_node = vertical_decomposition_with_divide_and_conquer_builder(
-          vertices, node_pool, VerticalDecompositionType::interior_decomposition);
+      Node* root_node = interior_decomposition_with_divide_and_conquer_builder(vertices, node_pool);
       CHECK(validate_polygon_decomposition(vertices, Winding::ccw, root_node));
     }
   }

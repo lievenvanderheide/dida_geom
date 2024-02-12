@@ -21,8 +21,9 @@ struct ZigzagState
   /// Whether we're currently going forward.
   bool forward;
 
-  /// The first vertex of the first decomposition.
-  VerticesView::const_iterator first_vertex_it;
+  /// The vertex where the zigzag algorithm should terminate. If the input is a polygon, then this is equal to the first
+  /// vertex of the last chain, if the input is a chain, then this is the last_node->vertex_it.
+  VerticesView::const_iterator last_vertex_it;
 
   /// The current edge. This is the edge which contains the current active point.
   Edge current_edge;
@@ -35,17 +36,25 @@ struct ZigzagState
   /// direction of @c direction. @c next_node can be @c nullptr.
   Node* next_node;
 
+  /// XXX
+  Node* last_node;
+
   /// The output vector of chain decompositions. The last chain in this array is the chain we're currently building.
   std::vector<ChainDecomposition> chain_decompositions;
 };
 
-/// Initializes a @c ZigzagState. This function finds a convex side vertex to start the first chain with, and
-/// initializes the @c ZigzagState to the state with this vertex as its active point.
-///
-///
-/// @param state The @c ZigzagState. On call, the @c vertices and @c node_pool members must be set, on return, the full
-/// @c ZigzagState will be in a valid state.
-void zigzag_init(ZigzagState& state);
+/// Initializes a @c ZigzagState, when decomposing the interior of a polygon. This function finds a convex side vertex
+/// to start the first chain with, and initializes the @c ZigzagState to the state with this vertex as its active point.
+void interior_zigzag_init(ZigzagState& state, VerticesView vertices, NodePool& node_pool);
+
+/// Initializes a @c ZigzagState, when decomposing the interior of a polygon. This function initializes @c ZigzagState to the state with
+/// first_node->vertex_it as its active point.
+void exterior_zigzag_init(ZigzagState& state, VerticesView vertices, Node* first_node, Node* last_node,
+                          NodePool& node_pool);
+
+/// Runs the main loop of the zigzag algorithm.
+template <Winding winding>
+void zigzag_iterate(ZigzagState& state);
 
 /// Performs 'forward' iterations until the next side vertex.
 ///
@@ -95,20 +104,25 @@ bool zigzag_reverse_convex_corner(ZigzagState& state, VerticesView::const_iterat
 ///
 /// @tparam The current direction. This should be equal to @c state.direction.
 /// @param state The @c ZigZagState.
+/// @return True if we should continue iterating, false we're finished.
 template <HorizontalDirection direction>
-void zigzag_concave_corner(ZigzagState& state);
+bool zigzag_concave_corner(ZigzagState& state);
 
 /// Returns whether the corner at @c b, with previous vertex @c a and next vertex @c c is a convex corner.
 template <Winding winding>
 bool is_convex_corner(Point2 a, Point2 b, Point2 c);
 
 template <Winding winding>
-void zigzag_init(ZigzagState& state)
+void interior_zigzag_init(ZigzagState& state, VerticesView vertices, NodePool& node_pool)
 {
-  for (VerticesView::const_iterator it = state.vertices.begin(); it != state.vertices.end(); ++it)
+  state.vertices = vertices;
+  state.node_pool = &node_pool;
+  state.last_node = nullptr;
+
+  for (VerticesView::const_iterator it = vertices.begin(); it != vertices.end(); ++it)
   {
-    VerticesView::const_iterator prev_it = prev_cyclic(state.vertices, it);
-    VerticesView::const_iterator next_it = next_cyclic(state.vertices, it);
+    VerticesView::const_iterator prev_it = prev_cyclic(vertices, it);
+    VerticesView::const_iterator next_it = next_cyclic(vertices, it);
 
     bool incoming_towards_right = lex_less_than(*prev_it, *it);
     bool outgoing_towards_right = lex_less_than(*it, *next_it);
@@ -130,7 +144,7 @@ void zigzag_init(ZigzagState& state)
 
         state.direction = direction;
         state.forward = true;
-        state.first_vertex_it = it;
+        state.last_vertex_it = it;
         state.current_edge = Edge{it, next_it};
         state.prev_node = node;
         state.next_node = nullptr;
@@ -143,6 +157,63 @@ void zigzag_init(ZigzagState& state)
   }
 
   DIDA_ASSERT(!"No convex side vertex found - input not a valid polygon.");
+}
+
+void exterior_zigzag_init(ZigzagState& state, VerticesView vertices, Node* first_node, Node* last_node,
+                          NodePool& node_pool)
+{
+  state.vertices = vertices;
+  state.node_pool = &node_pool;
+  state.direction = first_node->direction;
+  state.forward = true;
+  state.last_vertex_it = last_node->vertex_it;
+  state.current_edge = Edge::outgoing_edge(vertices, first_node->vertex_it);
+  state.prev_node = first_node;
+  state.next_node = nullptr;
+  state.last_node = last_node;
+  state.chain_decompositions.push_back(ChainDecomposition{first_node, nullptr});
+}
+
+template <Winding winding>
+void zigzag_iterate(ZigzagState& state)
+{
+  while (true)
+  {
+    if (state.forward)
+    {
+      if (state.direction == HorizontalDirection::right)
+      {
+        if (!zigzag_forward<winding, HorizontalDirection::right>(state))
+        {
+          break;
+        }
+      }
+      else
+      {
+        if (!zigzag_forward<winding, HorizontalDirection::left>(state))
+        {
+          break;
+        }
+      }
+    }
+    else
+    {
+      if (state.direction == HorizontalDirection::right)
+      {
+        if (!zigzag_reverse<winding, HorizontalDirection::right>(state))
+        {
+          break;
+        }
+      }
+      else
+      {
+        if (!zigzag_reverse<winding, HorizontalDirection::left>(state))
+        {
+          break;
+        }
+      }
+    }
+  }
 }
 
 template <Winding winding, HorizontalDirection direction>
@@ -163,8 +234,7 @@ bool zigzag_forward(ZigzagState& state)
       }
       else
       {
-        zigzag_concave_corner<winding, direction>(state);
-        return true;
+        return zigzag_concave_corner<winding, direction>(state);
       }
     }
   }
@@ -206,8 +276,7 @@ bool zigzag_reverse(ZigzagState& state)
         }
         else
         {
-          zigzag_concave_corner<winding, direction>(state);
-          return true;
+          return zigzag_concave_corner<winding, direction>(state);
         }
       }
     }
@@ -219,14 +288,15 @@ bool zigzag_forward_convex_corner(ZigzagState& state, VerticesView::const_iterat
 {
   constexpr bool incoming_is_lower = (winding == Winding::ccw) == (direction == HorizontalDirection::right);
 
-  if (state.current_edge.start_vertex_it == state.first_vertex_it)
+  if (state.current_edge.start_vertex_it == state.last_vertex_it)
   {
     // We've reached the first vertex, so the current chain ends here.
     //
-    // Note that the current chain can't be the same chain as the outgoing chain at state.first_vertex_it,
+    // Note that the current chain can't be the same chain as the outgoing chain at state.last_vertex_it,
     // because for that we'd have to be going in the reverse direction.
 
     DIDA_DEBUG_ASSERT(state.chain_decompositions.size() > 1);
+    DIDA_DEBUG_ASSERT(!state.last_node);
 
     Node* node = state.node_pool->alloc();
     node->direction = other_direction(direction);
@@ -282,11 +352,12 @@ bool zigzag_reverse_convex_corner(ZigzagState& state)
 
   // The zigzag algorithm can't handle convex corners at the end of a reverse edge, so we have to start a new chain.
 
-  if (state.current_edge.start_vertex_it == state.first_vertex_it && state.chain_decompositions.size() == 1)
+  if (state.current_edge.start_vertex_it == state.last_vertex_it && state.chain_decompositions.size() == 1)
   {
     // We've reached the first vertex while still in our first chain, so it's a closed chain.
 
     DIDA_DEBUG_ASSERT(state.next_node == state.chain_decompositions[0].first_node);
+    DIDA_DEBUG_ASSERT(!state.last_node);
 
     // Turn the first node into a leaf node.
     Node* first_node = state.next_node;
@@ -300,6 +371,9 @@ bool zigzag_reverse_convex_corner(ZigzagState& state)
 
     first_node->neighbors[0] = state.prev_node;
     return false;
+
+    // If state.current_edge.start_vertex_it == state.last_vertex_it, but we're not in the first chain, then we'll
+    // proceed to create the closing node of the current chain in the default way, and return afterwards.
   }
 
   Node* old_chain_last_node = state.node_pool->alloc();
@@ -352,8 +426,10 @@ bool zigzag_reverse_convex_corner(ZigzagState& state)
 
   state.chain_decompositions.back().last_node = old_chain_last_node;
 
-  if (state.current_edge.start_vertex_it == state.first_vertex_it)
+  if (state.current_edge.start_vertex_it == state.last_vertex_it)
   {
+    DIDA_DEBUG_ASSERT(!state.last_node);
+
     return false;
   }
 
@@ -378,9 +454,23 @@ bool zigzag_reverse_convex_corner(ZigzagState& state)
 }
 
 template <Winding winding, HorizontalDirection direction>
-void zigzag_concave_corner(ZigzagState& state)
+bool zigzag_concave_corner(ZigzagState& state)
 {
   constexpr bool incoming_is_lower = (winding == Winding::ccw) == (direction == HorizontalDirection::right);
+
+  if (state.current_edge.start_vertex_it == state.last_vertex_it)
+  {
+    DIDA_DEBUG_ASSERT(state.last_node);
+
+    state.last_node->neighbors[incoming_is_lower ? 2 : 1] = state.prev_node;
+
+    uint8_t prev_node_branch_index = state.forward ? (incoming_is_lower ? 2 : 1) : 0;
+    state.prev_node->neighbors[prev_node_branch_index] = state.last_node;
+
+    state.chain_decompositions.back().last_node = state.last_node;
+
+    return false;
+  }
 
   Node* node = state.node_pool->alloc();
   node->direction = other_direction(direction);
@@ -445,6 +535,8 @@ void zigzag_concave_corner(ZigzagState& state)
 
   state.direction = other_direction(direction);
   state.forward = true;
+
+  return true;
 }
 
 template <Winding winding>
@@ -460,69 +552,74 @@ bool is_convex_corner(Point2 a, Point2 b, Point2 c)
   }
 }
 
-template <Winding winding>
-std::vector<ChainDecomposition> vertical_decomposition_zigzag_phase(VerticesView vertices, NodePool& node_pool)
+} // namespace
+
+std::vector<ChainDecomposition> interior_zigzag_phase(VerticesView vertices, Winding winding, NodePool& node_pool)
 {
   ZigzagState state;
-  state.vertices = vertices;
-  state.node_pool = &node_pool;
 
-  zigzag_init<winding>(state);
-
-  while (true)
+  if (winding == Winding::ccw)
   {
-    if (state.forward)
-    {
-      if (state.direction == HorizontalDirection::right)
-      {
-        if (!zigzag_forward<winding, HorizontalDirection::right>(state))
-        {
-          break;
-        }
-      }
-      else
-      {
-        if (!zigzag_forward<winding, HorizontalDirection::left>(state))
-        {
-          break;
-        }
-      }
-    }
-    else
-    {
-      if (state.direction == HorizontalDirection::right)
-      {
-        if (!zigzag_reverse<winding, HorizontalDirection::right>(state))
-        {
-          break;
-        }
-      }
-      else
-      {
-        if (!zigzag_reverse<winding, HorizontalDirection::left>(state))
-        {
-          break;
-        }
-      }
-    }
+    interior_zigzag_init<Winding::ccw>(state, vertices, node_pool);
+    zigzag_iterate<Winding::ccw>(state);
+  }
+  else
+  {
+    interior_zigzag_init<Winding::cw>(state, vertices, node_pool);
+    zigzag_iterate<Winding::cw>(state);
   }
 
   return std::move(state.chain_decompositions);
 }
 
-} // namespace
-
-std::vector<ChainDecomposition> vertical_decomposition_zigzag_phase(VerticesView vertices, Winding winding,
-                                                                    NodePool& node_pool)
+ExteriorChainDecompositions exterior_zigzag_phase(VerticesView vertices, Winding winding, NodePool& node_pool)
 {
-  if (winding == Winding::ccw)
+  auto [leftmost_vertex_it, rightmost_vertex_it] = std::minmax_element(vertices.begin(), vertices.end(), lex_less_than);
+
+  Node* leftmost_node = node_pool.alloc();
+  leftmost_node->direction = HorizontalDirection::right;
+  leftmost_node->type = NodeType::branch;
+  leftmost_node->vertex_it = leftmost_vertex_it;
+  leftmost_node->lower_opp_edge = Edge::invalid();
+  leftmost_node->upper_opp_edge = Edge::invalid();
+  leftmost_node->neighbors[0] = nullptr;
+
+  Node* rightmost_node = node_pool.alloc();
+  rightmost_node->direction = HorizontalDirection::left;
+  rightmost_node->type = NodeType::branch;
+  rightmost_node->vertex_it = rightmost_vertex_it;
+  rightmost_node->lower_opp_edge = Edge::invalid();
+  rightmost_node->upper_opp_edge = Edge::invalid();
+  rightmost_node->neighbors[0] = nullptr;
+
+  ExteriorChainDecompositions result;
+  result.leftmost_node = leftmost_node;
+  result.rightmost_node = rightmost_node;
+
+  if(winding == Winding::ccw)
   {
-    return vertical_decomposition_zigzag_phase<Winding::ccw>(vertices, node_pool);
+    ZigzagState state;
+    exterior_zigzag_init(state, vertices, leftmost_node, rightmost_node, node_pool);
+    zigzag_iterate<Winding::ccw>(state);
+    result.upper_chain_decompositions = std::move(state.chain_decompositions);
+
+    exterior_zigzag_init(state, vertices, rightmost_node, leftmost_node, node_pool);
+    zigzag_iterate<Winding::ccw>(state);
+    result.lower_chain_decompositions = std::move(state.chain_decompositions);
   }
   else
   {
-    return vertical_decomposition_zigzag_phase<Winding::cw>(vertices, node_pool);
+    ZigzagState state;
+    exterior_zigzag_init(state, vertices, leftmost_node, rightmost_node, node_pool);
+    zigzag_iterate<Winding::cw>(state);
+    result.lower_chain_decompositions = std::move(state.chain_decompositions);
+
+    exterior_zigzag_init(state, vertices, rightmost_node, leftmost_node, node_pool);
+    zigzag_iterate<Winding::cw>(state);
+    result.upper_chain_decompositions = std::move(state.chain_decompositions);
   }
+
+  return result;
 }
 
 } // namespace dida::detail::vertical_decomposition
