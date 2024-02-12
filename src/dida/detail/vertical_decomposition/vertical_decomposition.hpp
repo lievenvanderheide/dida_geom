@@ -237,7 +237,7 @@ struct VerticalDecomposition
   Node* rightmost_node;
 };
 
-/// A struct which holds pointers to the nodes at the beginning and end of the vertical decompisition of a polygonal
+/// A struct which holds pointers to the nodes at the beginning and end of the vertical decomposition of a polygonal
 /// chain. All other nodes of the chain can be reached by following the @c neighbors pointers in either of these nodes.
 ///
 /// A special case is the chain which consists of all the edges of the input polygon. In this case, @c first_node can be

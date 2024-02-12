@@ -12,7 +12,15 @@ namespace dida::detail::vertical_decomposition
 /// pointers in the nodes' @c neighbors array. The nodes are allocated using the provided @c node_pool, so the vertical
 /// decomposition remains alive as long as the node pool stays alive, while deallocating the node pool is enough to
 /// deallocate the vertical decomposition.
-Node* vertical_decomposition_with_divide_and_conquer_builder(VerticesView vertices, NodePool& node_pool,
-                                                             VerticalDecompositionType decomposition_type);
+Node* interior_decomposition_with_divide_and_conquer_builder(VerticesView vertices, NodePool& node_pool);
+
+struct ExteriorDecomposition
+{
+  Node* leftmost_node;
+  Node* rightmost_node;
+};
+
+ExteriorDecomposition exterior_decomposition_with_divide_and_conquer_builder(VerticesView vertices,
+                                                                             NodePool& node_pool);
 
 } // namespace dida::detail::vertical_decomposition
