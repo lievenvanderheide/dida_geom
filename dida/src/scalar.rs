@@ -84,7 +84,7 @@ impl<Params: ScalarParams> Scalar<Params> {
 
     /// Constructs a scalar with the given numerator.
     ///
-    /// The value of the scalar is 'numerator / DENOM'.
+    /// The value of the scalar is `numerator / DENOM`.
     pub fn from_numerator(numerator: Params::IntT) -> Self {
         Self { numerator }
     }
@@ -96,14 +96,14 @@ impl<Params: ScalarParams> Scalar<Params> {
     
     /// Constructs a scalar with the given floating point value.
     ///
-    /// The value will be the ScalarDeg1 closest to 'value'.
+    /// The value will be the `ScalarDeg1` closest to `value`.
     pub fn new(value: f64) -> Self {
         Self {
             numerator: Params::f64_to_int((value * Params::int_to_f64(Self::DENOM)).round_ties_even())
         }
     }
 
-    /// Converts this scalar to a f64 number. Rounds if necessary.
+    /// Converts this scalar to a `f64` number. Rounds if necessary.
     pub fn as_f64(&self) -> f64 {
         Params::int_to_f64(self.numerator) * Self::QUANTUM
     }

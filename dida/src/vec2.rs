@@ -1,7 +1,8 @@
 use crate::{ScalarDeg1, ScalarDeg2};
-use std::ops::{Add, Sub};
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::cmp::Ordering;
 
+/// A 2D vector with [`ScalarDeg1`] coordinates.
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Vec2 {
     x: ScalarDeg1,
@@ -9,7 +10,7 @@ pub struct Vec2 {
 }
 
 impl Vec2 {
-    /// Constructs a new Vec2 with the 'ScalarDeg1' coordinates closest to the given 'f64' coordinates.
+    /// Constructs a `Vec2` with the `ScalarDeg1` coordinates closest to the given `f64` coordinates.
     pub fn new(x: f64, y: f64) -> Vec2 {
         Vec2 {
             x: ScalarDeg1::new(x),
@@ -17,7 +18,7 @@ impl Vec2 {
         }
     }
 
-    /// Constructs a vector with the given coordinates.
+    /// Constructs a `Vec2` with the given coordinates.
     pub fn from_coords(x: ScalarDeg1, y: ScalarDeg1) -> Vec2 {
         Vec2 {
             x: x,
@@ -25,22 +26,22 @@ impl Vec2 {
         }
     }
 
-    /// Returns the 'x' component of this vector.
+    /// Returns the `x` component of this vector.
     pub fn x(self) -> ScalarDeg1 {
         self.x
     }
 
-    /// Returns the 'y' component of this vector.
+    /// Returns the `y` component of this vector.
     pub fn y(self) -> ScalarDeg1 {
         self.y
     }
 
-    /// Sets the 'x' component of this vector.
+    /// Sets the `x` component of this vector.
     pub fn set_x(&mut self, x: ScalarDeg1) {
         self.x = x;
     }
 
-    /// Sets the 'y' component of this vector.
+    /// Sets the `y` component of this vector.
     pub fn set_y(&mut self, y: ScalarDeg1) {
         self.y = y;
     }
@@ -53,22 +54,22 @@ impl Vec2 {
     /// Returns the 2D cross product of 2 vectors.
     ///
     /// The 2D cross product, also known as the perp dot product, is defined as the dot product of the left
-    /// perpendicular of 'a' and the vector 'b'. 
+    /// perpendicular of `a` and the vector `b`. 
     pub fn cross(a: Vec2, b: Vec2) -> ScalarDeg2 {
         a.x * b.y - a.y * b.x
     }
 
-    /// Returns whether 'a' is lexicographically less than 'b'
+    /// Returns whether `a` is lexicographically less than `b`.
     pub fn lex_less_than(a: Vec2, b: Vec2) -> bool {
         a.x < b.x || (a.x == b.x && a.y < b.y)
     }
 
-    /// Returns whether 'a' is lexicographically greater than 'b'.
+    /// Returns whether `a` is lexicographically greater than `b`.
     pub fn lex_greater_than(a: Vec2, b: Vec2) -> bool {
         a.x > b.x || (a.x == b.x && a.y > b.y)
     }
 
-    /// Lexicographically compares vectors 'a' and 'b'. 
+    /// Lexicographically compares vectors `a` and `b`.
     pub fn lex_cmp(a: Vec2, b: Vec2) -> Ordering {
         if a.x < b.x {
             Ordering::Less
@@ -97,6 +98,13 @@ impl Add for Vec2 {
     }
 }
 
+impl AddAssign for Vec2 {
+    fn add_assign(&mut self, b: Vec2) {
+        self.x += b.x;
+        self.y += b.y;
+    }
+}
+
 impl Sub for Vec2 {
     type Output = Vec2;
 
@@ -105,6 +113,13 @@ impl Sub for Vec2 {
             x: self.x - b.x,
             y: self.y - b.y,
         }
+    }
+}
+
+impl SubAssign for Vec2 {
+    fn sub_assign(&mut self, b: Vec2) {
+        self.x -= b.x;
+        self.y -= b.y;
     }
 }
 
@@ -213,7 +228,21 @@ mod tests {
     }
 
     #[test]
+    fn test_add_assign() {
+        let mut a = Vec2::new(99.0, 4.0);
+        a += Vec2::new(93.0, -35.0);
+        std::assert_eq!(a, Vec2::new(192.0, -31.0));
+    }
+
+    #[test]
     fn test_sub() {
         std::assert_eq!(Vec2::new(99.0, 4.0) - Vec2::new(93.0, -35.0), Vec2::new(6.0, 39.0));
+    }
+
+    #[test]
+    fn test_sub_assign() {
+        let mut a = Vec2::new(99.0, 4.0);
+        a -= Vec2::new(93.0, -35.0);
+        std::assert_eq!(a, Vec2::new(6.0, 39.0));
     }
 }
