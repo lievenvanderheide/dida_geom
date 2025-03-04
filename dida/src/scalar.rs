@@ -15,8 +15,8 @@ pub trait ScalarParams {
     fn int_to_f64(a: Self::IntT) -> f64;
 }
 
-#[derive(Eq, Ord, PartialEq, PartialOrd)]
-struct ScalarDeg1Params {}
+#[derive(Copy, Clone, Eq, Ord, PartialEq, PartialOrd, Hash)]
+pub struct ScalarDeg1Params {}
 impl ScalarParams for ScalarDeg1Params {
     type IntT = i32;
 
@@ -35,8 +35,8 @@ impl ScalarParams for ScalarDeg1Params {
     }
 }
 
-#[derive(Eq, Ord, PartialEq, PartialOrd)]
-struct ScalarDeg2Params {}
+#[derive(Copy, Clone, Eq, Ord, PartialEq, PartialOrd, Hash)]
+pub struct ScalarDeg2Params {}
 impl ScalarParams for ScalarDeg2Params {
     type IntT = i64;
 
@@ -67,8 +67,8 @@ pub struct Scalar<Params: ScalarParams> {
     numerator: Params::IntT,
 }
 
-type ScalarDeg1 = Scalar<ScalarDeg1Params>;
-type ScalarDeg2 = Scalar<ScalarDeg2Params>;
+pub type ScalarDeg1 = Scalar<ScalarDeg1Params>;
+pub type ScalarDeg2 = Scalar<ScalarDeg2Params>;
 
 impl<Params: ScalarParams> Scalar<Params> {
     pub const DENOM: Params::IntT = Params::DENOM;
