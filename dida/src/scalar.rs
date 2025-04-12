@@ -71,6 +71,7 @@ pub type ScalarDeg1 = Scalar<ScalarDeg1Params>;
 pub type ScalarDeg2 = Scalar<ScalarDeg2Params>;
 
 impl<Params: ScalarParams> Scalar<Params> {
+    /// The denominator of a scalar of this type.
     pub const DENOM: Params::IntT = Params::DENOM;
 
     /// The difference between consecutive scalars of this type.

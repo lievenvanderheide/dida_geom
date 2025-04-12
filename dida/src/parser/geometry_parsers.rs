@@ -1,0 +1,62 @@
+use crate::parser::parser::Parser;
+use crate::parser::scalar_parser::parse_scalar_deg1;
+use crate::Point2;
+use crate::Vec2;
+
+/// Parses a 'Vec2'.
+pub fn parse_vec2(parser: &mut Parser) -> Option<Vec2> {
+    if !parser.try_match(b'{') {
+        return None;
+    }
+
+    parser.skip_optional_whitespace();
+    let Some(x) = parse_scalar_deg1(parser) else {
+        return None;
+    };
+
+    parser.skip_optional_whitespace();
+    if !parser.try_match(b',') {
+        return None;
+    }
+
+    parser.skip_optional_whitespace();
+    let Some(y) = parse_scalar_deg1(parser) else {
+        return None;
+    };
+
+    parser.skip_optional_whitespace();
+    if !parser.try_match(b'}') {
+        return None;
+    }
+
+    Some(Vec2::from_coords(x, y))
+}
+
+/// Parses a 'Point2'.
+pub fn parse_point2(parser: &mut Parser) -> Option<Point2> {
+    parse_vec2(parser).map(&Point2::from_vec2)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_vec2() {
+        std::assert_eq!(parse_vec2(&mut Parser::new("{12,34}")), Some(Vec2::new(12.0, 34.0)));
+        std::assert_eq!(parse_vec2(&mut Parser::new("{  12   ,\n\t34  }")), Some(Vec2::new(12.0, 34.0)));
+        std::assert_eq!(parse_vec2(&mut Parser::new("{ 95.8, -61.2 }")), Some(Vec2::new(95.8, -61.2)));
+    
+        std::assert_eq!(parse_vec2(&mut Parser::new("12, 34}")), None);
+        std::assert_eq!(parse_vec2(&mut Parser::new("{x, 34}")), None);
+        std::assert_eq!(parse_vec2(&mut Parser::new("{12; 34}")), None);
+        std::assert_eq!(parse_vec2(&mut Parser::new("{12, y}")), None);
+        std::assert_eq!(parse_vec2(&mut Parser::new("{12, 34")), None);
+    }
+
+    #[test]
+    fn test_parse_point2() {
+        std::assert_eq!(parse_point2(&mut Parser::new("{-2.41, 2.26}")), Some(Point2::new(-2.41, 2.26)));
+        std::assert_eq!(parse_point2(&mut Parser::new("What's your point?")), None);
+    }
+}

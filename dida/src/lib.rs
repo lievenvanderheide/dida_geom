@@ -1,3 +1,4 @@
+mod parser;
 mod point2;
 mod scalar;
 mod vec2;
