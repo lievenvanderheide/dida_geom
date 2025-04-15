@@ -1,35 +1,14 @@
 use crate::parser::parser::Parser;
 use crate::parser::scalar_parser::parse_scalar_deg1;
-use crate::Point2;
-use crate::Vec2;
+use crate::{ScalarDeg1, Vec2, Point2};
 
 /// Parses a 'Vec2'.
 pub fn parse_vec2(parser: &mut Parser) -> Option<Vec2> {
-    if !parser.try_match(b'{') {
-        return None;
-    }
-
-    parser.skip_optional_whitespace();
-    let Some(x) = parse_scalar_deg1(parser) else {
+    let Some(elems) = parser.parse_fixed_size_list::<ScalarDeg1, 2>(&parse_scalar_deg1) else {
         return None;
     };
 
-    parser.skip_optional_whitespace();
-    if !parser.try_match(b',') {
-        return None;
-    }
-
-    parser.skip_optional_whitespace();
-    let Some(y) = parse_scalar_deg1(parser) else {
-        return None;
-    };
-
-    parser.skip_optional_whitespace();
-    if !parser.try_match(b'}') {
-        return None;
-    }
-
-    Some(Vec2::from_coords(x, y))
+    Some(Vec2::from_coords(elems[0], elems[1]))
 }
 
 /// Parses a 'Point2'.

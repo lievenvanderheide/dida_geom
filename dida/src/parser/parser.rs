@@ -1,4 +1,5 @@
 use std::str;
+use crate::container::array_builder::ArrayBuilder;
 
 pub struct Parser<'a> {
     utf8_bytes: &'a [u8],
@@ -58,7 +59,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Skips all bytes at the beginning of the current text which match the predicate.
+    /// Skips bytes which match the predicate, until the first byte which doesn't match the predicate.
     pub fn skip_zero_or_more(&mut self, pred: impl Fn(u8) -> bool) {
         while self.next_is(&pred) {
             self.byte_index += 1;
@@ -69,8 +70,42 @@ impl<'a> Parser<'a> {
         c == b' ' || c == b'\t' || c == b'\n' || c == b'\r'
     }
 
+    /// Skips whitespace, if any, until the first non-whitespace byte.
     pub fn skip_optional_whitespace(&mut self) {
         self.skip_zero_or_more(&Self::is_whitespace)
+    }
+
+    pub fn parse_fixed_size_list<T, const N: usize>(
+        &mut self,
+        parse_elem: &impl Fn(&mut Parser) -> Option<T>
+    ) -> Option<[T; N]> {
+        if !self.try_match(b'{') {
+            return None;
+        }
+
+        let mut result_builder = ArrayBuilder::<T, N>::new();
+        for i in 0..N {
+            self.skip_optional_whitespace();
+            let Some(elem) = parse_elem(self) else {
+                return None;
+            };
+
+            result_builder.push(elem);
+
+            if i != N - 1 {
+                self.skip_optional_whitespace();
+                if !self.try_match(b',') {
+                    return None;
+                }
+            }
+        }
+
+        self.skip_optional_whitespace();
+        if !self.try_match(b'}') {
+            return None;
+        }
+    
+        Some(result_builder.finalize())
     }
 }
 
