@@ -1,9 +1,16 @@
 use std::fmt::{Debug, Formatter, Result};
 use std::ops::{Add, AddAssign, Sub, SubAssign, Neg, Mul};
+use std::cmp::Ordering;
 use std::hash::Hash;
 
 pub trait ScalarParams {
-    type IntT: Copy + Clone + Add<Output = Self::IntT> + AddAssign + Sub<Output = Self::IntT> + SubAssign + Neg<Output = Self::IntT>;
+    type IntT:
+        Copy +
+        Clone +
+        Add<Output = Self::IntT> +
+        AddAssign + Sub<Output = Self::IntT> +
+        SubAssign + Neg<Output = Self::IntT> +
+        Ord;
     
     const DEGREE: usize;
     const DENOM: Self::IntT;
@@ -35,7 +42,7 @@ impl ScalarParams for ScalarDeg1Params {
     }
 }
 
-#[derive(Copy, Clone, Eq, Ord, PartialEq, PartialOrd, Hash)]
+#[derive(Copy, Clone, Hash)]
 pub struct ScalarDeg2Params {}
 impl ScalarParams for ScalarDeg2Params {
     type IntT = i64;
@@ -62,7 +69,7 @@ impl ScalarParams for ScalarDeg2Params {
 /// sum of the degree of the two operands. Since the number of bits of a scalar, as well its radix position grow with
 /// the degree of the scalar, the result of a multiplication can always be stored exactly; there's no need to shift the
 /// result to the correct radix position, and no bits need to be discarded.
-#[derive(Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Hash)]
 pub struct Scalar<Params: ScalarParams> {
     numerator: Params::IntT,
 }
@@ -159,6 +166,38 @@ impl Mul for ScalarDeg1 {
         ScalarDeg2 {
             numerator: self.numerator as i64 * b.numerator as i64
         }
+    }
+}
+
+impl<Params: ScalarParams> PartialEq<Scalar<Params>> for Scalar<Params> {
+    fn eq(&self, b: &Scalar<Params>) -> bool {
+        self.numerator.eq(&b.numerator)
+    }
+}
+
+impl<Params: ScalarParams> PartialEq<f64> for Scalar<Params> {
+    fn eq(&self, b: &f64) -> bool {
+        self.eq(&Scalar::<Params>::new(*b))
+    }
+}
+
+impl<Params: ScalarParams> Eq for Scalar<Params> {} 
+
+impl<Params: ScalarParams> PartialOrd<Scalar<Params>> for Scalar<Params> {
+    fn partial_cmp(&self, b: &Scalar<Params>) -> Option<Ordering> {
+        self.numerator.partial_cmp(&b.numerator) 
+    }
+}
+
+impl<Params: ScalarParams> PartialOrd<f64> for Scalar<Params> {
+    fn partial_cmp(&self, b: &f64) -> Option<Ordering> {
+        self.partial_cmp(&Scalar::<Params>::new(*b))
+    }
+}
+
+impl<Params: ScalarParams> Ord for Scalar<Params> {
+    fn cmp(&self, b: &Scalar<Params>) -> Ordering{
+        self.numerator.cmp(&b.numerator)
     }
 }
 
@@ -269,6 +308,15 @@ mod tests {
     }
 
     #[test]
+    fn test_eq_f64() {
+        std::assert!(ScalarDeg1::new(1.0) == 1.0);
+        std::assert!(!(ScalarDeg1::new(1.0) == 2.0));
+
+        std::assert!(ScalarDeg2::new(1.0) == 1.0);
+        std::assert!(!(ScalarDeg2::new(1.0) == 2.0));
+    }
+
+    #[test]
     fn test_cmp() {
         std::assert_eq!(ScalarDeg1::from_numerator(1).cmp(&ScalarDeg1::from_numerator(2)), Ordering::Less);
         std::assert_eq!(ScalarDeg1::from_numerator(1).cmp(&ScalarDeg1::from_numerator(1)), Ordering::Equal);
@@ -277,5 +325,16 @@ mod tests {
         std::assert_eq!(ScalarDeg2::from_numerator(1).cmp(&ScalarDeg2::from_numerator(2)), Ordering::Less);
         std::assert_eq!(ScalarDeg2::from_numerator(1).cmp(&ScalarDeg2::from_numerator(1)), Ordering::Equal);
         std::assert_eq!(ScalarDeg2::from_numerator(2).cmp(&ScalarDeg2::from_numerator(1)), Ordering::Greater);
+    }
+
+    #[test]
+    fn test_cmp_f64() {
+        std::assert_eq!(ScalarDeg1::new(1.0).partial_cmp(&2.0), Some(Ordering::Less));
+        std::assert_eq!(ScalarDeg1::new(1.0).partial_cmp(&1.0), Some(Ordering::Equal));
+        std::assert_eq!(ScalarDeg1::new(2.0).partial_cmp(&1.0), Some(Ordering::Greater));
+
+        std::assert_eq!(ScalarDeg2::new(1.0).partial_cmp(&2.0), Some(Ordering::Less));
+        std::assert_eq!(ScalarDeg2::new(1.0).partial_cmp(&1.0), Some(Ordering::Equal));
+        std::assert_eq!(ScalarDeg2::new(2.0).partial_cmp(&1.0), Some(Ordering::Greater));
     }
 }
