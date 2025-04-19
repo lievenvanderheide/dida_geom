@@ -1,4 +1,5 @@
 use std::str;
+use crate::container::array_builder::ArrayBuilder;
 
 pub struct Parser<'a> {
     utf8_bytes: &'a [u8],
@@ -58,7 +59,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// Skips all bytes at the beginning of the current text which match the predicate.
+    /// Skips bytes which match the predicate, until the first byte which doesn't match the predicate.
     pub fn skip_zero_or_more(&mut self, pred: impl Fn(u8) -> bool) {
         while self.next_is(&pred) {
             self.byte_index += 1;
@@ -69,8 +70,83 @@ impl<'a> Parser<'a> {
         c == b' ' || c == b'\t' || c == b'\n' || c == b'\r'
     }
 
+    /// Skips whitespace, if any, until the first non-whitespace byte.
     pub fn skip_optional_whitespace(&mut self) {
         self.skip_zero_or_more(&Self::is_whitespace)
+    }
+
+    /// Parses a fixed size array with C-style markup. The elements are parsed using the user provided 'parse_elem'
+    /// function.
+    ///
+    /// C-style markup means the array should be enclosed in '{}', while elements should be separated with ',', for
+    /// example: {6, 10, 4, 3}.
+    pub fn parse_array<T, const N: usize>(
+        &mut self,
+        parse_elem: &impl Fn(&mut Parser) -> Option<T>
+    ) -> Option<[T; N]> {
+        if !self.try_match(b'{') {
+            return None;
+        }
+
+        let mut result_builder = ArrayBuilder::<T, N>::new();
+        for i in 0..N {
+            self.skip_optional_whitespace();
+            let Some(elem) = parse_elem(self) else {
+                return None;
+            };
+
+            result_builder.push(elem);
+
+            if i != N - 1 {
+                self.skip_optional_whitespace();
+                if !self.try_match(b',') {
+                    return None;
+                }
+            }
+        }
+
+        self.skip_optional_whitespace();
+        if !self.try_match(b'}') {
+            return None;
+        }
+    
+        Some(result_builder.build())
+    }
+
+    /// Parses a dynamically sized array with C-style markup. The elements are parsed using the user provided 
+    /// 'parse_elem' function.
+    ///
+    /// C-style markup means the array should be enclosed in '{}', while elements should be separated with ',', for
+    /// example: {6, 10, 4, 3}.
+    pub fn parse_vector<T>(&mut self, parse_elem: &impl Fn(&mut Parser) -> Option<T>) -> Option<Vec<T>> {
+        if !self.try_match(b'{') {
+            return None;
+        }
+
+        self.skip_optional_whitespace();
+        if self.try_match(b'}') {
+            return Some(Vec::new());
+        }
+
+        let mut result = Vec::<T>::new();
+        loop {
+            let Some(elem) = parse_elem(self) else {
+                return None;
+            };
+
+            result.push(elem);
+
+            self.skip_optional_whitespace();
+            if self.try_match(b'}') {
+                return Some(result);
+            }
+
+            if !self.try_match(b',') {
+                return None;
+            }
+
+            self.skip_optional_whitespace();
+        }
     }
 }
 
@@ -146,5 +222,95 @@ mod tests {
 
         parser.skip_optional_whitespace();
         std::assert!(parser.has_finished());
+    }
+
+    fn parse_alphabetic_byte(parser: &mut Parser) -> Option<u8> {
+        parser.try_parse_byte(|c| (c as char).is_alphabetic())
+    }
+
+    #[test]
+    fn test_parse_array() {
+        // Valid case.
+        {
+            let mut parser = Parser::new("{D, i  ,d, a}");
+            let array = parser.parse_array::<u8, 4>(&parse_alphabetic_byte).unwrap();
+            std::assert!(parser.has_finished());
+            std::assert_eq!(array, "Dida".as_bytes());
+        }
+
+        // Too few elements
+        {
+            let mut parser = Parser::new("{D, i  ,d}");
+            std::assert_eq!(parser.parse_array::<u8, 4>(&parse_alphabetic_byte), None);
+        }
+
+        // Too many elements
+        {
+            let mut parser = Parser::new("{D, i  ,d, a, A}");
+            std::assert_eq!(parser.parse_array::<u8, 4>(&parse_alphabetic_byte), None);
+        }
+
+        // { Missing.
+        {
+            let mut parser = Parser::new("D, i  ,d, a}");
+            std::assert_eq!(parser.parse_array::<u8, 4>(&parse_alphabetic_byte), None);
+        }
+
+        // Invalid element
+        {
+            let mut parser = Parser::new("{D, !!  ,d, a}");
+            std::assert_eq!(parser.parse_array::<u8, 4>(&parse_alphabetic_byte), None);
+        }
+
+        // No ,
+        {
+            let mut parser = Parser::new("{D, i ; d, a}");
+            std::assert_eq!(parser.parse_array::<u8, 4>(&parse_alphabetic_byte), None);
+        }
+
+        // No }
+        {
+            let mut parser = Parser::new("{D, i  ,d, a]");
+            std::assert_eq!(parser.parse_array::<u8, 4>(&parse_alphabetic_byte), None);
+        }
+    }
+
+    #[test]
+    fn test_parse_vector() {
+        // Valid case.
+        {
+            let mut parser = Parser::new("{D, i  ,d, a,\n\tG,e,o, m}");
+            let vec = parser.parse_vector::<u8>(&parse_alphabetic_byte).unwrap();
+            std::assert!(parser.has_finished());
+            std::assert_eq!(vec, "DidaGeom".as_bytes());
+        }
+
+        // Empty vector.
+        {
+            let mut parser = Parser::new("{}");
+            let vec = parser.parse_vector::<u8>(&parse_alphabetic_byte).unwrap();
+            std::assert!(parser.has_finished());
+            std::assert_eq!(vec, []);
+        }
+
+        // Empty vector with whitespace
+        {
+            let mut parser = Parser::new("{\t}");
+            let vec = parser.parse_vector::<u8>(&parse_alphabetic_byte).unwrap();
+            std::assert!(parser.has_finished());
+            std::assert_eq!(vec, []);
+        }
+
+        // { Missing.
+        std::assert_eq!(Parser::new("D, i  ,d, a}").parse_vector::<u8>(&parse_alphabetic_byte), None);
+
+        // Invalid element.
+        std::assert_eq!(Parser::new("{D, !!  ,d, a}").parse_vector::<u8>(&parse_alphabetic_byte), None);
+
+        // No ,
+        std::assert_eq!(Parser::new("{D, i ; d, a}").parse_vector::<u8>(&parse_alphabetic_byte), None);
+
+        // No }
+        std::assert_eq!(Parser::new("{D, i  ,d, a]").parse_vector::<u8>(&parse_alphabetic_byte), None);
     }
 }

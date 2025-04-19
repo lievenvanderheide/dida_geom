@@ -1,6 +1,6 @@
 use crate::{ScalarDeg1, Vec2};
 use crate::parser::parser::Parser;
-use crate::parser::geometry_parsers::parse_point2;
+use crate::parser::geometry_parsers::{parse_point2, parse_point2_vec};
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::cmp::Ordering;
 use std::str::FromStr;
@@ -24,6 +24,23 @@ impl Point2 {
         Point2 {
             pos: Vec2::from_coords(x, y),
         }
+    }
+
+    /// Parses the given string into a 'Vec<Point2>'.
+    pub fn vec_from_str(s: &str) -> Result<Vec<Point2>, String> {
+        let mut parser = Parser::new(s);
+
+        parser.skip_optional_whitespace();
+        let Some(result) = parse_point2_vec(&mut parser) else {
+            return Err(format!("Failed to parse point \"{}\"", s));
+        };
+
+        parser.skip_optional_whitespace();
+        if !parser.has_finished() {
+            return Err(format!("Failed to parse point \"{}\"", s));
+        }
+
+        Ok(result)
     }
 
     /// Constructs a `Point2` from a `Vec2`.
@@ -116,7 +133,7 @@ impl std::fmt::Debug for Point2 {
 impl FromStr for Point2 {
     type Err = String;
 
-    fn from_str(s: &str) -> Result<Point2, String> {
+    fn from_str(s: &str) -> Result<Self, String> {
         let mut parser = Parser::new(s);
 
         parser.skip_optional_whitespace();
@@ -258,5 +275,13 @@ mod tests {
         std::assert_eq!(Point2::from_str("  {4.05, -1.83}"), Ok(Point2::new(4.05, -1.83)));
         std::assert_eq!(Point2::from_str("{-8.89, 6.55}   "), Ok(Point2::new(-8.89, 6.55)));
         std::assert!(Point2::from_str("not a point").is_err());
+    }
+
+    #[test]
+    fn test_vec_from_str() {
+        std::assert_eq!(
+            Point2::vec_from_str("{{7.98, -2.95}, {-8.23, -4.78}, {-2.33, -6.25}}"),
+            Ok(vec![Point2::new(7.98, -2.95), Point2::new(-8.23, -4.78), Point2::new(-2.33, -6.25)])
+        );
     }
 }

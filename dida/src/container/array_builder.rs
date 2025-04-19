@@ -26,7 +26,7 @@ impl<T, const N: usize> ArrayBuilder<T, N> {
 
     /// Builds the array.
     /// This function should be called after 'push' has been called exactly 'N' times.
-    pub fn build(mut self) -> [T; N] {
+    pub fn build(self) -> [T; N] {
         std::assert!(self.len == N);
 
         // replace with array_assume_init when it becomes stable.
@@ -61,7 +61,7 @@ mod tests {
     }
 
     impl<'a> DropTracker<'a> {
-        pub fn new(c: char, num_instances: &'a RefCell<i32>) -> DropTracker{
+        pub fn new(c: char, num_instances: &'a RefCell<i32>) -> DropTracker<'a> {
             *num_instances.borrow_mut() += 1;
             DropTracker { c, num_instances }
         }
