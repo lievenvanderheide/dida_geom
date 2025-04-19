@@ -4,7 +4,7 @@ use crate::{ScalarDeg1, Vec2, Point2};
 
 /// Parses a 'Vec2'.
 pub fn parse_vec2(parser: &mut Parser) -> Option<Vec2> {
-    let Some(elems) = parser.parse_fixed_size_list::<ScalarDeg1, 2>(&parse_scalar_deg1) else {
+    let Some(elems) = parser.parse_array::<ScalarDeg1, 2>(&parse_scalar_deg1) else {
         return None;
     };
 
@@ -14,6 +14,11 @@ pub fn parse_vec2(parser: &mut Parser) -> Option<Vec2> {
 /// Parses a 'Point2'.
 pub fn parse_point2(parser: &mut Parser) -> Option<Point2> {
     parse_vec2(parser).map(&Point2::from_vec2)
+}
+
+/// Parses a vector of 'Point2' elements.
+pub fn parse_point2_vec(parser: &mut Parser) -> Option<Vec<Point2>> {
+    parser.parse_vector(&parse_point2)
 }
 
 #[cfg(test)]
@@ -37,5 +42,15 @@ mod tests {
     fn test_parse_point2() {
         std::assert_eq!(parse_point2(&mut Parser::new("{-2.41, 2.26}")), Some(Point2::new(-2.41, 2.26)));
         std::assert_eq!(parse_point2(&mut Parser::new("What's your point?")), None);
+    }
+
+    #[test]
+    fn test_parse_point2_vec() {
+        std::assert_eq!(
+            parse_point2_vec(&mut Parser::new("{{-0.49, -6.08}, {2.84, 9.15}}")),
+            Some(vec![Point2::new(-0.49, -6.08), Point2::new(2.84, 9.15)])
+        );
+
+        std::assert_eq!(parse_point2_vec(&mut Parser::new("{{-0.49, -6.08}, {cos(theta), sin(theta)}}")), None);
     }
 }
