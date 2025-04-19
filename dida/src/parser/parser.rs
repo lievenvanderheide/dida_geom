@@ -75,6 +75,11 @@ impl<'a> Parser<'a> {
         self.skip_zero_or_more(&Self::is_whitespace)
     }
 
+    /// Parses a fixed size array with C-style markup. The elements are parsed using the user provided 'parse_elem'
+    /// function.
+    ///
+    /// C-style markup means the array should be enclosed in '{}', while elements should be separated with ',', for
+    /// example: {6, 10, 4, 3}.
     pub fn parse_array<T, const N: usize>(
         &mut self,
         parse_elem: &impl Fn(&mut Parser) -> Option<T>
@@ -108,6 +113,11 @@ impl<'a> Parser<'a> {
         Some(result_builder.build())
     }
 
+    /// Parses a dynamically sized array with C-style markup. The elements are parsed using the user provided 
+    /// 'parse_elem' function.
+    ///
+    /// C-style markup means the array should be enclosed in '{}', while elements should be separated with ',', for
+    /// example: {6, 10, 4, 3}.
     pub fn parse_vector<T>(&mut self, parse_elem: &impl Fn(&mut Parser) -> Option<T>) -> Option<Vec<T>> {
         if !self.try_match(b'{') {
             return None;

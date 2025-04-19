@@ -26,6 +26,7 @@ impl Point2 {
         }
     }
 
+    /// Parses the given string into a 'Vec<Point2>'.
     pub fn vec_from_str(s: &str) -> Result<Vec<Point2>, String> {
         let mut parser = Parser::new(s);
 
