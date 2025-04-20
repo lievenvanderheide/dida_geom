@@ -64,101 +64,53 @@ mod tests {
 
         // Valid polygon
         test(
-            &mut [
-                Point2::new(-7.56, 0.96),
-                Point2::new(-7.2, -1.9),
-                Point2::new(-5.6, -4.38),
-                Point2::new(-2.62, -5.32),
-                Point2::new(4.56, -2.38),
-                Point2::new(4.5, 1.46),
-                Point2::new(3.2, 4.2),
-                Point2::new(-0.58, 5.38),
-                Point2::new(-4.8, 3.94),
-            ],
+            Point2::vec_from_str("{
+                {-7.56, 0.96}, {-7.2, -1.9}, {-5.6, -4.38}, {-2.62, -5.32}, {4.56, -2.38}, {4.5, 1.46}, {3.2, 4.2},
+                {-0.58, 5.38}, {-4.8, 3.94}
+            }").unwrap().as_mut(),
             true
         );
 
         // Triangle
-        test(
-            &mut [
-                Point2::new(0.98, -3.32),
-                Point2::new(6.2, -3.4),
-                Point2::new(8.58, 2.92),
-            ],  
-            true
-        );
+        test(Point2::vec_from_str("{{0.98, -3.32}, {6.2, -3.4}, {8.58, 2.92}}").unwrap().as_mut(), true);
 
         // Too few vertices
-        test(
-            &mut [
-                Point2::new(-0.24, -2.18),
-                Point2::new(9.86, 1.2),
-            ],  
-            false
-        );
+        test(Point2::vec_from_str("{{-0.24, -2.18}, {9.86, 1.2}}").unwrap().as_mut(), false);
 
         // Duplicated vertices
         test(
-            &mut [
-                Point2::new(6.86, -7.22),
-                Point2::new(6.86, -7.22),
-                Point2::new(12.38, -4.54),
-                Point2::new(10.46, 2.84),
-                Point2::new(4.96, -5.34),
-                Point2::new(5.42, -6.64),
-            ],
+            Point2::vec_from_str(
+                "{{6.86, -7.22}, {6.86, -7.22}, {12.38, -4.54}, {10.46, 2.84}, {4.96, -5.34}, {5.42, -6.64}}"
+            ).unwrap().as_mut(),
             false
         );
 
         // Non convex
         test(
-            &mut [
-                Point2::new(6.58, -2.26),
-                Point2::new(5.56, -3.7),
-                Point2::new(12.68, -1.16),
-                Point2::new(8.98, 3.38),
-                Point2::new(0.28, -2.94)
-            ],
+            Point2::vec_from_str(
+                "{{6.58, -2.26}, {5.56, -3.7}, {12.68, -1.16}, {8.98, 3.38}, {0.28, -2.94}}"
+            ).unwrap().as_mut(),
             false
         );
 
         // Wrong winding
         test(
-            &mut [
-                Point2::new(1.4, -1.6),
-                Point2::new(4.72, 1.16),
-                Point2::new(13.48, -0.34),
-                Point2::new(11.52, -7.22),
-                Point2::new(5.9, -5.62),
-            ],
+            Point2::vec_from_str(
+                "{{1.4, -1.6}, {4.72, 1.16}, {13.48, -0.34}, {11.52, -7.22}, {5.9, -5.62}}"
+            ).unwrap().as_mut(),
             false
         );
 
         // Winds around twice
         test(
-            &mut[
-                Point2::new(-0.9, -2.86),
-                Point2::new(-0.08, -6.14),
-                Point2::new(6.22, -7.14),
-                Point2::new(10.6, -0.28),
-                Point2::new(1.92, 0.46),
-                Point2::new(-1.9, -4.84),
-                Point2::new(3.22, -10.62),
-                Point2::new(11.14, -7.12),
-                Point2::new(5.24, 1.62),
-            ],
+            Point2::vec_from_str("{
+                {-0.9, -2.86}, {-0.08, -6.14}, {6.22, -7.14}, {10.6, -0.28}, {1.92, 0.46}, {-1.9, -4.84},
+                {3.22, -10.62}, {11.14, -7.12}, {5.24, 1.62}
+            }").unwrap().as_mut(),
             false
         );
 
         // All vertices on vertical line
-        test(
-            &mut [
-                Point2::new(3.0, 1.0),
-                Point2::new(3.0, -3.0),
-                Point2::new(3.0, 6.0),
-                Point2::new(3.0, 4.0),
-            ],
-            false
-        );
+        test(Point2::vec_from_str("{{3.0, 1.0}, {3.0, -3.0}, {3.0, 6.0}, {3.0, 4.0}}").unwrap().as_mut(), false);
     }
 }
