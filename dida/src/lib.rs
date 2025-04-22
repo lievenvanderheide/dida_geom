@@ -1,5 +1,6 @@
 mod container;
 mod convex;
+mod cyclic;
 mod parser;
 mod point2;
 mod scalar;
