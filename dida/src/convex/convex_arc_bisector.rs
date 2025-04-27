@@ -18,10 +18,17 @@ pub struct ConvexArcBisector<'a, const OUTGOING_IS_CCW: bool> {
     /// The number of edges in the current range.
     num_edges: usize,
 
-    // The offset from 'begin_index' to the mid index ()
+    /// The offset from 'begin_index' to the mid index.
     mid_offset: usize,
+
+    /// The index of the mid vertex.
     mid_index: usize,
+
+    // The mid vertex.
     mid_vertex: Point2,
+
+    /// The outgoing direction of the mid vertex. If OUTGOING_IS_CCW is true, then this is the vector from the
+    /// mid_vertex to the next vertex, otherwise it's the vector from mid_vertex to the previous vertex.  
     mid_vertex_outgoing: Vec2,
 }
 

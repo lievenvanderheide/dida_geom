@@ -138,7 +138,6 @@ mod tests {
 
     #[test]
     fn test_unimodal_cyclic_sequence_maximum() {
-        
         fn test(slice: &mut [i32], mut expected_maximum_index: usize) {
             for _ in 0..slice.len() {
                 std::assert_eq!(unimodal_cyclic_sequence_maximum(slice, |a, b| *a > *b), expected_maximum_index);
