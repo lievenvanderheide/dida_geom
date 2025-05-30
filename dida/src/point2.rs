@@ -37,7 +37,7 @@ impl Point2 {
 
         parser.skip_optional_whitespace();
         if !parser.has_finished() {
-            return Err(format!("Failed to parse point \"{}\"", s));
+            return Err(format!("Failed to parse point list \"{}\"", s));
         }
 
         Ok(result)

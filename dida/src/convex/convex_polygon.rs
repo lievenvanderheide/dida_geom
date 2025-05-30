@@ -1,9 +1,11 @@
-use crate::Point2;
+use crate::{Point2, Vec2, ScalarDeg1};
 use crate::convex::validation::are_valid_convex_polygon_vertices;
+use crate::convex::convex_hull::convex_hull_inplace;
 use crate::cyclic::unimodal_cyclic_sequence_maximum;
 use std::ops::Index;
 use std::str::FromStr;
 
+#[derive(Debug, PartialEq)]
 pub struct ConvexPolygon<VertexContainer: AsRef<[Point2]>> {
     vertices: VertexContainer,
 }
@@ -70,6 +72,39 @@ impl<VertexContainer: Clone + AsRef<[Point2]>> Clone for ConvexPolygon<VertexCon
     }
 }
 
+impl ConvexPolygon<Vec<Point2>> {
+    /// Returns the convex hull of the given point set as a `ConvexPolygon<Vec<Point2>>`.
+    ///
+    /// To avoid invalid convex polygons when the convex hull degenerates into a point or a line segment, a very small
+    /// or very thin polygon with non-zero area which closely resembles the point or line segment is returned instead.
+    pub fn convex_hull(points: &[Point2]) -> Self {
+        let mut vertices = points.to_vec();
+        let num_vertices = convex_hull_inplace(&mut vertices);
+        vertices.truncate(num_vertices);
+
+        if num_vertices == 2 {
+            if Point2::lex_greater_than(vertices[0], vertices[1]) {
+                vertices.swap(0, 1);
+            }
+
+            let offset = if vertices[0].x() != vertices[1].x() {
+                Vec2::new(0.0, ScalarDeg1::QUANTUM)
+            } else {
+                Vec2::new(-ScalarDeg1::QUANTUM, 0.0)
+            };
+
+            vertices.push(vertices[0] + offset);
+        } else if num_vertices == 1 {
+            vertices.extend_from_slice(&[
+                vertices[0] + Vec2::new(ScalarDeg1::QUANTUM, 0.0),
+                vertices[0] + Vec2::new(0.0, ScalarDeg1::QUANTUM)
+            ]);
+        }
+
+        ConvexPolygon::new_unchecked(vertices)
+    }
+}
+
 impl<'a> Copy for ConvexPolygonView<'a> {}
 
 impl<'a> Index<usize> for ConvexPolygonView<'a> {
@@ -117,5 +152,54 @@ mod tests {
         std::assert_eq!(polygon[0], Point2::new(2.62, 2.44));
         std::assert_eq!(polygon[1], Point2::new(8.52, 3.6));
         std::assert_eq!(polygon[2], Point2::new(7.38, 4.58));
+    }
+
+    #[test]
+    fn test_convex_hull() {
+        // General case.
+        std::assert_eq!(
+            ConvexPolygon::convex_hull(
+                &Point2::vec_from_str(
+                    "{{-6, 6}, {3, -2}, {16, 5}, {10, -6}, {-3, -6}, {-6, 1}, {2, 4}, {13, -4}}"
+                ).unwrap()
+            ),
+            ConvexPolygon::new(
+                Point2::vec_from_str("{{-6, 1}, {-3, -6}, {10, -6}, {13, -4}, {16, 5}, {-6, 6}}").unwrap()
+            )
+        );
+
+        // Degenerates into a point.
+        std::assert_eq!(
+            ConvexPolygon::convex_hull(&Point2::vec_from_str("{{0.32, 5.47}, {0.32, 5.47}}").unwrap()),
+            ConvexPolygon::new(vec![
+                Point2::new(0.32, 5.47),
+                Point2::new(0.32 + ScalarDeg1::QUANTUM, 5.47),
+                Point2::new(0.32, 5.47 + ScalarDeg1::QUANTUM),
+            ])
+        );
+
+        // Degenerates into a non-vertical line segment.
+        std::assert_eq!(
+            ConvexPolygon::convex_hull(
+                &Point2::vec_from_str("{{-6, 4}, {0, 6}, {-3, 5}, {6, 8}}").unwrap()
+            ),
+            ConvexPolygon::new(vec![
+              Point2::new(-6.0, 4.0),
+              Point2::new(6.0, 8.0),
+              Point2::new(-6.0, 4.0 + ScalarDeg1::QUANTUM),
+            ])
+        );
+
+        // Degenerates into a vertical line segment.
+        std::assert_eq!(
+            ConvexPolygon::convex_hull(
+                &Point2::vec_from_str("{{5, -4}, {5, 5}, {5, 1}, {5, 11}}").unwrap()
+            ),
+            ConvexPolygon::new(vec![
+              Point2::new(5.0, -4.0),
+              Point2::new(5.0, 11.0),
+              Point2::new(5.0 - ScalarDeg1::QUANTUM, -4.0),
+            ])
+        );
     }
 }
