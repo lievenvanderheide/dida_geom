@@ -1,6 +1,6 @@
 use crate::{Vec2, Point2};
 use crate::convex::convex_polygon::ConvexPolygonView;
-use crate::convex::convex_arc_bisector::{LowerConvexArcBisector, UpperConvexArcBisector};
+use crate::convex::convex_arc_bisector::ConvexArcBisector;
 use crate::cyclic::{sub_modulo};
 
 /// Returns whether the two convex polygons intersect.
@@ -25,136 +25,133 @@ pub fn intersect(a: ConvexPolygonView, b: ConvexPolygonView) -> bool {
 
     if a_is_lower {
         arc_regions_intersect(
-            UpperConvexArcBisector::new(
-                a,
-                a_rightmost_idx,
-                sub_modulo(a_leftmost_idx, a_rightmost_idx, a.num_vertices())
-            ),
-            LowerConvexArcBisector::new(
-                b,
-                b_leftmost_idx,
-                sub_modulo(b_rightmost_idx, b_leftmost_idx, b.num_vertices())
-            )
+            ConvexArcBisector::new(a, a_rightmost_idx, sub_modulo(a_leftmost_idx, a_rightmost_idx, a.num_vertices())),
+            ConvexArcBisector::new(b, b_leftmost_idx, sub_modulo(b_rightmost_idx, b_leftmost_idx, b.num_vertices()))
         )
     } else {
         arc_regions_intersect(
-            UpperConvexArcBisector::new(
-                b,
-                b_rightmost_idx,
-                sub_modulo(b_leftmost_idx, b_rightmost_idx, b.num_vertices())
-            ),
-            LowerConvexArcBisector::new(
-                a,
-                a_leftmost_idx,
-                sub_modulo(a_rightmost_idx, a_leftmost_idx, a.num_vertices())
-            )
+            ConvexArcBisector::new(b, b_rightmost_idx, sub_modulo(b_leftmost_idx, b_rightmost_idx, b.num_vertices())),
+            ConvexArcBisector::new(a, a_leftmost_idx, sub_modulo(a_rightmost_idx, a_leftmost_idx, a.num_vertices()))
         )
     }
 }
 
 /// Returns whether two arc regions intersect.
 ///
-/// The lower region is the region bounded by the edges in `lower_region_upper_arc_bisector` and the rays extending
-/// downward from the first and last vertices of this range.
+/// The lower region is the region bounded by the edges in `lower_region_arc_bisector` and the rays extending downward
+/// from the first and last vertices of this range.
 ///
-/// Similarly, the upper region is the region bounded by the edges in `upper_region_lower_arc_bisector` and the rays
-/// extending upward from the first and last vertices of this range.
+/// Similarly, the upper region is the region bounded by the edges in `upper_region_arc_bisector` and the rays extending
+/// upward from the first and last vertices of this range.
 fn arc_regions_intersect(
-    mut lower_region_upper_arc_bisector: UpperConvexArcBisector,
-    mut upper_region_lower_arc_bisector: LowerConvexArcBisector,
+    mut lower_region_arc_bisector: ConvexArcBisector,
+    mut upper_region_arc_bisector: ConvexArcBisector,
 ) -> bool {
-    while lower_region_upper_arc_bisector.can_bisect() && upper_region_lower_arc_bisector.can_bisect() {
-        let lower_edge_left = lower_region_upper_arc_bisector.mid_vertex();
-        let lower_edge_dir = lower_region_upper_arc_bisector.mid_vertex_outgoing();
+    lower_region_arc_bisector.bisect();
+    upper_region_arc_bisector.bisect();
 
-        let upper_edge_left = upper_region_lower_arc_bisector.mid_vertex();
-        let upper_edge_dir = upper_region_lower_arc_bisector.mid_vertex_outgoing();
+    while lower_region_arc_bisector.num_edges() > 1 && upper_region_arc_bisector.num_edges() > 1 {
+        let lower_edge_left = lower_region_arc_bisector.mid_vertex();
+        let lower_edge_dir = lower_region_arc_bisector.mid_vertex_outgoing_rev();
+
+        let upper_edge_left = upper_region_arc_bisector.mid_vertex();
+        let upper_edge_dir = upper_region_arc_bisector.mid_vertex_outgoing();
     
         let lower_edge_left_outside_upper = Vec2::cross(upper_edge_dir, lower_edge_left - upper_edge_left) < 0.0;
         let upper_edge_left_outside_lower = Vec2::cross(lower_edge_dir, upper_edge_left - lower_edge_left) > 0.0;
     
         if !lower_edge_left_outside_upper && !upper_edge_left_outside_lower {
             if lower_edge_left.x() < upper_edge_left.x() {
-                lower_region_upper_arc_bisector.move_right();
-                upper_region_lower_arc_bisector.move_left();
+                lower_region_arc_bisector.move_cw();
+                lower_region_arc_bisector.bisect();
+                upper_region_arc_bisector.move_cw();
+                upper_region_arc_bisector.bisect();
             } else {
-                lower_region_upper_arc_bisector.move_left();
-                upper_region_lower_arc_bisector.move_right();
+                lower_region_arc_bisector.move_ccw();
+                lower_region_arc_bisector.bisect();
+                upper_region_arc_bisector.move_ccw();
+                upper_region_arc_bisector.bisect();
             }
         } else {
             let overlap_on_right = Vec2::cross(lower_edge_dir, upper_edge_dir) < 0.0;
             
             if lower_edge_left_outside_upper {
                 if overlap_on_right {
-                    lower_region_upper_arc_bisector.move_right();
+                    lower_region_arc_bisector.move_cw();
+                    lower_region_arc_bisector.bisect();
                 } else {
-                    lower_region_upper_arc_bisector.move_left();
+                    lower_region_arc_bisector.move_ccw();
+                    lower_region_arc_bisector.bisect();
                 }
             }
 
             if upper_edge_left_outside_lower {
                 if overlap_on_right {
-                    upper_region_lower_arc_bisector.move_right();
+                    upper_region_arc_bisector.move_ccw();
+                    upper_region_arc_bisector.bisect();
                 } else {
-                    upper_region_lower_arc_bisector.move_left();
+                    upper_region_arc_bisector.move_cw();
+                    upper_region_arc_bisector.bisect();
                 }
             }
         }
     }
 
-    if !lower_region_upper_arc_bisector.can_bisect() && !upper_region_lower_arc_bisector.can_bisect() {
-        edge_slabs_intersecting(
-            lower_region_upper_arc_bisector.v1(),
-            lower_region_upper_arc_bisector.v0(),
-            upper_region_lower_arc_bisector.v0(),
-            upper_region_lower_arc_bisector.v1()
+    if lower_region_arc_bisector.num_edges() == 1 && upper_region_arc_bisector.num_edges() == 1 {
+        edge_regions_intersect(
+            lower_region_arc_bisector.end_vertex(),
+            lower_region_arc_bisector.begin_vertex(),
+            upper_region_arc_bisector.begin_vertex(),
+            upper_region_arc_bisector.end_vertex()
         )
-    } else if !lower_region_upper_arc_bisector.can_bisect() {
-        edge_slab_arc_intersecting(
-            lower_region_upper_arc_bisector.v1(),
-            lower_region_upper_arc_bisector.v0(),
-            upper_region_lower_arc_bisector
+    } else if lower_region_arc_bisector.num_edges() == 1{
+        edge_arc_regions_intersect(
+            lower_region_arc_bisector.end_vertex(),
+            lower_region_arc_bisector.begin_vertex(),
+            upper_region_arc_bisector
         )
     } else {
-        std::assert!(!upper_region_lower_arc_bisector.can_bisect());
+        std::assert_eq!(upper_region_arc_bisector.num_edges(), 1);
         arc_edge_regions_intersect(
-            lower_region_upper_arc_bisector,
-            upper_region_lower_arc_bisector.v0(),
-            upper_region_lower_arc_bisector.v1()
+            lower_region_arc_bisector,
+            upper_region_arc_bisector.begin_vertex(),
+            upper_region_arc_bisector.end_vertex()
         )
     }
 }
 
 /// Returns whether a lower arc region and an upper edge region intersect.
 ///
-/// The lower region is the region bounded by the edges in `lower_region_upper_arc_bisector` and the rays extending
-/// downward from the first and last vertices of this range.
+/// The lower region is the region bounded by the edges in `lower_region_arc_bisector` and the rays extending downward
+/// from the first and last vertices of this range.
 ///
 /// The upper region is the region bounded by the edge between 'upper_edge_left', 'upper_edge_right' and the rays
 /// extending upward from these two vertices.
 fn arc_edge_regions_intersect(
-    mut lower_region_upper_arc_bisector: UpperConvexArcBisector,
+    mut lower_region_arc_bisector: ConvexArcBisector,
     upper_edge_left: Point2,
     upper_edge_right: Point2
 ) -> bool {
     let upper_edge_dir = upper_edge_right - upper_edge_left;
 
-    while lower_region_upper_arc_bisector.can_bisect() {
-        let lower_edge_left = lower_region_upper_arc_bisector.mid_vertex();
-        let lower_edge_dir = lower_region_upper_arc_bisector.mid_vertex_outgoing();
+    while lower_region_arc_bisector.num_edges() > 1 {
+        let lower_edge_left = lower_region_arc_bisector.mid_vertex();
+        let lower_edge_dir = lower_region_arc_bisector.mid_vertex_outgoing_rev();
 
         if lower_edge_left.x() < upper_edge_left.x() ||
             (lower_edge_left.x() < upper_edge_right.x() && Vec2::cross(lower_edge_dir, upper_edge_dir) < 0.0)
         {
-            lower_region_upper_arc_bisector.move_right();
+            lower_region_arc_bisector.move_cw();
         } else {
-            lower_region_upper_arc_bisector.move_left();
+            lower_region_arc_bisector.move_ccw();
         }
+
+        lower_region_arc_bisector.bisect();
     }
 
-    edge_slabs_intersecting(
-        lower_region_upper_arc_bisector.v1(),
-        lower_region_upper_arc_bisector.v0(),
+    edge_regions_intersect(
+        lower_region_arc_bisector.end_vertex(),
+        lower_region_arc_bisector.begin_vertex(),
         upper_edge_left,
         upper_edge_right
     )
@@ -165,33 +162,35 @@ fn arc_edge_regions_intersect(
 /// The lower region is the region bounded by the edge between 'lower_edge_left', 'lower_edge_right' and the rays
 /// extending downward from these two vertices.
 ///
-/// The upper region is the region bounded by the edges in `upper_region_upper_arc_bisector` and the rays extending
-/// upward from the first and last vertices of this range.
-fn edge_slab_arc_intersecting(
+/// The upper region is the region bounded by the edges in `upper_region_arc_bisector` and the rays extending upward
+/// from the first and last vertices of this range.
+fn edge_arc_regions_intersect(
     lower_edge_left: Point2,
     lower_edge_right: Point2,
-    mut upper_slab_lower_arc_bisector: LowerConvexArcBisector
+    mut upper_region_arc_bisector: ConvexArcBisector
 ) -> bool {
     let lower_edge_dir = lower_edge_right - lower_edge_left;
 
-    while upper_slab_lower_arc_bisector.can_bisect() {
-        let upper_edge_left = upper_slab_lower_arc_bisector.mid_vertex();
-        let upper_edge_dir = upper_slab_lower_arc_bisector.mid_vertex_outgoing();
+    while upper_region_arc_bisector.num_edges() > 1 {
+        let upper_edge_left = upper_region_arc_bisector.mid_vertex();
+        let upper_edge_dir = upper_region_arc_bisector.mid_vertex_outgoing();
 
         if upper_edge_left.x() < lower_edge_left.x() ||
             (upper_edge_left.x() < lower_edge_right.x() && Vec2::cross(lower_edge_dir, upper_edge_dir) < 0.0)
         {
-            upper_slab_lower_arc_bisector.move_right();
+            upper_region_arc_bisector.move_ccw();
         } else {
-            upper_slab_lower_arc_bisector.move_left();
+            upper_region_arc_bisector.move_cw();
         }
+
+        upper_region_arc_bisector.bisect();
     }
 
-    edge_slabs_intersecting(
+    edge_regions_intersect(
         lower_edge_left,
         lower_edge_right,
-        upper_slab_lower_arc_bisector.v0(),
-        upper_slab_lower_arc_bisector.v1()
+        upper_region_arc_bisector.begin_vertex(),
+        upper_region_arc_bisector.end_vertex()
     )
 }
 
@@ -202,7 +201,7 @@ fn edge_slab_arc_intersecting(
 ///
 /// The upper region is the region bounded by the edge between 'upper_edge_left', 'upper_edge_right' and the rays
 /// extending upward from these two vertices. 
-fn edge_slabs_intersecting(
+fn edge_regions_intersect(
     lower_edge_left: Point2,
     lower_edge_right: Point2,
     upper_edge_left: Point2,
@@ -320,12 +319,12 @@ mod tests {
             );
 
             arc_regions_intersect(
-                UpperConvexArcBisector::new(
+                ConvexArcBisector::new(
                     lower_polygon.as_view(),
                     lower_arc_begin_index,
                     lower_arc_num_edges
                 ),
-                LowerConvexArcBisector::new(
+                ConvexArcBisector::new(
                     upper_polygon.as_view(),
                     upper_arc_begin_index,
                     upper_arc_num_edges
@@ -431,7 +430,7 @@ mod tests {
             for _ in 0..polygon.num_vertices() {
                 std::assert_eq!(
                     arc_edge_regions_intersect(
-                        UpperConvexArcBisector::new(polygon.as_view(), lower_range_begin_index, lower_range_num_edges),
+                        ConvexArcBisector::new(polygon.as_view(), lower_range_begin_index, lower_range_num_edges),
                         upper_edge_left,
                         upper_edge_right),
                     expected_result
@@ -468,7 +467,7 @@ mod tests {
     }
 
     #[test]
-    fn test_edge_slab_arc_intersecting() {
+    fn test_edge_arc_regions_intersect() {
         fn test_with_slab(lower_edge_left: Point2, lower_edge_right: Point2, expected_result: bool) {
             let mut upper_polygon = ConvexPolygon::from_str(
                 "{{4.28, 8.19}, {5.78, 5.07}, {10.54, 3.45}, {14.86, 5.31}, {16.82, 9.07}}"
@@ -479,10 +478,10 @@ mod tests {
 
             for _ in 0..upper_polygon.num_vertices() {
                 std::assert_eq!(
-                    edge_slab_arc_intersecting(
+                    edge_arc_regions_intersect(
                         lower_edge_left,
                         lower_edge_right,
-                        LowerConvexArcBisector::new(
+                        ConvexArcBisector::new(
                             upper_polygon.as_view(),
                             upper_range_begin_index,
                             upper_range_num_edges
@@ -522,9 +521,9 @@ mod tests {
     }
 
     #[test]
-    fn test_edge_slabs_intersecting() {
+    fn test_edge_regions_intersect() {
         // Lower fully left of upper
-        std::assert!(!edge_slabs_intersecting(
+        std::assert!(!edge_regions_intersect(
             Point2::new(-1.22, 2.15),
             Point2::new(2.16, 1.05),
             Point2::new(3.22, 5.11),
@@ -532,7 +531,7 @@ mod tests {
         ));
 
         // Upper fully left of lower
-        std::assert!(!edge_slabs_intersecting(
+        std::assert!(!edge_regions_intersect(
             Point2::new(-1.2, -0.49),
             Point2::new(2.16, 1.05),
             Point2::new(-5.6, 4.57),
@@ -540,7 +539,7 @@ mod tests {
         ));
 
         // Overlap towards left, edge of lower, no intersection.
-        std::assert!(!edge_slabs_intersecting(
+        std::assert!(!edge_regions_intersect(
             Point2::new(-4.8, -4.25),
             Point2::new(4.02, -1.77),
             Point2::new(-2.58, -1.55),
@@ -548,7 +547,7 @@ mod tests {
         ));
 
         // Overlap towards left, edge of lower, intersection.
-        std::assert!(edge_slabs_intersecting(
+        std::assert!(edge_regions_intersect(
             Point2::new(3.12,-1.8),
             Point2::new(14.04,-4.26),
             Point2::new(4.86,-4.38),
@@ -556,7 +555,7 @@ mod tests {
         ));
          
         // Overlap towards left, edge of upper, no intersection.
-        std::assert!(!edge_slabs_intersecting(
+        std::assert!(!edge_regions_intersect(
             Point2::new(10.08, 0.74),
             Point2::new(18.08, -4.82),
             Point2::new(5.6, 1.64),
@@ -564,7 +563,7 @@ mod tests {
         ));
 
         // Overlap towards left, edge of upper, intersection.
-        std::assert!(edge_slabs_intersecting(
+        std::assert!(edge_regions_intersect(
             Point2::new(8.12, 2.8),
             Point2::new(12.38, -3.36),
             Point2::new(4.94, 1.42),
@@ -572,7 +571,7 @@ mod tests {
         ));
         
         // Overlap towards right, edge of lower, no intersection.
-        std::assert!(!edge_slabs_intersecting(
+        std::assert!(!edge_regions_intersect(
             Point2::new(-3.72, -3.07),
             Point2::new(5.24, 0.73),
             Point2::new(-2.5, 2.27),
@@ -580,7 +579,7 @@ mod tests {
         ));
 
         // Overlap towards right, edge of lower, intersection.
-        std::assert!(edge_slabs_intersecting(
+        std::assert!(edge_regions_intersect(
             Point2::new(-1.52, -2.71),
             Point2::new(5.82, 1.17),
             Point2::new(-3.78, 3.23),
@@ -588,7 +587,7 @@ mod tests {
         ));
 
         // Overlap towards right, edge of upper, no intersection.
-        std::assert!(!edge_slabs_intersecting(
+        std::assert!(!edge_regions_intersect(
             Point2::new(2.08, 3.16),
             Point2::new(8.84, 6.6),
             Point2::new(5.48, 10.26),
@@ -596,7 +595,7 @@ mod tests {
         ));
 
         // Overlap towards right, edge of upper, intersection.
-        std::assert!(edge_slabs_intersecting(
+        std::assert!(edge_regions_intersect(
             Point2::new(6.16, 4.56),
             Point2::new(11.46, 8.96),
             Point2::new(4.48, 9.36),
