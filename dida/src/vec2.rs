@@ -88,6 +88,22 @@ impl Vec2 {
             }
         }
     }
+
+    /// Rotates this vector by 90 degrees in the counterclockwise direction and returns the result.
+    pub fn left_perpendicular(&self) -> Vec2 {
+        Vec2 {
+            x: -self.y,
+            y: self.x,
+        }
+    }
+
+    /// Rotates this vector by 90 degrees in the clockwise direction and returns the result.    
+    pub fn right_perpendicular(&self) -> Vec2 {
+        Vec2 {
+            x: self.y,
+            y: -self.x,
+        }
+    }
 }
 
 impl Add for Vec2 {
@@ -243,6 +259,26 @@ mod tests {
         std::assert_eq!(Vec2::lex_cmp(c, b), Ordering::Greater);
 
         std::assert_eq!(Vec2::lex_cmp(a, a), Ordering::Equal);
+    }
+
+    #[test]
+    fn test_left_perpendicular() {
+        let a = Vec2::new(f64::cos(1.0), f64::sin(1.0));
+        let expected_result = Vec2::new(
+            f64::cos(1.0 + std::f64::consts::FRAC_PI_2),
+            f64::sin(1.0 + std::f64::consts::FRAC_PI_2)
+        );
+        std::assert_eq!(a.left_perpendicular(), expected_result);
+    }
+
+    #[test]
+    fn test_right_perpendicular() {
+        let a = Vec2::new(f64::cos(1.0), f64::sin(1.0));
+        let expected_result = Vec2::new(
+            f64::cos(1.0 - std::f64::consts::FRAC_PI_2),
+            f64::sin(1.0 - std::f64::consts::FRAC_PI_2)
+        );
+        std::assert_eq!(a.right_perpendicular(), expected_result);
     }
 
     #[test]
