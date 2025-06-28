@@ -1,5 +1,5 @@
 use crate::{ScalarDeg1, ScalarDeg2};
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Sub, SubAssign, Neg};
 use std::cmp::Ordering;
 use std::str::FromStr;
 use crate::parser::parser::Parser;
@@ -48,6 +48,11 @@ impl Vec2 {
     pub fn set_y(&mut self, y: ScalarDeg1) {
         self.y = y;
     }
+
+    /// Returns the squared length of this vector.
+    pub fn sqr_len(&self) -> ScalarDeg2 {
+        self.x * self.x + self.y * self.y
+    } 
 
     /// Returns the dot product of 2 vectors.
     pub fn dot(a: Vec2, b: Vec2) -> ScalarDeg2 {
@@ -142,6 +147,17 @@ impl SubAssign for Vec2 {
     }
 }
 
+impl Neg for Vec2 {
+    type Output = Vec2;
+
+    fn neg(self) -> Vec2 {
+        Vec2 {
+            x: -self.x,
+            y: -self.y,
+        }
+    }
+}
+
 impl std::fmt::Debug for Vec2 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("").field(&self.x).field(&self.y).finish()
@@ -198,6 +214,12 @@ mod tests {
         let mut vec = Vec2::new(8.3, -9.6);
         vec.set_y(ScalarDeg1::new(8.7));
         std::assert_eq!(vec, Vec2::new(8.3, 8.7));
+    }
+
+    #[test]
+    fn test_sqr_len() {
+        let vec = Vec2::new(5.0, 2.0);
+        std::assert_eq!(vec.sqr_len(), ScalarDeg2::new(29.0));
     }
 
     #[test]
@@ -303,6 +325,12 @@ mod tests {
         let mut a = Vec2::new(99.0, 4.0);
         a -= Vec2::new(93.0, -35.0);
         std::assert_eq!(a, Vec2::new(6.0, 39.0));
+    }
+
+    #[test]
+    fn test_neg() {
+        let vec = Vec2::new(1.7, -1.2);
+        std::assert_eq!(-vec, Vec2::new(-1.7, 1.2));
     }
 
     #[test]
