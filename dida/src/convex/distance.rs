@@ -1,4 +1,85 @@
-use crate::{Point2, Vec2};
+use crate::{ConvexPolygonView, Point2, Vec2};
+use crate::convex::convex_arc_bisector::ConvexArcBisector;
+
+/// Returns the squared distance between convex polygons `a` and `b`.
+pub fn distance_squared(a: ConvexPolygonView, b: ConvexPolygonView) -> f64 {
+    let mut a_bisector = ConvexArcBisector::new_with_lower_then_upper_arc(a);
+    let mut b_bisector = ConvexArcBisector::new_with_upper_then_lower_arc(b);
+
+    // The following invariant is maintained: Given the Minkowski difference of polygons `a` and `b`, and the diagonal
+    // of the Minkowski difference from `v0` to v2`, the origin is contained in the `DiagonalVoronoiRegion::Right`
+    // region.
+
+    let mut v0 = Point2::from_vec2(a_bisector.begin_vertex() - b_bisector.begin_vertex());
+    let mut v2 = Point2::from_vec2(a_bisector.mid_vertex() - b_bisector.mid_vertex());
+    match diagonal_voronoi_region(v0, v2, Point2::new(0.0, 0.0)) {
+        DiagonalVoronoiRegion::Right => {
+            a_bisector.move_cw();
+            b_bisector.move_cw();
+        },
+        DiagonalVoronoiRegion::Left => {
+            a_bisector.move_ccw();
+            b_bisector.move_ccw();
+            std::mem::swap(&mut v0, &mut v2);
+        },
+    }
+
+    while a_bisector.num_edges() + b_bisector.num_edges() > 1 {
+        let bisect_direction;
+        if a_bisector.num_edges() == 1 && b_bisector.num_edges() == 1 {
+            // If both bisectors have 1 edge left, then there are 2 edges left in the Minkowski difference, so we still
+            // need to bisect. We need to treat this as a special case though, because neither of the other 2 branches
+            // of this if statement will be able to guarantee that the selected mid vertices result in a v1 different
+            // from v0 or v2, so they wouldn't be able to guarantee that the function will terminate.
+            if Vec2::cross(a_bisector.begin_vertex_outgoing(), b_bisector.begin_vertex_outgoing()) > 0.0 {
+                bisect_direction = b_bisector.begin_vertex_outgoing().left_perpendicular();
+
+                a_bisector.bisect_at(a_bisector.num_edges());
+                b_bisector.bisect_at(0);
+            } else {
+                bisect_direction = a_bisector.begin_vertex_outgoing().right_perpendicular();
+
+                a_bisector.bisect_at(0);
+                b_bisector.bisect_at(b_bisector.num_edges());
+            }
+        } else if a_bisector.num_edges() > b_bisector.num_edges() {
+            a_bisector.bisect();
+            bisect_direction = a_bisector.mid_vertex_outgoing().right_perpendicular();
+            b_bisector.bisect_at_support_vertex(-bisect_direction);
+        } else {
+            b_bisector.bisect();
+            bisect_direction = b_bisector.mid_vertex_outgoing().left_perpendicular();
+            a_bisector.bisect_at_support_vertex(bisect_direction);
+        }
+
+        let v1 = Point2::from_vec2(a_bisector.mid_vertex() - b_bisector.mid_vertex());
+        match triangle_voronoi_region(v0, v1, v2, bisect_direction, Point2::new(0.0, 0.0)) {
+            TriangleVoronoiRegion::EdgeV0V1 => {
+                a_bisector.move_cw();
+                b_bisector.move_cw();
+                v2 = v1;
+            },
+            TriangleVoronoiRegion::EdgeV1V2 => {
+                a_bisector.move_ccw();
+                b_bisector.move_ccw();
+                v0 = v1;
+            },
+            TriangleVoronoiRegion::Interior => return 0.0,
+        }
+    }  
+
+    let origin = Point2::new(0.0, 0.0);
+    let edge_sqr_len = (v2 - v0).sqr_len();
+    let origin_onto_edge = Vec2::dot(v2 - v0, origin - v0);
+    if origin_onto_edge <= 0.0 {
+        (v0 - origin).sqr_len().as_f64()
+    } else if origin_onto_edge >= edge_sqr_len {
+        (v2 - origin).sqr_len().as_f64()
+    } else {
+        let origin_onto_edge_normal = Vec2::cross(v2 - v0, origin - v0);
+        origin_onto_edge_normal.as_f64() * origin_onto_edge_normal.as_f64() / edge_sqr_len.as_f64()
+    }
+}
 
 /// Given the diagonal between two vertices of a convex polygon, the `DiagonalVoronoiRegion` of the left/right side of
 /// the diagonal is the union of the Voronoi cells of the polygon associated with the edges and vertices on that side,
@@ -64,18 +145,18 @@ fn triangle_voronoi_region(
     v1_support_direction: Vec2,
     point: Point2
 ) -> TriangleVoronoiRegion {
-    let in_front_of_v0v1 = Vec2::cross(point - v1, v1 - v0) >= 0.0;
-    let in_front_of_v1v2 = Vec2::cross(point - v1, v2 - v1) >= 0.0;
+    let v0v1_side = Vec2::cross(point - v1, v1 - v0);
+    let v1v2_side = Vec2::cross(point - v1, v2 - v1);
 
-    if in_front_of_v0v1 && in_front_of_v1v2 {
+    if v0v1_side >= 0.0 && v1v2_side >= 0.0 {
         if Vec2::cross(point - v1, v1_support_direction) > 0.0 {
             TriangleVoronoiRegion::EdgeV0V1
         } else {
             TriangleVoronoiRegion::EdgeV1V2
         }
-    } else if in_front_of_v0v1 {
+    } else if v0v1_side > 0.0 {
         TriangleVoronoiRegion::EdgeV0V1
-    } else if in_front_of_v1v2 {
+    } else if v1v2_side > 0.0 {
         TriangleVoronoiRegion::EdgeV1V2
     } else if Vec2::dot(point - v0, v0 - v2) > 0.0 {
         TriangleVoronoiRegion::EdgeV0V1
@@ -89,6 +170,36 @@ fn triangle_voronoi_region(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ConvexPolygon;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_distance_squared() {
+        let a = ConvexPolygon::from_str(
+            "{{2, 6}, {3, 2}, {5, -1}, {12, 3}, {14, 8}, {15, 12}, {14, 14}, {12, 16}, {8, 16}, {4, 13}, {2, 9}}"
+        ).unwrap();
+
+        // The closest distance is realized between two vertices.
+        let b = ConvexPolygon::from_str("{{15, -1}, {17, -3}, {19, -4}, {20, -2}, {19, 0}, {14, 2}}").unwrap();
+        std::assert_eq!(distance_squared(a.as_view(), b.as_view()), 5.0);
+        std::assert_eq!(distance_squared(b.as_view(), a.as_view()), 5.0);
+        
+        // The closest distance is realized between an edge and a vertex.
+        let b = ConvexPolygon::from_str("{{-1, 13}, {-2, 16}, {-3, 18}, {-4, 15}, {-3, 11}}").unwrap();
+        std::assert_eq!(distance_squared(a.as_view(), b.as_view()), 20.0);
+        std::assert_eq!(distance_squared(b.as_view(), a.as_view()), 20.0);
+        
+        // Intersecting
+        let b = ConvexPolygon::from_str("{{3, -3}, {9, -2}, {9, 3}, {6, 6}, {1, 2}}").unwrap();
+        std::assert_eq!(distance_squared(a.as_view(), b.as_view()), 0.0);
+        std::assert_eq!(distance_squared(b.as_view(), a.as_view()), 0.0);
+
+        // With parallel edges
+        let a = ConvexPolygon::from_str("{{-2, 2}, {4, 2}, {4, 5}, {-2, 5}}").unwrap();
+        let b = ConvexPolygon::from_str("{{2, 1}, {2, -1}, {6, -1}, {6, 1}}").unwrap();
+        std::assert_eq!(distance_squared(a.as_view(), b.as_view()), 1.0);
+        //std::assert_eq!(distance_squared(b.as_view(), a.as_view()), 1.0);
+    }
 
     #[test]
     fn test_diagonal_voronoi_region() {
@@ -144,6 +255,32 @@ mod tests {
         std::assert_eq!(
             triangle_voronoi_region(v0, v1, v2, v1_support_direction, Point2::new(-1.0, 1.0)),
             TriangleVoronoiRegion::Interior
+        );
+
+        // Degenerate cases
+        let v0 = Point2::new(1.0, 3.0);
+        let v1 = Point2::new(1.0, 3.0);
+        let v2 = Point2::new(4.0, 3.0);
+        let v1_support_direction = Vec2::new(0.0, -1.0);
+
+        std::assert_eq!(
+            triangle_voronoi_region(v0, v1, v2, v1_support_direction, Point2::new(0.0, 5.0)),
+            TriangleVoronoiRegion::EdgeV0V1
+        );
+
+        std::assert_eq!(    
+            triangle_voronoi_region(v0, v1, v2, v1_support_direction, Point2::new(2.0, -1.0)),
+            TriangleVoronoiRegion::EdgeV1V2
+        );
+
+        std::assert_eq!(
+            triangle_voronoi_region(v0, v1, v2, v1_support_direction, Point2::new(-2.0, 5.0)),
+            TriangleVoronoiRegion::EdgeV0V1
+        );
+
+        std::assert_eq!(
+            triangle_voronoi_region(v0, v1, v2, v1_support_direction, Point2::new(6.0, 6.0)),
+            TriangleVoronoiRegion::EdgeV1V2
         );
     }
 }

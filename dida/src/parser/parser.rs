@@ -163,8 +163,6 @@ mod tests {
 
         let mut expected_remainder = "Dida";
         for expected_c in [b'D', b'i', b'd', b'a'] {
-            println!("{}", expected_c);
-
             std::assert!(!parser.has_finished());
 
             std::assert!(parser.next_is(|c| c == expected_c));

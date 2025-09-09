@@ -78,6 +78,12 @@ impl<'a> ConvexArcBisector<'a> {
         self.polygon[self.begin_index]
     }
 
+    /// Returns the outgoing vector of the begin vertex. THis is the vector connecting `begin_vertex` to the next
+    /// vertex.
+    pub fn begin_vertex_outgoing(&self) -> Vec2 {
+        self.polygon[succ_modulo(self.begin_index, self.polygon.num_vertices())] - self.polygon[self.begin_index]
+    }
+
     /// Returns the last vertex of the current range.
     pub fn end_vertex(&self) -> Point2 {
         self.polygon[add_modulo(self.begin_index, self.num_edges, self.polygon.num_vertices())]
@@ -115,7 +121,12 @@ impl<'a> ConvexArcBisector<'a> {
 
     /// Selects the vertex at the middle of the current range as the `mid_vertex`.
     pub fn bisect(&mut self) {
-        self.mid_offset = self.num_edges / 2;
+        self.bisect_at(self.num_edges / 2);
+    }
+
+    /// Selects the vertex with the given offset from `begin_vertex` as the `mid_offset`.
+    pub fn bisect_at(&mut self, offset: usize) {
+        self.mid_offset = offset;
         self.mid_index = add_modulo(self.begin_index, self.mid_offset, self.polygon.num_vertices());
     }
 
@@ -204,6 +215,7 @@ mod tests {
             bisector.bisect();
             std::assert_eq!(bisector.num_edges(), 8);
             std::assert_eq!(bisector.begin_vertex(), Point2::new(2.48, 5.67));
+            std::assert_eq!(bisector.begin_vertex_outgoing(), Point2::new(3.34, 2.65) - Point2::new(2.48, 5.67));
             std::assert_eq!(bisector.end_vertex(), Point2::new(18.04, 8.69));
             std::assert_eq!(bisector.mid_vertex(), Point2::new(12.4, 0.79));
             std::assert_eq!(bisector.mid_vertex_outgoing(), Point2::new(14.78, 2.35) - Point2::new(12.4, 0.79));
@@ -213,6 +225,7 @@ mod tests {
             bisector.bisect();
             std::assert_eq!(bisector.num_edges(), 4);
             std::assert_eq!(bisector.begin_vertex(), Point2::new(2.48, 5.67));
+            std::assert_eq!(bisector.begin_vertex_outgoing(), Point2::new(3.34, 2.65) - Point2::new(2.48, 5.67));
             std::assert_eq!(bisector.end_vertex(), Point2::new(12.4, 0.79));
             std::assert_eq!(bisector.mid_vertex(), Point2::new(5.64, 0.87));
             std::assert_eq!(bisector.mid_vertex_outgoing(), Point2::new(9.36, 0.41) - Point2::new(5.64, 0.87));
@@ -222,6 +235,7 @@ mod tests {
             bisector.bisect();
             std::assert_eq!(bisector.num_edges(), 2);
             std::assert_eq!(bisector.begin_vertex(), Point2::new(5.64, 0.87));
+            std::assert_eq!(bisector.begin_vertex_outgoing(), Point2::new(9.36, 0.41) - Point2::new(5.64, 0.87));
             std::assert_eq!(bisector.end_vertex(), Point2::new(12.4, 0.79));
             std::assert_eq!(bisector.mid_vertex(), Point2::new(9.36, 0.41));
             std::assert_eq!(bisector.mid_vertex_outgoing(), Point2::new(12.4, 0.79) - Point2::new(9.36, 0.41));
@@ -231,6 +245,7 @@ mod tests {
             bisector.bisect();
             std::assert_eq!(bisector.num_edges(), 1);
             std::assert_eq!(bisector.begin_vertex(), Point2::new(9.36, 0.41));
+            std::assert_eq!(bisector.begin_vertex_outgoing(), Point2::new(12.40, 0.79) - Point2::new(9.36, 0.41));
             std::assert_eq!(bisector.end_vertex(), Point2::new(12.4, 0.79));
             std::assert_eq!(bisector.mid_vertex(), Point2::new(9.36, 0.41));
             std::assert_eq!(bisector.mid_vertex_outgoing(), Point2::new(12.4, 0.79) - Point2::new(9.36, 0.41));
@@ -240,6 +255,7 @@ mod tests {
             bisector.bisect();
             std::assert_eq!(bisector.num_edges(), 0);
             std::assert_eq!(bisector.begin_vertex(), Point2::new(9.36, 0.41));
+            std::assert_eq!(bisector.begin_vertex_outgoing(), Point2::new(12.40, 0.79) - Point2::new(9.36, 0.41));
             std::assert_eq!(bisector.end_vertex(), Point2::new(9.36, 0.41));
             std::assert_eq!(bisector.mid_vertex(), Point2::new(9.36, 0.41));
             std::assert_eq!(bisector.mid_vertex_outgoing(), Point2::new(12.4, 0.79) - Point2::new(9.36, 0.41));
@@ -291,7 +307,38 @@ mod tests {
             bisector.bisect_at_support_vertex((Point2::new(5.81, 7.54) - Point2::new(8.99, 4.74)).right_perpendicular());
             std::assert_eq!(bisector.mid_vertex(), Point2::new(8.99, 4.74));
 
-            vertices.rotate_right(1);    
+            vertices.rotate_right(1); 
+        }
+    }
+
+    #[test]
+    fn test_bisect_at() {
+        let mut vertices = Point2::vec_from_str(
+            "{{-3.22, 3.49}, {-1.04, 1.57}, {6.03, 0.88}, {11.07, 6.28}, {2.61, 7.48}}"
+        ).unwrap();
+
+        for i in 0..vertices.len() {
+            let polygon = ConvexPolygonView::new(&vertices);
+            
+            let mut bisector = ConvexArcBisector::new(polygon, i, 4);
+
+            bisector.bisect_at(2);
+            std::assert_eq!(bisector.mid_vertex(), Point2::new(6.03, 0.88));
+
+            bisector.move_cw();
+            std::assert_eq!(bisector.num_edges(), 2);
+            std::assert_eq!(bisector.begin_vertex(), Point2::new(-3.22, 3.49));
+            std::assert_eq!(bisector.end_vertex(), Point2::new(6.03, 0.88));
+
+            bisector.bisect_at(1);
+            std::assert_eq!(bisector.mid_vertex(), Point2::new(-1.04, 1.57));
+
+            bisector.move_ccw();
+            std::assert_eq!(bisector.num_edges(), 1);
+            std::assert_eq!(bisector.begin_vertex(), Point2::new(-1.04, 1.57));
+            std::assert_eq!(bisector.end_vertex(), Point2::new(6.03, 0.88));
+
+            vertices.rotate_right(1);
         }
     }
 }
