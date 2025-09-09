@@ -48,6 +48,11 @@ impl Point2 {
         Point2 { pos }
     }
 
+    /// Returns the Vec2 from the origin to this point.
+    pub fn to_vec2(&self) -> Vec2 {
+        self.pos
+    }
+
     /// Returns the `x` coordinate of this point.
     pub fn x(self) -> ScalarDeg1 {
         self.pos.x()
@@ -169,10 +174,17 @@ mod tests {
     }
 
     #[test]
-    fn from_vec2() {
+    fn test_from_vec2() {
         let point = Point2::from_vec2(Vec2::new(6.4, -4.0));
         std::assert_eq!(point.x(), ScalarDeg1::new(6.4));
         std::assert_eq!(point.y(), ScalarDeg1::new(-4.0));
+    }
+
+    #[test]
+    fn test_to_vec2() {
+        let vec = Point2::new(9.3, 4.0).to_vec2();
+        std::assert_eq!(vec.x(), ScalarDeg1::new(9.3));
+        std::assert_eq!(vec.y(), ScalarDeg1::new(4.0));
     }
 
     #[test]

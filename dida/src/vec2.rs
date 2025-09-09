@@ -338,6 +338,6 @@ mod tests {
         std::assert_eq!(Vec2::from_str("{1.32, 7.18}"), Ok(Vec2::new(1.32, 7.18)));    
         std::assert_eq!(Vec2::from_str("  {9.19, -6.07}"), Ok(Vec2::new(9.19, -6.07)));
         std::assert_eq!(Vec2::from_str("{-8.58, 7.52}   "), Ok(Vec2::new(-8.58, 7.52)));
-        std::assert!(Vec2::from_str("not a point").is_err());
+        std::assert!(Vec2::from_str("not a vector").is_err());
     }
 }

@@ -13,7 +13,7 @@ pub struct ConvexPolygon<VertexContainer: AsRef<[Point2]>> {
 pub type ConvexPolygonView<'a> = ConvexPolygon<&'a [Point2]>;
 
 impl<VertexContainer: AsRef<[Point2]>> ConvexPolygon<VertexContainer> {
-    /// Constructs a new `ConvexPolygonView` with the given vertices.
+    /// Constructs a new `ConvexPolygon` with the given vertices.
     ///
     /// This function will panic if the vertices do not form a valid convex polyogn (see
     /// 'are_valid_convex_polygon_vertices').
@@ -22,7 +22,7 @@ impl<VertexContainer: AsRef<[Point2]>> ConvexPolygon<VertexContainer> {
         Self { vertices }
     }
 
-    /// An unchecked variant of `ConvexPolygonView::new`.
+    /// An unchecked variant of `ConvexPolygon::new`.
     pub fn new_unchecked(vertices: VertexContainer) -> Self {
         std::debug_assert!(are_valid_convex_polygon_vertices(vertices.as_ref()));
         Self { vertices }

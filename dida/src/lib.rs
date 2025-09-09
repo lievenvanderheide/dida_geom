@@ -8,6 +8,7 @@ mod scalar;
 mod vec2;
 
 pub use convex::convex_polygon::{ConvexPolygon, ConvexPolygonView};
+pub use convex::minkowski_addition::*;
 pub use point2::*;
 pub use predicates::*;
 pub use scalar::*;

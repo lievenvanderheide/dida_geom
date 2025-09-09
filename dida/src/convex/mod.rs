@@ -3,4 +3,5 @@ pub mod convex_hull;
 pub mod convex_polygon;
 pub mod distance;
 pub mod intersect;
+pub mod minkowski_addition;
 pub mod validation;

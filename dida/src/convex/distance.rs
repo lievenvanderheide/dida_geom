@@ -31,16 +31,16 @@ pub fn distance_squared(a: ConvexPolygonView, b: ConvexPolygonView) -> f64 {
             // need to bisect. We need to treat this as a special case though, because neither of the other 2 branches
             // of this if statement will be able to guarantee that the selected mid vertices result in a v1 different
             // from v0 or v2, so they wouldn't be able to guarantee that the function will terminate.
-            if Vec2::cross(a_bisector.begin_vertex_outgoing(), b_bisector.begin_vertex_outgoing()) > 0.0 {
+            if Vec2::cross(a_bisector.begin_vertex_outgoing(), b_bisector.begin_vertex_outgoing()) < 0.0 {
                 bisect_direction = b_bisector.begin_vertex_outgoing().left_perpendicular();
 
-                a_bisector.bisect_at(a_bisector.num_edges());
+                a_bisector.bisect_at(1);
                 b_bisector.bisect_at(0);
             } else {
                 bisect_direction = a_bisector.begin_vertex_outgoing().right_perpendicular();
 
                 a_bisector.bisect_at(0);
-                b_bisector.bisect_at(b_bisector.num_edges());
+                b_bisector.bisect_at(1);
             }
         } else if a_bisector.num_edges() > b_bisector.num_edges() {
             a_bisector.bisect();
@@ -198,7 +198,13 @@ mod tests {
         let a = ConvexPolygon::from_str("{{-2, 2}, {4, 2}, {4, 5}, {-2, 5}}").unwrap();
         let b = ConvexPolygon::from_str("{{2, 1}, {2, -1}, {6, -1}, {6, 1}}").unwrap();
         std::assert_eq!(distance_squared(a.as_view(), b.as_view()), 1.0);
-        //std::assert_eq!(distance_squared(b.as_view(), a.as_view()), 1.0);
+        std::assert_eq!(distance_squared(b.as_view(), a.as_view()), 1.0);
+
+        // Former bug case.
+        let a = ConvexPolygon::from_str("{{-6, 4}, {-3, 2}, {2, 3}, {4, 7}, {-2, 6}}").unwrap();
+        let b = ConvexPolygon::from_str("{{6, 2}, {3, 1}, {2, -3}, {7, -2}}").unwrap();
+        std::assert_eq!(distance_squared(a.as_view(), b.as_view()), 5.0);
+        std::assert_eq!(distance_squared(b.as_view(), a.as_view()), 5.0);
     }
 
     #[test]
