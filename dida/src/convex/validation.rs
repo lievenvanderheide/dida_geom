@@ -7,7 +7,7 @@ use crate::{Vec2, Point2};
 ///  1. There are at least 3 vertices.
 ///  2. All vertices are distinct.
 ///  3. Each corner is strictly convex, the interior angle at any vertex is less than 180 degrees.
-///  4. The polygon winds around its interior exactly once in the counter clockwise direction.
+///  4. There are no loops in the boundary.
 ///
 pub fn are_valid_convex_polygon_vertices(vertices: &[Point2]) -> bool {
     if vertices.len() < 3 {
@@ -28,6 +28,8 @@ pub fn are_valid_convex_polygon_vertices(vertices: &[Point2]) -> bool {
 
         if incoming.x() <= 0.0 && outgoing.x() > 0.0 {
             if left_vertex_found {
+                // If this is the second vertex where the direction flips from going towards the left to going to the
+                // right, then either there must be a loop in the boundary or there must be a non convex corner.
                 return false;
             }
 
@@ -36,6 +38,8 @@ pub fn are_valid_convex_polygon_vertices(vertices: &[Point2]) -> bool {
 
         if incoming.x() >= 0.0 && outgoing.x() < 0.0 {
             if right_vertex_found {
+                // If this is the second vertex where the direction flips from going towards the right to going to the
+                // left, then either there must be a loop in the boundary or there must be a non convex corner.
                 return false;
             }
 
@@ -101,7 +105,7 @@ mod tests {
             false
         );
 
-        // Winds around twice
+        // With loop in boundary
         test(
             Point2::vec_from_str("{
                 {-0.9, -2.86}, {-0.08, -6.14}, {6.22, -7.14}, {10.6, -0.28}, {1.92, 0.46}, {-1.9, -4.84},
