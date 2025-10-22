@@ -1,3 +1,4 @@
+mod bezier_64;
 mod container;
 mod convex;
 mod cyclic;

@@ -16,7 +16,7 @@ pub fn pred_modulo(i: usize, m: usize) -> usize {
 pub fn succ_modulo(mut i: usize, m: usize) -> usize {
     i += 1;
     if i == m { 
-        0 
+        0
     } else {
         i
     }

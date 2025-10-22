@@ -288,7 +288,7 @@ mod tests {
             let mut parser = Parser::new("{}");
             let vec = parser.parse_vector::<u8>(&parse_alphabetic_byte).unwrap();
             std::assert!(parser.has_finished());
-            std::assert_eq!(vec, []);
+            std::assert_eq!(vec, [] as [u8; 0]);
         }
 
         // Empty vector with whitespace
@@ -296,7 +296,7 @@ mod tests {
             let mut parser = Parser::new("{\t}");
             let vec = parser.parse_vector::<u8>(&parse_alphabetic_byte).unwrap();
             std::assert!(parser.has_finished());
-            std::assert_eq!(vec, []);
+            std::assert_eq!(vec, [] as [u8; 0]);
         }
 
         // { Missing.

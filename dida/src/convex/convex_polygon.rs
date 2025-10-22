@@ -39,7 +39,7 @@ impl<VertexContainer: AsRef<[Point2]>> ConvexPolygon<VertexContainer> {
     }
 
     /// Returns a ConvexPolygonView of this polygon.
-    pub fn as_view(&self) -> ConvexPolygonView {
+    pub fn as_view(&self) -> ConvexPolygonView<'_> {
         ConvexPolygonView {
             vertices: self.vertices.as_ref(),
         }
