@@ -22,32 +22,32 @@ use std::fmt::Debug;
 ///
 /// Similar rules for other operations are documented at the respective function.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
-pub struct UnitIntervalScalar64 {
+pub struct UnitIntervalScalar {
     /// The numerator of this fixed point scalar. The denominator is implicitly 2^64.
     numerator: u64,
 }
 
-impl UnitIntervalScalar64 {
+impl UnitIntervalScalar {
     /// The minimum representable scalar.
-    pub const MIN: UnitIntervalScalar64 = UnitIntervalScalar64 { numerator: u64::MIN };
+    pub const MIN: UnitIntervalScalar = UnitIntervalScalar { numerator: u64::MIN };
 
     /// The maximum representable scalar.
-    pub const MAX: UnitIntervalScalar64 = UnitIntervalScalar64 { numerator: u64::MAX };
+    pub const MAX: UnitIntervalScalar = UnitIntervalScalar { numerator: u64::MAX };
 
     /// The distance between two consecutive representable scalars.
-    pub const QUANTUM: UnitIntervalScalar64 = UnitIntervalScalar64 { numerator: 1 };
+    pub const QUANTUM: UnitIntervalScalar = UnitIntervalScalar { numerator: 1 };
 
     /// Constructs a scalar with the given `f64` value.
     ///
-    /// Since `UnitIntervalScalar64` values have higher precision than `f64`, this conversion is exact. The error number
+    /// Since `UnitIntervalScalar` values have higher precision than `f64`, this conversion is exact. The error number
     /// of the resulting value is thus 0.
     ///
     /// It's a precondition that 0.0 <= value < 1.0.
-    pub fn new(value: f64) -> UnitIntervalScalar64 {
+    pub fn new(value: f64) -> UnitIntervalScalar {
         std::assert!(value >= 0.0 && value < 1.0);
         
         let one_numerator = (1_u128 << 64) as f64;
-        UnitIntervalScalar64 {
+        UnitIntervalScalar {
             numerator: (value * one_numerator) as u64,
         }
     }
@@ -59,16 +59,16 @@ impl UnitIntervalScalar64 {
     }
 
     /// Constructs a scalar from the given `ScalarDeg1` such that the full range of `ScalarDeg1` is (roughly) mapped to
-    /// the full range of `UnitIntervalScalar64`.
+    /// the full range of `UnitIntervalScalar`.
     ///
-    /// It's only roughly the full range, because `ScalarDeg1::MAX` won't map to exactly `UnitIntervalScalar64::MAX`,
+    /// It's only roughly the full range, because `ScalarDeg1::MAX` won't map to exactly `UnitIntervalScalar::MAX`,
     /// instead we use the mapping such that `ScalarDeg1::MAX + ScalarDeg1::QUANTUM` would map to
-    /// `UnitIntervalScalar64::MAX + UnitIntervalScalar64::QUANTUM` if both values were in range.
+    /// `UnitIntervalScalar::MAX + UnitIntervalScalar::QUANTUM` if both values were in range.
     ///
-    /// Since `UnitIntervalScalar64` values have higher precision than `ScalarDeg1`, this conversion is exact. The error
+    /// Since `UnitIntervalScalar` values have higher precision than `ScalarDeg1`, this conversion is exact. The error
     /// number of the resulting value is thus 0.
-    pub fn from_scalar_deg_1(value: ScalarDeg1) -> UnitIntervalScalar64 {
-        UnitIntervalScalar64 {
+    pub fn from_scalar_deg_1(value: ScalarDeg1) -> UnitIntervalScalar {
+        UnitIntervalScalar {
             numerator: (value.numerator().wrapping_add(i32::MIN).cast_unsigned() as u64) << 32
         }
     }
@@ -81,13 +81,13 @@ impl UnitIntervalScalar64 {
         ScalarDeg1::from_numerator(rounded.cast_signed().wrapping_sub(i32::MIN))
     }
 
-    /// Constructs a `UnitIntervalScalar64` with the given numerator. The new scalar will have the value
+    /// Constructs a `UnitIntervalScalar` with the given numerator. The new scalar will have the value
     /// `numerator / 2^64`.
-    pub fn from_numerator(numerator: u64) -> UnitIntervalScalar64 {
-        UnitIntervalScalar64 { numerator }
+    pub fn from_numerator(numerator: u64) -> UnitIntervalScalar {
+        UnitIntervalScalar { numerator }
     }
 
-    /// Returns the numerator of this `UnitIntervalScalar64`.
+    /// Returns the numerator of this `UnitIntervalScalar`.
     pub fn numerator(&self) -> u64 {
         self.numerator
     }
@@ -95,8 +95,8 @@ impl UnitIntervalScalar64 {
     /// Multiplies this scalar by 0.5 and returns the result.
     ///
     /// error_number(a.half()) = error_number(a) + 1
-    pub fn half(self) -> UnitIntervalScalar64 {
-        UnitIntervalScalar64 {
+    pub fn half(self) -> UnitIntervalScalar {
+        UnitIntervalScalar {
             numerator: self.numerator >> 1,
         }
     }
@@ -104,21 +104,27 @@ impl UnitIntervalScalar64 {
     /// Returns the midpoint between two scalars.
     ///
     /// error_number(a.half()) = max(error_number(a), error_number(b)) + 1
-    pub fn midpoint(a: UnitIntervalScalar64, b: UnitIntervalScalar64) -> UnitIntervalScalar64 {
-        UnitIntervalScalar64 {
-            numerator: a.numerator.midpoint(b.numerator),
+    pub fn midpoint(self, b: UnitIntervalScalar) -> UnitIntervalScalar {
+        UnitIntervalScalar {
+            numerator: self.numerator.midpoint(b.numerator),
         }
     }
 
     /// Linearly interpolates between `a` and `b` using parameter `t`.
     ///
     /// error_number(interpolate(a, b, t)) = error_number(t) + max(error_number(a), error_number(b)) + 1
-    pub fn interpolate(a: UnitIntervalScalar64, b: UnitIntervalScalar64, t: UnitIntervalScalar64) -> UnitIntervalScalar64 {
-        if a < b {
-            a + t * (b - a)
-        } else {
-            a - t * (a - b)
+    pub fn interpolate(a: UnitIntervalScalar, b: UnitIntervalScalar, t: UnitIntervalScalar) -> UnitIntervalScalar {
+        let mut diff_scaled = t * b.wrapping_sub(a);
+        if b < a {
+            // If 'b < a', then the result of 'b.wrapping_sub(a)' is 'b - a + 1', so the current value of 'diff_scaled'
+            // is 't * (b - a + 1) = t * (b - a) + t'. To adjust for this, we need to subtract 't' from 'diff_scaled'.
+            //
+            // Since we're not doing any further multiplications, and since we know the result is in the [0, 1) range,
+            // the effect of the remaining wrapping will just cancel out.
+            diff_scaled = diff_scaled.wrapping_sub(t);
         }
+
+        a.wrapping_add(diff_scaled)
     }
 
     /// Returns the interpolation parameter `t` such that `interpolate(a, b, t) == c`.
@@ -131,7 +137,7 @@ impl UnitIntervalScalar64 {
     /// consider the case where the actual values of a, b, c are 0, QUANTUM and 0, with a, b exact and c an error number
     /// of 1. The result of this function will be 0. A possible exact value corresponding to c is QUANTUM though, which
     /// means the exact result may be 1.
-    pub fn interpolation_param(a: UnitIntervalScalar64, b: UnitIntervalScalar64, c: UnitIntervalScalar64) -> UnitIntervalScalar64 {
+    pub fn interpolation_param(a: UnitIntervalScalar, b: UnitIntervalScalar, c: UnitIntervalScalar) -> UnitIntervalScalar {
         let num;
         let denom;
         if a < b {
@@ -145,49 +151,49 @@ impl UnitIntervalScalar64 {
         }
 
         if num == denom {
-            UnitIntervalScalar64::MAX
+            UnitIntervalScalar::MAX
         } else {
-            UnitIntervalScalar64 {
+            UnitIntervalScalar {
                 numerator: (((num.numerator as u128) << 64) / (denom.numerator as u128)) as u64,
             }
         }
     }
 
     /// Adds `self` and `b`, while wrapping around if the result is >= 1.0, then returns the result.
-    pub fn wrapping_add(self, b: UnitIntervalScalar64) -> UnitIntervalScalar64 {
-        UnitIntervalScalar64 {
+    pub fn wrapping_add(self, b: UnitIntervalScalar) -> UnitIntervalScalar {
+        UnitIntervalScalar {
             numerator: self.numerator.wrapping_add(b.numerator),
         }
     }
 
     /// Subtracts `b` from `self`, while wrapping around if the result is < 0.0, then returns the result.
-    pub fn wrapping_sub(self, b: UnitIntervalScalar64) -> UnitIntervalScalar64 {
-        UnitIntervalScalar64 {
+    pub fn wrapping_sub(self, b: UnitIntervalScalar) -> UnitIntervalScalar {
+        UnitIntervalScalar {
             numerator: self.numerator.wrapping_sub(b.numerator),
         }
     }
 
-    /// Adds `self` and `b`, clamps the result if it exceeds the `UnitIntervalScalar64` range, then returns the result.
-    pub fn saturating_add(self, b: UnitIntervalScalar64) -> UnitIntervalScalar64 {
-        UnitIntervalScalar64 {
+    /// Adds `self` and `b`, clamps the result if it exceeds the `UnitIntervalScalar` range, then returns the result.
+    pub fn saturating_add(self, b: UnitIntervalScalar) -> UnitIntervalScalar {
+        UnitIntervalScalar {
             numerator: self.numerator.saturating_add(b.numerator),
         }
     }
 
-    /// Subtracts `b` from `self`, clamps the result if it exceeds the `UnitIntervalScalar64` range, then returns the
+    /// Subtracts `b` from `self`, clamps the result if it exceeds the `UnitIntervalScUnitIntervalScalaralar64` range, then returns the
     /// result.
-    pub fn saturating_sub(self, b: UnitIntervalScalar64) -> UnitIntervalScalar64 {
-        UnitIntervalScalar64 {
+    pub fn saturating_sub(self, b: UnitIntervalScalar) -> UnitIntervalScalar {
+        UnitIntervalScalar {
             numerator: self.numerator.saturating_sub(b.numerator),
         }
     }
 
     /// Compares two scalars with a tolerance.
     ///
-    /// More precisely: Given `UnitIntervalScalar64` approximations `a` and `b` and `error_number = error_number(a) +
+    /// More precisely: Given `UnitIntervalScalar` approximations `a` and `b` and `error_number = error_number(a) +
     /// error_number(b)`, returns whether the interval of possible exact values for `a` and `b` overlap.
-    pub fn equal_within_tolerance(a: UnitIntervalScalar64, b: UnitIntervalScalar64, error_number: usize) -> bool {
-        let tolerance = UnitIntervalScalar64 {
+    pub fn equal_within_tolerance(a: UnitIntervalScalar, b: UnitIntervalScalar, error_number: usize) -> bool {
+        let tolerance = UnitIntervalScalar {
             numerator: error_number as u64
         };
 
@@ -195,39 +201,39 @@ impl UnitIntervalScalar64 {
     }
 }
 
-impl Add for UnitIntervalScalar64 {
-    type Output = UnitIntervalScalar64;
+impl Add for UnitIntervalScalar {
+    type Output = UnitIntervalScalar;
 
-    fn add(self, b: UnitIntervalScalar64) -> UnitIntervalScalar64 {
-        UnitIntervalScalar64 {
+    fn add(self, b: UnitIntervalScalar) -> UnitIntervalScalar {
+        UnitIntervalScalar {
             numerator: self.numerator + b.numerator
         }
     }
 }
 
-impl Sub for UnitIntervalScalar64 {
-    type Output = UnitIntervalScalar64;
+impl Sub for UnitIntervalScalar {
+    type Output = UnitIntervalScalar;
 
-    fn sub(self, b: UnitIntervalScalar64) -> UnitIntervalScalar64 {
-        UnitIntervalScalar64 {
+    fn sub(self, b: UnitIntervalScalar) -> UnitIntervalScalar {
+        UnitIntervalScalar {
             numerator: self.numerator - b.numerator
         }
     }
 }
 
-impl Mul for UnitIntervalScalar64 {
-    type Output = UnitIntervalScalar64;
+impl Mul for UnitIntervalScalar {
+    type Output = UnitIntervalScalar;
 
-    fn mul(self, b: UnitIntervalScalar64) -> UnitIntervalScalar64 {
+    fn mul(self, b: UnitIntervalScalar) -> UnitIntervalScalar {
         let a_u128 = self.numerator as u128;
         let b_u128 = b.numerator as u128;
-        UnitIntervalScalar64 {
+        UnitIntervalScalar {
             numerator: ((a_u128 * b_u128) >> 64) as u64
         }
     }
 }
 
-impl Debug for UnitIntervalScalar64 {
+impl Debug for UnitIntervalScalar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(&self.as_f64(), f)
     }
@@ -239,39 +245,39 @@ mod tests {
 
     #[test]
     fn test_from_to_f64() {
-        std::assert_eq!(UnitIntervalScalar64::new(0.759).as_f64(), 0.759);
-        std::assert_eq!(UnitIntervalScalar64::new(0.261).as_f64(), 0.261);
+        std::assert_eq!(UnitIntervalScalar::new(0.759).as_f64(), 0.759);
+        std::assert_eq!(UnitIntervalScalar::new(0.261).as_f64(), 0.261);
     }
 
     #[test]
     fn test_from_to_scalar_deg_1() {
         let a = ScalarDeg1::new(-722.366);
-        std::assert_eq!(UnitIntervalScalar64::from_scalar_deg_1(a).to_scalar_deg_1(), a);
-        std::assert_eq!(UnitIntervalScalar64::from_scalar_deg_1(ScalarDeg1::MIN).to_scalar_deg_1(), ScalarDeg1::MIN);
-        std::assert_eq!(UnitIntervalScalar64::from_scalar_deg_1(ScalarDeg1::MAX).to_scalar_deg_1(), ScalarDeg1::MAX);
+        std::assert_eq!(UnitIntervalScalar::from_scalar_deg_1(a).to_scalar_deg_1(), a);
+        std::assert_eq!(UnitIntervalScalar::from_scalar_deg_1(ScalarDeg1::MIN).to_scalar_deg_1(), ScalarDeg1::MIN);
+        std::assert_eq!(UnitIntervalScalar::from_scalar_deg_1(ScalarDeg1::MAX).to_scalar_deg_1(), ScalarDeg1::MAX);
 
-        std::assert_eq!(UnitIntervalScalar64::from_scalar_deg_1(ScalarDeg1::MIN), UnitIntervalScalar64::MIN);
+        std::assert_eq!(UnitIntervalScalar::from_scalar_deg_1(ScalarDeg1::MIN), UnitIntervalScalar::MIN);
         std::assert_eq!(
-            UnitIntervalScalar64::from_scalar_deg_1(ScalarDeg1::MAX),
-            UnitIntervalScalar64::from_numerator(0xffffffff00000000)
+            UnitIntervalScalar::from_scalar_deg_1(ScalarDeg1::MAX),
+            UnitIntervalScalar::from_numerator(0xffffffff00000000)
         );
     }
 
     #[test]
     fn test_from_to_numerator() {
-        std::assert_eq!(UnitIntervalScalar64::from_numerator(70965).numerator(), 70965);
+        std::assert_eq!(UnitIntervalScalar::from_numerator(70965).numerator(), 70965);
     }
 
     #[test]
     fn test_half() {
-        std::assert_eq!(UnitIntervalScalar64::new(0.4).half(), UnitIntervalScalar64::new(0.2));
+        std::assert_eq!(UnitIntervalScalar::new(0.4).half(), UnitIntervalScalar::new(0.2));
     }
 
     #[test]
     fn test_midpoint() {
         std::assert_eq!(
-            UnitIntervalScalar64::midpoint(UnitIntervalScalar64::new(0.25), UnitIntervalScalar64::new(0.875)),
-            UnitIntervalScalar64::new(0.5625),
+            UnitIntervalScalar::new(0.25).midpoint(UnitIntervalScalar::new(0.875)),
+            UnitIntervalScalar::new(0.5625),
         );
     }
 
@@ -279,22 +285,22 @@ mod tests {
     fn test_interpolate() {
         // a < b
         std::assert_eq!(
-            UnitIntervalScalar64::interpolate(
-                UnitIntervalScalar64::new(0.3125),
-                UnitIntervalScalar64::new(0.8125),
-                UnitIntervalScalar64::new(0.1875)
+            UnitIntervalScalar::interpolate(
+                UnitIntervalScalar::new(0.3125),
+                UnitIntervalScalar::new(0.8125),
+                UnitIntervalScalar::new(0.1875)
             ),
-            UnitIntervalScalar64::new(0.40625)
+            UnitIntervalScalar::new(0.40625)
         );
 
         // a > b
         std::assert_eq!(
-            UnitIntervalScalar64::interpolate(
-                UnitIntervalScalar64::new(0.875),
-                UnitIntervalScalar64::new(0.25),
-                UnitIntervalScalar64::new(0.6875)
+            UnitIntervalScalar::interpolate(
+                UnitIntervalScalar::new(0.875),
+                UnitIntervalScalar::new(0.25),
+                UnitIntervalScalar::new(0.6875)
             ),
-            UnitIntervalScalar64::new(0.4453125)
+            UnitIntervalScalar::new(0.4453125)
         );
     }
 
@@ -302,110 +308,110 @@ mod tests {
     fn test_interpolation_param() {
         // a < b
         std::assert_eq!(
-            UnitIntervalScalar64::interpolation_param(
-                UnitIntervalScalar64::new(0.3125),
-                UnitIntervalScalar64::new(0.8125),
-                UnitIntervalScalar64::new(0.40625)
+            UnitIntervalScalar::interpolation_param(
+                UnitIntervalScalar::new(0.3125),
+                UnitIntervalScalar::new(0.8125),
+                UnitIntervalScalar::new(0.40625)
             ),
-            UnitIntervalScalar64::new(0.1875)
+            UnitIntervalScalar::new(0.1875)
         );
 
         // a > b
         std::assert_eq!(
-            UnitIntervalScalar64::interpolation_param(
-                UnitIntervalScalar64::new(0.875),
-                UnitIntervalScalar64::new(0.25),
-                UnitIntervalScalar64::new(0.4453125),
+            UnitIntervalScalar::interpolation_param(
+                UnitIntervalScalar::new(0.875),
+                UnitIntervalScalar::new(0.25),
+                UnitIntervalScalar::new(0.4453125),
             ),
-            UnitIntervalScalar64::new(0.6875)
+            UnitIntervalScalar::new(0.6875)
         );
 
-        // Interpolation param of 1.0 (which is rounded to UnitIntervalScalar64::MAX).
+        // Interpolation param of 1.0 (which is rounded to UnitIntervalScalar::MAX).
         std::assert_eq!(
-            UnitIntervalScalar64::interpolation_param(
-                UnitIntervalScalar64::new(0.84),
-                UnitIntervalScalar64::new(0.79),
-                UnitIntervalScalar64::new(0.79),
+            UnitIntervalScalar::interpolation_param(
+                UnitIntervalScalar::new(0.84),
+                UnitIntervalScalar::new(0.79),
+                UnitIntervalScalar::new(0.79),
             ),
-            UnitIntervalScalar64::MAX
+            UnitIntervalScalar::MAX
         );
     }
 
     #[test]
     fn test_wrapping_add() {
         std::assert_eq!(
-            UnitIntervalScalar64::new(0.75).wrapping_add(UnitIntervalScalar64::new(0.125)),
-            UnitIntervalScalar64::new(0.75 + 0.125)
+            UnitIntervalScalar::new(0.75).wrapping_add(UnitIntervalScalar::new(0.125)),
+            UnitIntervalScalar::new(0.75 + 0.125)
         );
 
         std::assert_eq!(
-            UnitIntervalScalar64::new(0.75).wrapping_add(UnitIntervalScalar64::new(0.625)),
-            UnitIntervalScalar64::new(0.75 + 0.625 - 1.0)
+            UnitIntervalScalar::new(0.75).wrapping_add(UnitIntervalScalar::new(0.625)),
+            UnitIntervalScalar::new(0.75 + 0.625 - 1.0)
         );
     }
 
     #[test]
     fn test_wrapping_sub() {
         std::assert_eq!(
-            UnitIntervalScalar64::new(0.625).wrapping_sub(UnitIntervalScalar64::new(0.25)),
-            UnitIntervalScalar64::new(0.625 - 0.25)
+            UnitIntervalScalar::new(0.625).wrapping_sub(UnitIntervalScalar::new(0.25)),
+            UnitIntervalScalar::new(0.625 - 0.25)
         );
 
         std::assert_eq!(
-            UnitIntervalScalar64::new(0.6875).wrapping_sub(UnitIntervalScalar64::new(0.9375)),
-            UnitIntervalScalar64::new(0.6875 - 0.9375 + 1.0)
+            UnitIntervalScalar::new(0.6875).wrapping_sub(UnitIntervalScalar::new(0.9375)),
+            UnitIntervalScalar::new(0.6875 - 0.9375 + 1.0)
         );
     }
 
     #[test]
     fn test_saturating_add() {
         std::assert_eq!(
-            UnitIntervalScalar64::new(0.34375).saturating_add(UnitIntervalScalar64::new(0.03125)),
-            UnitIntervalScalar64::new(0.34375 + 0.03125)
+            UnitIntervalScalar::new(0.34375).saturating_add(UnitIntervalScalar::new(0.03125)),
+            UnitIntervalScalar::new(0.34375 + 0.03125)
         );
 
         std::assert_eq!(
-            UnitIntervalScalar64::new(0.375).saturating_add(UnitIntervalScalar64::new(0.9375)),
-            UnitIntervalScalar64::MAX
+            UnitIntervalScalar::new(0.375).saturating_add(UnitIntervalScalar::new(0.9375)),
+            UnitIntervalScalar::MAX
         );
     }
 
     #[test]
     fn test_saturating_sub() {
         std::assert_eq!(
-            UnitIntervalScalar64::new(0.40625).saturating_sub(UnitIntervalScalar64::new(0.25)),
-            UnitIntervalScalar64::new(0.40625 - 0.25)
+            UnitIntervalScalar::new(0.40625).saturating_sub(UnitIntervalScalar::new(0.25)),
+            UnitIntervalScalar::new(0.40625 - 0.25)
         );
 
         std::assert_eq!(
-            UnitIntervalScalar64::new(0.21875).saturating_sub(UnitIntervalScalar64::new(0.90625)),
-            UnitIntervalScalar64::MIN
+            UnitIntervalScalar::new(0.21875).saturating_sub(UnitIntervalScalar::new(0.90625)),
+            UnitIntervalScalar::MIN
         );
     }
 
     #[test]
     fn test_equal_within_tolerance() {
-        std::assert!(UnitIntervalScalar64::equal_within_tolerance(
-            UnitIntervalScalar64::from_numerator(60401),
-            UnitIntervalScalar64::from_numerator(60404),
+        std::assert!(UnitIntervalScalar::equal_within_tolerance(
+            UnitIntervalScalar::from_numerator(60401),
+            UnitIntervalScalar::from_numerator(60404),
             3
         ));
 
-        std::assert!(UnitIntervalScalar64::equal_within_tolerance(
-            UnitIntervalScalar64::from_numerator(25826),
-            UnitIntervalScalar64::from_numerator(25824),
+        std::assert!(UnitIntervalScalar::equal_within_tolerance(
+            UnitIntervalScalar::from_numerator(25826),
+            UnitIntervalScalar::from_numerator(25824),
             2
         ));
 
-        std::assert!(!UnitIntervalScalar64::equal_within_tolerance(
-            UnitIntervalScalar64::from_numerator(58469),
-            UnitIntervalScalar64::from_numerator(58479),
+        std::assert!(!UnitIntervalScalar::equal_within_tolerance(
+            UnitIntervalScalar::from_numerator(58469),
+            UnitIntervalScalar::from_numerator(58479),
             4
         ));
 
-        std::assert!(!UnitIntervalScalar64::equal_within_tolerance(
-            UnitIntervalScalar64::from_numerator(77247),
-            UnitIntervalScalar64::from_numerator(77241),
+        std::assert!(!UnitIntervalScalar::equal_within_tolerance(
+            UnitIntervalScalar::from_numerator(77247),
+            UnitIntervalScalar::from_numerator(77241),
             4
         ));
     }
@@ -413,24 +419,24 @@ mod tests {
     #[test]
     fn test_add() {
         std::assert_eq!(
-            UnitIntervalScalar64::new(0.75) + UnitIntervalScalar64::new(0.125),
-            UnitIntervalScalar64::new(0.75 + 0.125)
+            UnitIntervalScalar::new(0.75) + UnitIntervalScalar::new(0.125),
+            UnitIntervalScalar::new(0.75 + 0.125)
         );
     }
 
     #[test]
     fn test_sub() {
         std::assert_eq!(
-            UnitIntervalScalar64::new(0.625) - UnitIntervalScalar64::new(0.25),
-            UnitIntervalScalar64::new(0.625 - 0.25)
+            UnitIntervalScalar::new(0.625) - UnitIntervalScalar::new(0.25),
+            UnitIntervalScalar::new(0.625 - 0.25)
         );
     }
 
     #[test]
     fn test_mul() {
         std::assert_eq!(
-            UnitIntervalScalar64::new(0.875) * UnitIntervalScalar64::new(0.375),
-            UnitIntervalScalar64::new(0.875 * 0.375)
+            UnitIntervalScalar::new(0.875) * UnitIntervalScalar::new(0.375),
+            UnitIntervalScalar::new(0.875 * 0.375)
         );
     }
 }

@@ -17,7 +17,7 @@ impl<T, const N: usize> ArrayBuilder<T, N> {
 
     /// Appends anw element to the part of the array already built. 
     ///
-    /// This function should not be called at most 'N' times.
+    /// This function should not be called more than 'N' times.
     pub fn push(&mut self, elem: T) {
         std::assert!(self.len < N);
         self.elems[self.len].write(elem);
@@ -25,6 +25,7 @@ impl<T, const N: usize> ArrayBuilder<T, N> {
     }
 
     /// Builds the array.
+    ///
     /// This function should be called after 'push' has been called exactly 'N' times.
     pub fn build(self) -> [T; N] {
         std::assert!(self.len == N);
