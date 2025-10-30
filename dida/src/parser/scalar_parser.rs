@@ -1,5 +1,7 @@
 use crate::ScalarDeg1;
 use crate::parser::parser::Parser;
+use crate::bezier_64::unit_interval_scalar::UnitIntervalScalar;
+use std::ops::{Add, Sub, SubAssign, Mul, MulAssign, Shl, Shr};
 
 fn is_digit(utf8_byte: u8) -> bool {
     utf8_byte >= b'0' && utf8_byte <= b'9' 
@@ -13,8 +15,8 @@ fn skip_digits(parser: &mut Parser) {
     parser.skip_zero_or_more(&is_digit)
 }
 
-fn try_parse_digit(parser: &mut Parser) -> Option<i32> {
-    parser.try_parse_byte(&is_digit).map(|utf8_byte| (utf8_byte - b'0') as i32)
+fn try_parse_digit(parser: &mut Parser) -> Option<u8> {
+    parser.try_parse_byte(&is_digit).map(|utf8_byte| utf8_byte - b'0')
 }
 
 /// Parses a 'ScalarDeg1'.
@@ -25,7 +27,8 @@ pub fn parse_scalar_deg1(parser: &mut Parser) -> Option<ScalarDeg1> {
 
     let has_integer_digits = next_is_digit(&parser);
     let mut int_part: i32 = 0;
-    while let Some(digit) = try_parse_digit(parser) {
+    while let Some(digit_u8) = try_parse_digit(parser) {
+        let digit = digit_u8 as i32;
         if int_part >= MAX_INT_PART / 10 {
             if int_part > MAX_INT_PART / 10 || digit > MAX_INT_PART % 10 {
                 skip_digits(parser);
@@ -77,7 +80,9 @@ pub fn parse_scalar_deg1(parser: &mut Parser) -> Option<ScalarDeg1> {
 ///
 ///   v - truncated(v) < .5 * ScalarType::quantum
 ///
-const fn base_10_num_significant_fractional_digits() -> usize {
+const fn base_10_num_significant_fractional_digits<const NUM_FRACTIONAL_BITS: i32>() -> usize {
+    let denom = (1 as i128) << NUM_FRACTIONAL_BITS;
+
     // The result is the lowest 'n' for which
     //
     //   1/10^n <= .5 * 1/2^exp
@@ -86,9 +91,9 @@ const fn base_10_num_significant_fractional_digits() -> usize {
     //
     //   10^n >= 2^exp
 
-    let mut lhs: i32 = 1;
+    let mut lhs: i128 = 1;
     let mut n: usize = 0;
-    while lhs < ScalarDeg1::DENOM {
+    while lhs < denom {
         lhs *= 10;
         n += 1;
     }
@@ -98,14 +103,15 @@ const fn base_10_num_significant_fractional_digits() -> usize {
 
 /// Parses the digits after the decimal point as a ScalarDeg1 in the range [0, 1).
 fn parse_scalar_fractional_part(parser: &mut Parser) -> ScalarDeg1 {
-    const NUM_SIGNIFICANT_DIGITS: usize = base_10_num_significant_fractional_digits();
+    const NUM_SIGNIFICANT_DIGITS: usize =
+        base_10_num_significant_fractional_digits::<{ScalarDeg1::NUM_FRACTIONAL_BITS}>();
 
     let mut base_10_num: i32 = 0;
     let mut base_10_denom: i32 = 1;
     for _ in 0..NUM_SIGNIFICANT_DIGITS {
         match try_parse_digit(parser) {
             Some(digit) => {
-                base_10_num = 10 * base_10_num + digit;
+                base_10_num = 10 * base_10_num + digit as i32;
                 base_10_denom *= 10;
             },
             None => break,
@@ -117,17 +123,42 @@ fn parse_scalar_fractional_part(parser: &mut Parser) -> ScalarDeg1 {
     let mut base_2_num = base_10_num * ScalarDeg1::DENOM / base_10_denom;
     let remainder = base_10_num * ScalarDeg1::DENOM % base_10_denom;
 
-    if remainder > (base_10_denom / 2) || (remainder == (base_10_denom / 2) && (base_2_num & 1) == 1) {
+    base_2_num += parse_scalar_fractional_part_tail::<{ScalarDeg1::NUM_FRACTIONAL_BITS}, i32>(
+        parser,
+        remainder,
+        base_10_denom,
+        (base_2_num & 1) == 0
+    ); 
+
+    ScalarDeg1::from_numerator(base_2_num)
+}
+
+fn parse_scalar_fractional_part_tail<const NUM_FRACTIONAL_BITS: i32, IntT>(
+    parser: &mut Parser,
+    remainder: IntT,
+    base_10_denom: IntT,
+    is_even: bool
+) -> IntT
+where
+    IntT: Copy + Clone + From<u8> +
+        PartialEq + PartialOrd +
+        Add<IntT, Output = IntT> + Sub<IntT, Output = IntT> + Mul<IntT, Output = IntT> +
+        MulAssign<IntT> + SubAssign<IntT> +
+        Shl<i32, Output = IntT> + Shr<i32, Output = IntT>
+{
+    let base_2_denom = IntT::from(1) << NUM_FRACTIONAL_BITS;
+
+    if remainder > (base_10_denom >> 1) || (remainder == (base_10_denom >> 1) && !is_even) {
         // We're already rounding up, so even if there are digits remaining, these can't be enough to bump the
         // result up by another ScalarDeg1::QUANTUM.
 
         // Skip remaining digits.
         skip_digits(parser);
-        return ScalarDeg1::from_numerator(base_2_num + 1);
+        return IntT::from(1);
     }
 
     if !next_is_digit(parser) {
-        return ScalarDeg1::from_numerator(base_2_num);
+        return IntT::from(0);
     }
 
     // The truncated value resulted in downwards rounding, but there are digits remaining, so it is  possible that
@@ -139,30 +170,84 @@ fn parse_scalar_fractional_part(parser: &mut Parser) -> ScalarDeg1 {
     //                                    tail(v) > .5 / base_2_denom - remainder / (base_10_denom * base_2_denom)
     //   (tail(v) * base_10_denom) * base_2_denom > base_10_denom / 2 - remainder
     //
-    let mut threshold = base_10_denom / 2 - remainder;
+    let mut threshold = (base_10_denom >> 1) - remainder;
 
     while let Some(digit) = try_parse_digit(parser) {
-        let digit_base_2_num = digit * ScalarDeg1::DENOM;
-        threshold *= 10;
-        if digit_base_2_num + ScalarDeg1::DENOM <= threshold {
+        let digit_base_2_num = IntT::from(digit) * base_2_denom;
+        threshold *= IntT::from(10);
+        if digit_base_2_num + base_2_denom <= threshold {
             skip_digits(parser);
-            return ScalarDeg1::from_numerator(base_2_num);
+            return IntT::from(0);
         } else if digit_base_2_num > threshold {
             skip_digits(parser);
-            return ScalarDeg1::from_numerator(base_2_num + 1);
+            return IntT::from(1);
         } else {
             threshold -= digit_base_2_num;
         }
     }
 
-    if threshold == 0 {
-        // We're exactly on the threshold, so we should round to even.
-        if (base_2_num & 1) == 1 {
-            base_2_num += 1;
+    // If we're exactly on the threshold, then we should round to even.
+    if threshold == IntT::from(0) && !is_even {
+        IntT::from(1)
+    } else {
+        IntT::from(0)
+    }
+}
+
+/// Parses the digits after the decimal point as a ScalarDeg1 in the range [0, 1).
+pub fn parse_unit_interval_scalar(parser: &mut Parser) -> Option<UnitIntervalScalar> {
+    if !parser.try_match(b'0') {
+        return None;
+    }
+
+    if !parser.try_match(b'.') {
+        if next_is_digit(parser) {
+            return None;
+        } else {
+            return Some(UnitIntervalScalar::new(0.0));
         }
     }
 
-    ScalarDeg1::from_numerator(base_2_num)
+    if !next_is_digit(parser) {
+        return None;
+    }
+
+    const NUM_SIGNIFICANT_DIGITS: usize = base_10_num_significant_fractional_digits::<64>();
+
+    let mut base_10_num: u128 = 0;
+    let mut base_10_denom: u128 = 1;
+    for _ in 0..NUM_SIGNIFICANT_DIGITS {
+        match try_parse_digit(parser) {
+            Some(digit) => {
+                base_10_num = 10 * base_10_num + digit as u128;
+                base_10_denom *= 10;
+            },
+            None => break,
+        }
+    }
+
+    // The significant digits have been parsed. The final value will be either base_2_num / base_2_denom or
+    // (base_2_num + 1) / base_2_denom.
+    //
+    // Note that since base_10_num might already exceed the 64 bit range, we can't just do
+    // 
+    //   (base_10_num << 64) / base_10_num
+    //
+    // Instead, we have to do this 2 step approach.
+    let mut base_2_num = ((base_10_num << 32) / base_10_denom) << 32;
+    let mut remainder = ((base_10_num << 32) % base_10_denom) << 32;
+    
+    base_2_num += remainder / base_10_denom;
+    remainder %= base_10_denom;
+
+    base_2_num += parse_scalar_fractional_part_tail::<{ScalarDeg1::NUM_FRACTIONAL_BITS}, u128>(
+        parser,
+        remainder,
+        base_10_denom,
+        (base_2_num & 1) == 0
+    ); 
+
+    Some(UnitIntervalScalar::from_numerator(base_2_num as u64))
 }
 
 #[cfg(test)]
@@ -179,14 +264,24 @@ mod tests {
 
     #[test]
     fn test_next_is_digit() {
+        let mut parser = Parser::new("1a");
+        
+        std::assert!(next_is_digit(&parser));
+        parser.try_match(b'1');
 
+        std::assert!(!next_is_digit(&parser));
     }
     
-    /*fn next_is_digit(parser: &Parser) -> bool {
-        parser.next_is(&is_digit)
+    #[test]
+    fn test_skip_digits() {
+        let mut parser = Parser::new("159ab");
+
+        skip_digits(&mut parser);
+        std::assert!(parser.try_match(b'a'));
+
+        skip_digits(&mut parser);
+        std::assert!(parser.try_match(b'b'));
     }
-    
-    fn skip_digits(parser: &mut Parser) {*/
 
     #[test]
     fn test_try_parse_digit() {
@@ -438,5 +533,38 @@ mod tests {
 
         // Tail too short.
         std::assert_eq!(parse("508178710"), ScalarDeg1::new(0.508057));
+    }
+
+    #[test]
+    fn test_parse_unit_interval_scalar() {
+        std::assert_eq!(
+            parse_unit_interval_scalar(&mut Parser::new("0.3398")),
+            Some(UnitIntervalScalar::from_numerator(6268203636246505639))
+        );
+
+        std::assert_eq!(
+            parse_unit_interval_scalar(&mut Parser::new("0.67093514633655881455")),
+            Some(UnitIntervalScalar::from_numerator(12376568934527367093))
+        );
+
+        std::assert_eq!(
+            parse_unit_interval_scalar(&mut Parser::new("2.67")),
+            None
+        );
+
+        std::assert_eq!(
+            parse_unit_interval_scalar(&mut Parser::new("NaN")),
+            None
+        );
+
+        std::assert_eq!(
+            parse_unit_interval_scalar(&mut Parser::new("0")),
+            Some(UnitIntervalScalar::new(0.0))
+        );
+
+        std::assert_eq!(
+            parse_unit_interval_scalar(&mut Parser::new("0.")),
+            None
+        );
     }
 }

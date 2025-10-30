@@ -1,6 +1,9 @@
 use crate::ScalarDeg1;
+use crate::parser::parser::Parser;
+use crate::parser::scalar_parser::parse_unit_interval_scalar;
 use std::ops::{Add, Mul, Sub};
 use std::fmt::Debug;
+use std::str::FromStr;
 
 /// A 64-bit fixed point scalar in the interval [0, 1).
 ///
@@ -16,8 +19,8 @@ use std::fmt::Debug;
 ///
 /// The error number of the result of the basic operations can be computed as follows.
 ///
-///   error_number(a + b) = max(error_number(a), error_number(b))
-///   error_number(a - b) = max(error_number(a), error_number(b))
+///   error_number(a + b) = error_number(a) + error_number(b)
+///   error_number(a - b) = error_number(a) + error_number(b)
 ///   error_number(a * b) = error_number(a) + error_number(b) + 1
 ///
 /// Similar rules for other operations are documented at the respective function.
@@ -239,6 +242,26 @@ impl Debug for UnitIntervalScalar {
     }
 }
 
+impl FromStr for UnitIntervalScalar {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, String> {
+        let mut parser = Parser::new(s);
+
+        parser.skip_optional_whitespace();
+        let Some(result) = parse_unit_interval_scalar(&mut parser) else {
+            return Err(format!("Failed to parse UnitIntervalScalar \"{}\"", s));
+        };
+
+        parser.skip_optional_whitespace();
+        if !parser.has_finished() {
+            return Err(format!("Failed to parse UnitIntervalScalar \"{}\"", s));
+        }
+
+        Ok(result)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -438,5 +461,15 @@ mod tests {
             UnitIntervalScalar::new(0.875) * UnitIntervalScalar::new(0.375),
             UnitIntervalScalar::new(0.875 * 0.375)
         );
+    }
+
+    #[test]
+    fn test_from_str() {
+        std::assert_eq!(
+            UnitIntervalScalar::from_str("0.1390"),
+            Ok(UnitIntervalScalar::from_numerator(2564097426245627675))
+        );
+
+        std::assert!(UnitIntervalScalar::from_str("NotAUnitIntervalScalar").is_err());
     }
 }

@@ -13,6 +13,7 @@ pub trait ScalarParams {
         Ord;
     
     const DEGREE: usize;
+    const NUM_FRACTIONAL_BITS: i32;
     const DENOM: Self::IntT;
     const QUANTUM: f64;
     const MIN_NUMERATOR: Self::IntT;
@@ -28,6 +29,7 @@ impl ScalarParams for ScalarDeg1Params {
     type IntT = i32;
 
     const DEGREE: usize = 1;
+    const NUM_FRACTIONAL_BITS: i32 = 12;
     const DENOM: i32 = 4096;
     const QUANTUM: f64 = 1.0 / 4096.0;
     const MIN_NUMERATOR: i32 = i32::MIN;
@@ -48,6 +50,7 @@ impl ScalarParams for ScalarDeg2Params {
     type IntT = i64;
 
     const DEGREE: usize = 2;
+    const NUM_FRACTIONAL_BITS: i32 = 24;
     const DENOM: i64 = 4096 * 4096;
     const QUANTUM: f64 = 1.0 / (4096.0 * 4096.0);
     const MIN_NUMERATOR: i64 = i64::MIN;
@@ -78,6 +81,9 @@ pub type ScalarDeg1 = Scalar<ScalarDeg1Params>;
 pub type ScalarDeg2 = Scalar<ScalarDeg2Params>;
 
 impl<Params: ScalarParams> Scalar<Params> {
+    /// The number of fractional bits of this scalar type.
+    pub const NUM_FRACTIONAL_BITS: i32 = Params::NUM_FRACTIONAL_BITS;
+
     /// The denominator of a scalar of this type.
     pub const DENOM: Params::IntT = Params::DENOM;
 
@@ -237,6 +243,13 @@ mod tests {
     fn test_as_f64() {
         std::assert_eq!(ScalarDeg1::new(-9.25).as_f64(), -9.25);
         std::assert_eq!(ScalarDeg2::new(1.5).as_f64(), 1.5);
+    }
+
+    #[test]
+    fn test_num_fractional_bits() {
+        std::assert_eq!(ScalarDeg1::new(1.0).numerator(), 1 << ScalarDeg1::NUM_FRACTIONAL_BITS);
+        std::assert_eq!(ScalarDeg2::new(1.0).numerator(), 1 << ScalarDeg2::NUM_FRACTIONAL_BITS);
+
     }
 
     #[test]
