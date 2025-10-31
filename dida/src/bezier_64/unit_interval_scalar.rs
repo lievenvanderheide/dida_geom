@@ -437,6 +437,30 @@ mod tests {
             UnitIntervalScalar::from_numerator(77241),
             4
         ));
+
+        std::assert!(UnitIntervalScalar::equal_within_tolerance(
+            UnitIntervalScalar::from_numerator(3),
+            UnitIntervalScalar::from_numerator(2),
+            8
+        ));
+
+        std::assert!(!UnitIntervalScalar::equal_within_tolerance(
+            UnitIntervalScalar::from_numerator(3),
+            UnitIntervalScalar::from_numerator(u64::MAX),
+            8
+        ));
+
+        std::assert!(!UnitIntervalScalar::equal_within_tolerance(
+            UnitIntervalScalar::from_numerator(u64::MAX - 3),
+            UnitIntervalScalar::from_numerator(2),
+            20
+        ));
+
+        std::assert!(UnitIntervalScalar::equal_within_tolerance(
+            UnitIntervalScalar::from_numerator(u64::MAX - 3),
+            UnitIntervalScalar::from_numerator(u64::MAX - 1),
+            20
+        ));
     }
 
     #[test]
@@ -468,6 +492,11 @@ mod tests {
         std::assert_eq!(
             UnitIntervalScalar::from_str("0.1390"),
             Ok(UnitIntervalScalar::from_numerator(2564097426245627675))
+        );
+
+        std::assert_eq!(
+            UnitIntervalScalar::from_str("    0.7872  "),
+            Ok(UnitIntervalScalar::from_numerator(14521276934824159032))
         );
 
         std::assert!(UnitIntervalScalar::from_str("NotAUnitIntervalScalar").is_err());

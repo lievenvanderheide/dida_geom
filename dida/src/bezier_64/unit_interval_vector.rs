@@ -1,5 +1,8 @@
 use crate::bezier_64::unit_interval_scalar::UnitIntervalScalar;
+use crate::parser::parser::Parser;
+use crate::parser::geometry_parsers::parse_unit_interval_vector;
 use std::ops::{Add, Mul, Sub};
+use std::str::FromStr;
 
 /// A vector with UnitIntervalScalar coordinates.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -13,6 +16,11 @@ impl<const DIM: usize> UnitIntervalVector<DIM> {
         Self {
             coords: std::array::from_fn(|i| UnitIntervalScalar::new(coords[i])),
         }
+    }
+
+    /// Constructs a `UnitIntervalVector` with the given coordinates.
+    pub fn from_coords(coords: [UnitIntervalScalar; DIM]) -> Self {
+        Self { coords }
     }
 
     /// Returns a reference to the array of coordinates of this vector. 
@@ -46,6 +54,17 @@ impl<const DIM: usize> UnitIntervalVector<DIM> {
         Self {
             coords: std::array::from_fn(|i| std::cmp::max(self.coords[i], b.coords[i])),
         }
+    }
+
+    /// Compares two vectors with a tolerance. See `UnitIntervalScalar::equal_with_tolerance` for more details.
+    pub fn equal_within_tolerance(&self, b: &Self, error_number: usize) -> bool {
+        for i in 0..DIM {
+            if !UnitIntervalScalar::equal_within_tolerance(self.coords[i], b.coords[i], error_number) {
+                return false;
+            }
+        }
+
+        true
     }
 }
 
@@ -87,6 +106,26 @@ impl<const DIM: usize> Mul<UnitIntervalScalar> for UnitIntervalVector<DIM> {
     }
 }
 
+impl<const DIM: usize> FromStr for UnitIntervalVector<DIM> {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, String> {
+        let mut parser = Parser::new(s);
+
+        parser.skip_optional_whitespace();
+        let Some(result) = parse_unit_interval_vector(&mut parser) else {
+            return Err(format!("Failed to parse UnitIntervalScalar \"{}\"", s));
+        };
+
+        parser.skip_optional_whitespace();
+        if !parser.has_finished() {
+            return Err(format!("Failed to parse UnitIntervalScalar \"{}\"", s));
+        }
+
+        Ok(result)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -94,7 +133,20 @@ mod tests {
     #[test]
     fn test_new_and_access_coords() {
         let vector = UnitIntervalVector::new([0.0074, 0.5135]);
-        std::assert_eq!(vector.coords, [UnitIntervalScalar::new(0.0074), UnitIntervalScalar::new(0.5135)]);
+        std::assert_eq!(vector.coords(), &[UnitIntervalScalar::new(0.0074), UnitIntervalScalar::new(0.5135)]);
+    }
+
+    #[test]
+    fn test_from_coords_and_acces() {
+        let coords = [
+            UnitIntervalScalar::new(0.475),
+            UnitIntervalScalar::new(0.243),
+            UnitIntervalScalar::new(0.071),
+            UnitIntervalScalar::new(0.029),
+        ];
+
+        let vector = UnitIntervalVector::from_coords(coords);
+        std::assert_eq!(vector.coords(), &coords);
     }
 
     #[test]
@@ -164,5 +216,56 @@ mod tests {
             a * b,
             UnitIntervalVector::new([0.1416015625, 0.09765625, 0.0927734375])
         );
+    }
+
+    #[test]
+    fn test_from_str() {
+        std::assert_eq!(
+            UnitIntervalVector::from_str("{0.012, 0.796, 0.765}"),
+            Ok(UnitIntervalVector::from_coords([
+                UnitIntervalScalar::from_str("0.012").unwrap(),
+                UnitIntervalScalar::from_str("0.796").unwrap(),
+                UnitIntervalScalar::from_str("0.765").unwrap(),
+            ]))
+        );
+
+        std::assert_eq!(
+            UnitIntervalVector::from_str("  {0.318, 0.097}    "),
+            Ok(UnitIntervalVector::from_coords([
+                UnitIntervalScalar::from_str("0.318").unwrap(),
+                UnitIntervalScalar::from_str("0.097").unwrap(),
+            ]))
+        );
+
+        std::assert!(UnitIntervalVector::<2>::from_str("NotAVector").is_err());
+    }
+
+    #[test]
+    fn test_equal_within_tolerance() {
+        std::assert!(UnitIntervalVector::equal_within_tolerance(
+            &UnitIntervalVector::from_coords([
+                UnitIntervalScalar::from_numerator(761243),
+                UnitIntervalScalar::from_numerator(719168),
+                UnitIntervalScalar::from_numerator(264298),
+            ]),
+            &UnitIntervalVector::from_coords([
+                UnitIntervalScalar::from_numerator(761246),
+                UnitIntervalScalar::from_numerator(719164),
+                UnitIntervalScalar::from_numerator(264295),
+            ]),
+            4
+        ));
+
+        std::assert!(!UnitIntervalVector::equal_within_tolerance(
+            &UnitIntervalVector::from_coords([
+                UnitIntervalScalar::from_numerator(618388),
+                UnitIntervalScalar::from_numerator(524106),
+            ]),
+            &UnitIntervalVector::from_coords([
+                UnitIntervalScalar::from_numerator(618388),
+                UnitIntervalScalar::from_numerator(524116),
+            ]),
+            4
+        ));
     }
 }
