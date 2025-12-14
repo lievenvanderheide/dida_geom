@@ -48,13 +48,13 @@ impl<VertexContainer: AsRef<[Point2]>> ConvexPolygon<VertexContainer> {
     /// Returns the index of the leftmost vertex (the vertex which compares less than all other vertices with
     /// `Point2::lex_less_than`).
     pub fn leftmost_vertex_index(&self) -> usize {
-        unimodal_cyclic_sequence_maximum(self.vertices(), |a, b| a.x() < b.x())
+        unimodal_cyclic_sequence_maximum(self.vertices(), |a, b| a.x() > b.x())
     }
     
     /// Returns the index of the rightmost vertex (the vertex which compares greater than all other vertices with
     /// `Point2::lex_greater_than`).
     pub fn rightmost_vertex_index(&self) -> usize {
-        unimodal_cyclic_sequence_maximum(self.vertices(), |a, b| a.x() > b.x())
+        unimodal_cyclic_sequence_maximum(self.vertices(), |a, b| a.x() < b.x())
     }
 }
 
