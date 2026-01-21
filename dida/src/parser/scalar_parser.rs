@@ -58,7 +58,7 @@ pub fn parse_scalar_deg1(parser: &mut Parser) -> Option<ScalarDeg1> {
             return None;
         }
 
-        return Some(int_part_scalar - fractional_part);
+        Some(int_part_scalar - fractional_part)
     } else {
         if int_part >= MAX_INT_PART {
             return None;
@@ -69,7 +69,7 @@ pub fn parse_scalar_deg1(parser: &mut Parser) -> Option<ScalarDeg1> {
             return None;
         }
 
-        return Some(int_part_scalar + fractional_part);
+        Some(int_part_scalar + fractional_part)
     }
 }
 

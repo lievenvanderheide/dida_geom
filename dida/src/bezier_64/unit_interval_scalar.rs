@@ -200,7 +200,7 @@ impl UnitIntervalScalar {
             numerator: error_number as u64
         };
 
-        return a.saturating_sub(tolerance) <= b && b <= a.saturating_add(tolerance);
+        a.saturating_sub(tolerance) <= b && b <= a.saturating_add(tolerance)
     }
 }
 

@@ -13,7 +13,7 @@ pub struct BezierCurve<const DIM: usize, const ORDER: usize> {
 impl<const DIM: usize, const ORDER: usize> BezierCurve<DIM, ORDER> {
     /// Constructs a new `BezierCurve` from `f64` coordinates.
     pub fn new(control_points_f64: [[f64; DIM]; ORDER]) -> Self {
-        Self { 
+        Self {
             control_points: std::array::from_fn(|i| UnitIntervalVector::new(control_points_f64[i])),
         }
     }
@@ -33,7 +33,7 @@ impl<const DIM: usize, const ORDER: usize> BezierCurve<DIM, ORDER> {
     /// The error number of each of the coordinates of the result is
     ///
     ///   error_number = (ORDER - 1) * (error_number(t) + 1) + error_number(self)
-    /// 
+    ///
     /// Where error_number(self) is the max error number of corresponding coordinate of the control points.
     pub fn eval(&self, t: UnitIntervalScalar) -> UnitIntervalVector<DIM> {
         let mut control_points = self.control_points;
@@ -51,7 +51,7 @@ impl<const DIM: usize, const ORDER: usize> BezierCurve<DIM, ORDER> {
     /// The error number of each of the coordinates of the result is
     ///
     ///   error_number = (ORDER - 1) * (error_number(t) + 1) + error_number(self)
-    /// 
+    ///
     /// Where error_number(self) is the max error number of corresponding coordinate of the control points.
     pub fn split_at(&self, t: UnitIntervalScalar) -> (Self, Self) {
         let mut left = BezierCurve::default();
@@ -76,7 +76,7 @@ impl<const DIM: usize, const ORDER: usize> BezierCurve<DIM, ORDER> {
     /// The error number of each of the coordinates of the result is
     ///
     ///   error_number = (ORDER - 1) + error_number(self)
-    /// 
+    ///
     /// Where error_number(self) is the max error number of corresponding coordinate of the control points.
     pub fn split_at_mid(&self) -> (Self, Self) {
         let mut left = BezierCurve::default();
@@ -122,6 +122,48 @@ impl<const DIM: usize, const ORDER: usize> FromStr for BezierCurve<DIM, ORDER> {
         }
 
         Ok(result)
+    }
+}
+
+struct BezierCurveSlice<const DIM: usize, const ORDER: usize> {
+    /// The curve corresponding to this slice.
+    ///
+    /// The point on this curve with param 't' is equal to the point on the original curve with param
+    /// 'min_t + t * (max_t - min_t)'.
+    curve: BezierCurve<DIM, ORDER>,
+
+    /// The param of the point on the original curve corresponding to the leftmost point of 'curve'.
+    min_t: UnitIntervalScalar,
+
+    /// The param of the point on the original curve corresponding to the rightmost point of 'curve'.
+    max_t: UnitIntervalScalar,
+}
+
+impl<const DIM: usize, const ORDER: usize> BezierCurveSlice<DIM, ORDER> {
+    pub fn full_curve_slice(curve: BezierCurve<DIM, ORDER>) -> Self {
+        BezierCurveSlice {
+            curve: curve,
+            min_t: UnitIntervalScalar::MIN,
+            max_t: UnitIntervalScalar::MAX,
+        }
+    }
+
+    pub fn split_at_mid(&self) -> (Self, Self) {
+        let (left_curve, right_curve) = self.curve.split_at_mid();
+        let mid_t = self.min_t.midpoint(self.max_t);
+
+        (
+            Self {
+                curve: left_curve,
+                min_t: self.min_t,
+                max_t: mid_t,
+            },
+            Self {
+                curve: right_curve,
+                min_t: mid_t,
+                max_t: self.max_t,
+            }
+        )
     }
 }
 
@@ -187,7 +229,7 @@ mod tests {
             30
         ));
     }
-    
+
     #[test]
     fn test_split_at_mid() {
         let curve = BezierCurve::<1, 4>::from_str("{{0.72}, {0.98}, {0.33}, {0.92}}").unwrap();
@@ -209,7 +251,7 @@ mod tests {
     #[test]
     fn test_from_str() {
         let curve = BezierCurve::<3, 4>::from_str(
-            "  {{0.988, 0.606, 0.541}, {0.215, 0.221, 0.86}, {0.701, 0.196, 0.070}, {0.599, 0.644, 0.207}}   "
+            "{{0.988, 0.606, 0.541}, {0.215, 0.221, 0.86}, {0.701, 0.196, 0.070}, {0.599, 0.644, 0.207}}"
         ).unwrap();
 
         std::assert_eq!(
@@ -221,5 +263,31 @@ mod tests {
                 UnitIntervalVector::from_str("{0.599, 0.644, 0.207}").unwrap(),
             ]
         )
+    }
+
+    #[test]
+    fn test_beziez_curve_slice_full_curve_slice() {
+        let curve = BezierCurve::<2, 3>::from_str("{{0.15, 0.18}, {0.66, 0.80}, {0.90, 0.18}}").unwrap();
+        let slice = BezierCurveSlice::full_curve_slice(curve.clone());
+        std::assert_eq!(slice.curve, curve);
+        std::assert_eq!(slice.min_t, UnitIntervalScalar::MIN);
+        std::assert_eq!(slice.max_t, UnitIntervalScalar::MAX);
+    }
+
+    #[test]
+    fn test_bezier_curve_slice_split_at_mid() {
+        let curve = BezierCurve::<1, 4>::from_str("{{0.1}, {0.9}, {0.3}, {0.6}}").unwrap();
+        let slice_0_1 = BezierCurveSlice::full_curve_slice(curve.clone());
+        let (slice_0_2, slice_1_2) = slice_0_1.split_at_mid();
+        let (slice_0_4, slice_1_4) = slice_0_2.split_at_mid();
+        let (slice_2_4, slice_3_4) = slice_1_2.split_at_mid();
+
+        for slice in [slice_0_4, slice_1_4, slice_2_4, slice_3_4] {
+            for slice_t in [UnitIntervalScalar::new(0.0), UnitIntervalScalar::new(0.4), UnitIntervalScalar::new(0.9)] {
+                let value = slice.curve.eval(slice_t);
+                let ref_value = curve.eval(slice.min_t + slice_t * (slice.max_t - slice.min_t));
+                std::assert!(value.equal_within_tolerance(&ref_value, 10));
+            }
+        }
     }
 }

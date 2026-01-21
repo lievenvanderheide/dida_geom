@@ -16,7 +16,7 @@ fn minkowski_addition<const IS_DIFFERENCE: bool>(a: ConvexPolygonView, b: Convex
     let mut b_index = b_first_index;
     let mut b_next_index = succ_modulo(b_index, b.num_vertices());
     let mut b_outgoing = b[b_next_index] - b[b_index];
-    
+
     let mut result = Vec::<Point2>::with_capacity(a.num_vertices() + b.num_vertices());
     let mut num_merged = 0;
     while num_merged != a.num_vertices() + b.num_vertices() {
@@ -45,7 +45,7 @@ fn minkowski_addition<const IS_DIFFERENCE: bool>(a: ConvexPolygonView, b: Convex
             b_index = b_next_index;
             b_next_index = succ_modulo(b_index, b.num_vertices());
             b_outgoing = b[b_next_index] - b[b_index];
-        
+
             num_merged += 1;
         }
     }
