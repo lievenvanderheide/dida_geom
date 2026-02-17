@@ -2,6 +2,7 @@ use crate::bezier_64::unit_interval_scalar::UnitIntervalScalar;
 use crate::bezier_64::unit_interval_vector::UnitIntervalVector;
 use crate::parser::parser::Parser;
 use crate::parser::geometry_parsers::parse_bezier_curve;
+use crate::container::static_vec::StaticVec;
 use std::str::FromStr;
 
 /// A bezier curve with `UnitIntervalVector` control points.
@@ -125,11 +126,70 @@ impl<const DIM: usize, const ORDER: usize> FromStr for BezierCurve<DIM, ORDER> {
     }
 }
 
-struct BezierCurveSlice<const DIM: usize, const ORDER: usize> {
+enum CountSignChangesResult {
+    Zero,
+    One,
+    MaybeMultiple,
+}
+
+impl<const ORDER: usize> BezierCurve<1, ORDER> {
+    pub fn isolate_solutions<const MAX_NUM_SOLUTIONS: usize>(
+        &self,
+        solution_value: UnitIntervalScalar
+    ) -> StaticVec<BezierCurveSlice<1, ORDER>, MAX_NUM_SOLUTIONS> {
+        let mut result = StaticVec::<BezierCurveSlice<1, ORDER>, MAX_NUM_SOLUTIONS>::new();
+
+        let mut stack = StaticVec::<BezierCurveSlice<1, ORDER>, ORDER>::new();
+        stack.push(BezierCurveSlice::full_curve_slice(self));
+        while let Some(slice) = stack.pop() {
+            match slice.curve.count_sign_changes(solution_value) {
+                CountSignChangesResult::Zero => {},
+                CountSignChangesResult::One => {
+                    result.push(slice);
+                    if result.len() == MAX_NUM_SOLUTIONS {
+                        return result;
+                    }
+                },
+                CountSignChangesResult::MaybeMultiple => {
+                    let (left, right) = slice.split_at_mid();
+                    stack.push(right);
+                    stack.push(left);
+                }
+            }
+        }
+
+        result
+    }
+
+    fn count_sign_changes(&self, solution_value: UnitIntervalScalar) -> CountSignChangesResult {
+        let mut it = self.control_points.iter();
+        if it.next().unwrap().coords()[0] < solution_value {
+            if it.find(|control_point| control_point.coords()[0] >= solution_value).is_none() {
+                return CountSignChangesResult::Zero;
+            }
+
+            if it.find(|control_point| control_point.coords()[0] < solution_value).is_none() {
+                return CountSignChangesResult::One;
+            }
+        } else {
+            if it.find(|control_point| control_point.coords()[0] < solution_value).is_none() {
+                return CountSignChangesResult::Zero;
+            }
+
+            if it.find(|control_point| control_point.coords()[0] >= solution_value).is_none() {
+                return CountSignChangesResult::One;
+            }
+        }
+
+        CountSignChangesResult::MaybeMultiple
+    }
+}
+
+pub struct BezierCurveSlice<const DIM: usize, const ORDER: usize> {
     /// The curve corresponding to this slice.
     ///
-    /// The point on this curve with param 't' is equal to the point on the original curve with param
-    /// 'min_t + t * (max_t - min_t)'.
+    /// The point on this curve with param 't' is equal (except for rdunding errors) to the point on the original curve
+    /// with param 'min_t + t * (max_t - min_t)'.
     curve: BezierCurve<DIM, ORDER>,
 
     /// The param of the point on the original curve corresponding to the leftmost point of 'curve'.
@@ -140,9 +200,9 @@ struct BezierCurveSlice<const DIM: usize, const ORDER: usize> {
 }
 
 impl<const DIM: usize, const ORDER: usize> BezierCurveSlice<DIM, ORDER> {
-    pub fn full_curve_slice(curve: BezierCurve<DIM, ORDER>) -> Self {
+    pub fn full_curve_slice(curve: &BezierCurve<DIM, ORDER>) -> Self {
         BezierCurveSlice {
-            curve: curve,
+            curve: curve.clone(),
             min_t: UnitIntervalScalar::MIN,
             max_t: UnitIntervalScalar::MAX,
         }
@@ -291,7 +351,7 @@ mod tests {
     #[test]
     fn test_beziez_curve_slice_full_curve_slice() {
         let curve = BezierCurve::<2, 3>::from_str("{{0.15, 0.18}, {0.66, 0.80}, {0.90, 0.18}}").unwrap();
-        let slice = BezierCurveSlice::full_curve_slice(curve.clone());
+        let slice = BezierCurveSlice::full_curve_slice(&curve);
         std::assert_eq!(slice.curve, curve);
         std::assert_eq!(slice.min_t, UnitIntervalScalar::MIN);
         std::assert_eq!(slice.max_t, UnitIntervalScalar::MAX);
@@ -300,7 +360,7 @@ mod tests {
     #[test]
     fn test_bezier_curve_slice_split_at_mid() {
         let curve = BezierCurve::<1, 4>::from_str("{{0.1}, {0.9}, {0.3}, {0.6}}").unwrap();
-        let slice_0_1 = BezierCurveSlice::full_curve_slice(curve.clone());
+        let slice_0_1 = BezierCurveSlice::full_curve_slice(&curve);
         let (slice_0_2, slice_1_2) = slice_0_1.split_at_mid();
         let (slice_0_4, slice_1_4) = slice_0_2.split_at_mid();
         let (slice_2_4, slice_3_4) = slice_1_2.split_at_mid();
