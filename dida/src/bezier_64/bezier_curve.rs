@@ -73,11 +73,11 @@ impl<const DIM: usize, const ORDER: usize> BezierCurve<DIM, ORDER> {
 
     /// Splits the bezier curve at the point with parameter 0.5.
     ///
-    /// The error number of each of the coordinates of the result is
+    /// The error number of each of the coordinates in the result is
     ///
     ///   error_number = (ORDER - 1) + error_number(self)
     ///
-    /// Where error_number(self) is the max error number of corresponding coordinate of the control points.
+    /// Where error_number(self) is the max error number of the coordinates in 'self'.
     pub fn split_at_mid(&self) -> (Self, Self) {
         let mut left = BezierCurve::default();
         let mut right = self.clone();
@@ -148,7 +148,30 @@ impl<const DIM: usize, const ORDER: usize> BezierCurveSlice<DIM, ORDER> {
         }
     }
 
+    /// Splits the bezier slice at its midpoint.
+    ///
+    /// The error number of each of the coordinates in the result is
+    ///
+    ///   error_number = (ORDER - 1) + error_number(self)
+    ///
+    /// where error_number(self) is the max error number of the coordinates in 'self'.
+    ///
+    /// In general, the error number of the bounds of the param range is
+    ///
+    ///   error_number(min_t, max_t) = max(error_number(self.min_t), error_number(self.max_t)) + 1.
+    ///
+    /// However, if it's a slice which was arrived at by successive calls to `split_at_mid` while starting from the
+    /// slice returned by `full_curve_slice`, then the error number is at most 1 (regardless of the number of times
+    /// `split_at_mid` was called).
+    ///
+    /// Proof: The full interval, represented using numerators, is of the form [0, 2^n - 1]. Splitting this interval
+    /// into 2 results in the intervals [0, 2^(n - 1) - 1] and [2^(n - 1) - 1, 2^n - 1]. The second interval has a width
+    /// which is a power of 2, so all further recursive splits of it will be exact. The first interval is of the
+    /// same form as the original interval, so we can apply induction. The conclusion is that the end points of each
+    /// interval differ at most 1 from the exact endpoint.
     pub fn split_at_mid(&self) -> (Self, Self) {
+        std::assert!(self.max_t - self.min_t >= UnitIntervalScalar::from_numerator(2));
+
         let (left_curve, right_curve) = self.curve.split_at_mid();
         let mid_t = self.min_t.midpoint(self.max_t);
 
